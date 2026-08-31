@@ -1,0 +1,3057 @@
+BANK $C0 - $CC
+--------------
+Executable Code
+
+BANK $CD
+--------
+$CD0000		-> padding
+$CD0001-$CD5C84	-> S-DD1 sprite tileset
+$CD5C85-$CDB2FC	-> S-DD1 data chunk
+$CDB2FD-$CDFE5C	-> S-DD1 data chunk
+$CDFE5D-$CDFFFD	-> S-DD1 sprite tileset
+$CDFFFE-$CDFFFF	-> padding
+
+
+BANK $CE
+--------
+$CE0000-$CE5052	-> S-DD1 data chunk
+$CE5053-$CE9EE4	-> S-DD1 data chunk
+$CE9EE5-$CEE47A	-> S-DD1 data chunk
+$CEE47B-$CEFF76	-> S-DD1 sprite tileset
+$CEFF77-$CEFFFF	-> LZ data chunk
+
+
+
+BANK $CF
+--------
+$CF0000-$CF436F	-> S-DD1 data chunk
+$CF4370-$CFFF89	-> S-DD1 sprite tileset
+$CFFF8A-$CFFFFE	-> LZ data chunk
+$CFFFFF		-> padding
+
+
+BANK $D0
+--------
+$D00000-$D03928	-> S-DD1 sprite tileset
+$D03929-$D0721A	-> S-DD1 data chunk
+$D0721B-$D0A705	-> S-DD1 sprite tileset
+$D0A706-$D0DBA0	-> S-DD1 data chunk
+$D0DBA1-$D0FFFE	-> S-DD1 sprite tileset
+$D0FFFF		-> padding
+
+
+BANK $D1
+--------
+$D10000-$D133BD	-> S-DD1 data chunk
+$D133BE-$D1FC56	-> S-DD1 sprite tileset
+$D1FC57-$D1FFF6	-> LZ data chunk
+$D1FFF7-$D1FFFF	-> padding
+
+
+BANK $D2
+--------
+$D20000-$D2C083	-> S-DD1 sprite tileset
+$D2C084-$D2EDF9	-> LZ data chunk
+$D2EDFA-$D2FFF7	-> S-DD1 sprite tileset
+$D2FFF8-$D2FFFF	-> padding
+
+
+
+BANK $D3
+--------
+$D30000-$D37EA7	-> S-DD1 sprite tileset
+$D37EA8-$D3A660	-> S-DD1 data chunk
+$D3A661-$D3FF8A	-> S-DD1 sprite tileset
+$D3FF8B-$D3FFFF	-> LZ data chunk
+
+
+
+BANK $D4
+--------
+$D40000-$D4F158	-> S-DD1 sprite tileset
+$D4F159-$D4FFF4	-> S-DD1 data chunk
+$D4FFF5-$D4FFFF	-> padding
+
+
+
+BANK $D5
+--------
+$D50000-$D5844B	-> S-DD1 sprite tileset
+$D5844C-$D5A3C6	-> S-DD1 data chunk
+$D5A3C7-$D5FFFC	-> S-DD1 sprite tileset
+$D5FFFD-$D5FFFF	-> padding
+
+
+
+BANK $D6
+--------
+$D60000-$D6FFFE	-> S-DD1 sprite tileset
+$D6FFFF		-> padding
+
+
+
+BANK $D7
+--------
+$D70000-$D7254A -> weapon, armor, item and enemy names
+$D7254B-$D74287	-> weapon, armor and item descriptions
+$D74288-$D743FF	-> padding
+$D74400-$D786EE	-> S-DD1 sprite tileset
+$D786EF-$D79CE9	-> S-DD1 data chunk
+$D79CEA-$D7DDF9	-> S-DD1 sprite tileset
+$D7DDFA-$D7DDFF -> padding
+$D7DE00-$D7FFFF	-> color data for palettes 
+
+
+
+BANK $D8
+--------
+$D80000-$D8C9EB	-> S-DD1 sprite tileset
+$D8C9EC-$D8DAF8	-> S-DD1 data chunk
+$D8DAF9-$D8FC6B	-> S-DD1 sprite tileset
+$D8FC6C-$D8FFE6	-> S-DD1 data chunk
+$D8FFE7-$D8FFFF	-> padding
+
+
+
+BANK $D9
+--------
+$D90000-$D90FC5	-> S-DD1 data chunk
+$D90FC6-$D91F48	-> S-DD1 data chunk
+$D91F49-$D91F87	-> unused data
+$D91F88-$D92F3B	-> S-DD1 data chunk
+$D92F3C-$D96D32	-> S-DD1 sprite tileset
+$D96D33-$D97C6D	-> S-DD1 data chunk
+$D97C6E-$D98BA5	-> S-DD1 data chunk
+$D98BA6-$D9FFF8	-> S-DD1 sprite tileset
+$D9FFF9-$D9FFFF	-> padding
+
+
+
+BANK $DA
+--------
+$DA0000-$DA77C6	-> S-DD1 sprite tileset
+$DA77C7-$DA835F	-> S-DD1 data chunk
+$DA8360-$DAC410	-> S-DD1 sprite tileset
+$DAC411-$DACDBD	-> S-DD1 data chunk
+$DACDBE-$DAEABB	-> S-DD1 sprite tileset
+$DAEABC-$DAF457	-> S-DD1 data chunk
+$DAF458-$DAFDA9	-> S-DD1 data chunk
+$DAFDAA-$DAFFFA	-> LZ data chunk
+$DAFFFB-$DAFFFF	-> padding
+
+
+
+BANK $DB
+--------
+$DB0000-$DB2412	-> S-DD1 sprite tileset
+$DB2413-$DB2CCB	-> LZ data chunk
+$DB2CCC-$DB3E2B	-> S-DD1 sprite tileset
+$DB3E2C-$DB46CD	-> S-DD1 data chunk
+$DB46CE-$DB98CA	-> S-DD1 sprite tileset
+$DB98CB-$DBA077	-> S-DD1 data chunk
+$DBA078-$DBA819 -> S-DD1-compressed 8x8 1BPP font
+$DBA81A-$DBE21C	-> S-DD1 sprite tileset
+$DBE21D-$DBE8EC	-> S-DD1 data chunk
+$DBE8ED-$DBEFAD	-> S-DD1 data chunk
+$DBEFAE-$DBFC6E	-> S-DD1 sprite tileset
+$DBFC6F-$DBFFE6	-> S-DD1 data chunk
+$DBFFE7-$DBFFFF	-> padding
+
+
+
+BANK $DC
+--------
+$DC0000-$DC12A1	-> S-DD1 sprite tileset
+$DC12A2-$DC18B2	-> S-DD1 data chunk
+$DC18B3-$DC2439	-> S-DD1 sprite tileset
+$DC243A-$DC29D9	-> data table indexed from $C9:E4DC, $C9:E57B y $C9:E5F8
+$DC29DA-$DC3FDD	-> S-DD1 sprite tileset
+$DC3FDE-$DC454F	-> S-DD1 data chunk
+$DC4550-$DC5546	-> S-DD1 sprite tileset
+$DC5547-$DC5A79	-> S-DD1 data chunk
+$DC5A7A-$DC6989	-> S-DD1 sprite tileset
+$DC698A-$DC6E62	-> S-DD1 data chunk
+$DC6E63-$DC7338	-> S-DD1 data chunk
+$DC7339-$DC7CC9	-> S-DD1 sprite tileset
+$DC7CCA-$DC817C	-> LZ data chunk
+$DC817D-$DC8624	-> S-DD1 sprite tileset
+$DC8625-$DC8ABE	-> S-DD1 data chunk
+$DC8ABF-$DC8F55	-> S-DD1 sprite tileset
+$DC8F56-$DC93E7	-> S-DD1 data chunk
+$DC93E8-$DC9CF9	-> S-DD1 sprite tileset
+$DC9CFA-$DCA17B	-> S-DD1 data chunk
+$DCA17C-$DCA5F2	-> S-DD1 data chunk
+$DCA5F3-$DCAEC2	-> S-DD1 sprite tileset
+$DCAEC3-$DCB31D	-> LZ data chunk
+$DCB31E-$DCC852	-> S-DD1 sprite tileset
+$DCC853-$DCCC7C	-> S-DD1 data chunk
+$DCCC7D-$DCD0A1	-> S-DD1 data chunk
+$DCD0A2-$DCD4BC	-> LZ data chunk
+$DCD4BD-$DCE0E7	-> S-DD1 sprite tileset
+$DCE0E8-$DCE4DD	-> S-DD1 data chunk
+$DCE4DE-$DCF81A	-> S-DD1 sprite tileset
+$DCF81B-$DCFBDA	-> S-DD1 data chunk
+$DCFBDB-$DCFF89	-> S-DD1 sprite tileset
+$DCFF8A-$DCFFFE	-> LZ data chunk
+$DCFFFF		-> padding
+
+
+
+
+BANK $DD
+--------
+
+$DD0000-$DD075A	-> S-DD1 sprite tileset
+$DD075B-$DD0AF8	-> S-DD1 data chunk
+$DD0AF9-$DD0E96	-> S-DD1 data chunk
+$DD0E97-$DD1234	-> S-DD1 data chunk
+$DD1235-$DD15CC	-> S-DD1 sprite tileset
+$DD15CD-$DD1944	-> LZ data chunk
+$DD1945-$DD2A75	-> S-DD1 sprite tileset
+$DD2A76-$DD2DDE	-> S-DD1 data chunk
+$DD2DDF-$DD3140	-> S-DD1 sprite tileset
+$DD3141-$DD349E	-> S-DD1 data chunk
+$DD349F-$DD37FA	-> LZ data chunk
+$DD37FB-$DD3B5F	-> LZ data chunk
+$DD3B50-$DD3EA4	-> S-DD1 sprite tileset
+$DD3EA5-$DD41EB	-> S-DD1 data chunk
+$DD41EC-$DD54E4	-> S-DD1 sprite tileset
+$DD54E5-$DD57F2	-> LZ data chunk
+$DD57F3-$DD5DAD	-> S-DD1 sprite tileset
+$DD5DAE-$DD6083	-> S-DD1 data chunk
+$DD6084-$DD6628	-> S-DD1 sprite tileset
+$DD6629-$DD68F9	-> S-DD1 data chunk
+$DD68FA-$DD6BC0	-> S-DD1 sprite tileset
+$DD6BC1-$DD6E81	-> LZ data chunk
+$DD6E82-$DD713F	-> LZ data chunk
+$DD7140-$DD73F0	-> S-DD1 data chunk
+$DD73F1-$DD769C	-> S-DD1 data chunk
+$DD769D-$DD7BE4	-> S-DD1 sprite tileset
+$DD7BE5-$DD7E81	-> S-DD1 data chunk
+$DD7E82-$DD8113	-> S-DD1 data chunk
+$DD8114-$DD83A4	-> S-DD1 sprite tileset
+$DD83A5-$DD8626	-> LZ data chunk
+$DD8627-$DD88A7	-> S-DD1 data chunk
+$DD88A8-$DD8DA3	-> S-DD1 sprite tileset
+$DD8DA4-$DD901C	-> S-DD1 data chunk
+$DD901D-$DD9294	-> S-DD1 data chunk
+$DD9295-$DD950B	-> S-DD1 data chunk
+$DD950C-$DD9780	-> S-DD1 sprite tileset
+$DD9781-$DD99F3	-> S-DD1 data chunk
+$DD99F4-$DD9ED1	-> S-DD1 sprite tileset
+$DD9ED2-$DDA13F	-> S-DD1 data chunk
+$DDA140-$DDA611	-> S-DD1 sprite tileset
+$DDA612-$DDA876	-> S-DD1 data chunk
+$DDA877-$DDAADA	-> S-DD1 sprite tileset
+$DDAADB-$DDAD37	-> S-DD1 data chunk
+$DDAD38-$DDB41D	-> S-DD1 sprite tileset
+$DDB41E-$DDB661	-> S-DD1 data chunk
+$DDB662-$DDC614	-> S-DD1 sprite tileset
+$DDC615-$DDC849	-> S-DD1 data chunk
+$DDC84A-$DDD714	-> S-DD1 sprite tileset
+$DDD715-$DDD921	-> S-DD1 data chunk
+$DDD922-$DDDD36	-> S-DD1 sprite tileset
+$DDDD37-$DDDF2A	-> LZ data chunk
+$DDDF2B-$DDE11A	-> S-DD1 data chunk
+$DDE11B-$DDE4E5	-> S-DD1 sprite tileset
+$DDE4E6-$DDE6B8	-> LZ data chunk
+$DDE6B9-$DDE887	-> S-DD1 sprite tileset
+$DDE888-$DEEA27	-> data table indexed from $C9:E35B
+$DDEA48-$DDEC03	-> LZ data chunk
+$DDEC04-$DDEDBF	-> LZ data chunk
+$DDEDC0-$DDEF7A	-> S-DD1 sprite tileset
+$DDEF7B-$DDF12B	-> S-DD1 data chunk
+$DDF12C-$DDF2DB	-> LZ data chunk
+$DDF2DC-$DDFE70	-> S-DD1 sprite tileset
+$DDFE71-$DDFFFF	-> LZ data chunk 
+ 
+  
+BANK $DE
+--------
+$DE0000-$DE47A9	-> S-DD1 data chunk
+$DE47AA-$DE56E7	-> LZ data chunk
+$DE56E8-$DE573F	-> LZ data chunk
+$DE5740-$DE5A5D	-> S-DD1 sprite tileset
+$DE5A5E-$DE5BDD	-> LZ data chunk
+$DE5BDE-$DE5D5C	-> S-DD1 sprite tileset
+$DE5D5D-$DE5ED9	-> LZ data chunk
+$DE5EDA-$DE6052	-> S-DD1 sprite tileset
+$DE6053-$DE61C6	-> LZ data chunk
+$DE61C7-$DE677D	-> S-DD1 sprite tileset
+$DE677E-$DE68E4	-> LZ data chunk
+$DE68E5-$DE6A49	-> LZ data chunk
+$DE6A4A-$DE6BAE	-> LZ data chunk
+$DE6BAF-$DE6D09	-> LZ data chunk
+$DE6D0A-$DE6E62	-> S-DD1 sprite tileset
+$DE6E63-$DE6FB6	-> S-DD1 data chunk
+$DE6FB7-$DE7109	-> S-DD1 sprite tileset
+$DE710A-$DE7258	-> LZ data chunk
+$DE7259-$DE74F0	-> S-DD1 sprite tileset
+$DE74F1-$DE7638	-> LZ data chunk
+$DE7639-$DE777D	-> LZ data chunk
+$DE777E-$DE78BE	-> S-DD1 sprite tileset
+$DE78BF-$DE79FE	-> data table indexed from $C9/DCD4
+$DE79FF-$DE7B3B	-> LZ data chunk
+$DE7B3C-$DE7C6E	-> LZ data chunk
+$DE7C6F-$DE8002	-> S-DD1 sprite tileset
+$DE8003-$DE812F	-> LZ data chunk
+$DE8130-$DE8259	-> LZ data chunk
+$DE825A-$DE84AB	-> S-DD1 sprite tileset
+$DE84AC-$DE85D3	-> S-DD1 data chunk
+$DE85D4-$DE881F	-> S-DD1 sprite tileset
+$DE8820-$DE8943	-> LZ data chunk
+$DE8944-$DE8A67	-> LZ data chunk
+$DE8A68-$DE8B8B	-> LZ data chunk
+$DE8B8C-$DE8CAF	-> LZ data chunk
+$DE8CB0-$DE8DC2	-> S-DD1 sprite tileset
+$DE8DC3-$DE8ED3	-> LZ data chunk
+$DE8ED4-$DE8FE4	-> LZ data chunk
+$DE8FE5-$DE90F5	-> LZ data chunk
+$DE90F6-$DE927E	-> LZ data chunk
+$DE9207-$DE9317	-> S-DD1 data chunk
+$DE9318-$DE941D	-> LZ data chunk
+$DE941E-$DE951F	-> S-DD1 sprite tileset
+$DE9520-$DE961C	-> LZ data chunk
+$DE961D-$DE9719	-> S-DD1 sprite tileset
+$DE971A-$DE9815	-> LZ data chunk
+$DE9816-$DE990F	-> LZ data chunk
+$DE9910-$DE9A02	-> S-DD1 data chunk
+$DE9A03-$DE9AF4	-> S-DD1 data chunk
+$DE9AF5-$DE9BE5	-> S-DD1 data chunk
+$DE9BE6-$DE9CD5	-> LZ data chunk
+$DE9CD6-$DE9DC5	-> S-DD1 sprite tileset
+$DE9DC6-$DE9EB0	-> LZ data chunk
+$DE9EB1-$DE9F99	-> LZ data chunk
+$DE9F9A-$DEA081	-> LZ data chunk
+$DEA082-$DEA163	-> S-DD1 data chunk
+$DEA164-$DEA245	-> LZ data chunk
+$DEA246-$DEA326	-> LZ data chunk
+$DEA327-$DEA406	-> LZ data chunk
+$DEA407-$DEA4E2	-> LZ data chunk
+$DEA4E3-$DEA5BE	-> LZ data chunk
+$DEA5BF-$DEA698	-> LZ data chunk
+$DEA699-$DEA772	-> LZ data chunk
+$DEA773-$DEA849	-> LZ data chunk
+$DEA84A-$DEA91E	-> LZ data chunk
+$DEA920-$DEA9F5	-> LZ data chunk
+$DEA9F6-$DEAAC6	-> LZ data chunk
+$DEAAC7-$DEAB97	-> LZ data chunk
+$DEAB98-$DEAC67	-> LZ data chunk
+$DEAC68-$DEAD37	-> LZ data chunk
+$DEAD38-$DEAE05	-> LZ data chunk
+$DEAE06-$DEAED2	-> S-DD1 sprite tileset
+$DEAED3-$DEAF9D	-> LZ data chunk
+$DEAF9E-$DEB065	-> LZ data chunk
+$DEB066-$DEB127	-> LZ data chunk
+$DEB128-$DEB1E8	-> S-DD1 sprite tileset
+$DEB1E9-$DEB2A8	-> LZ data chunk
+$DEB2A9-$DEB366	-> LZ data chunk
+$DEB367-$DEB423	-> LZ data chunk
+$DEB424-$DEB4DA	-> LZ data chunk
+$DEB4DB-$DEB7A9	-> S-DD1 sprite tileset
+$DEB7AA-$DEB84E	-> LZ data chunk
+$DEB84F-$DEB8F3	-> S-DD1 sprite tileset
+$DEB8F4-$DEB98F	-> S-DD1 data chunk
+$DEB990-$DEBA2A	-> LZ data chunk
+$DEBA2B-$DEBAC4	-> LZ data chunk
+$DEBAC5-$DEBB5D	-> LZ data chunk
+$DEBB5E-$DEBBF6	-> S-DD1 sprite tileset
+$DEBBF7-$DEBC8D	-> LZ data chunk
+$DEBC8E-$DEBD23	-> LZ data chunk
+$DEBD24-$DEBDB4	-> S-DD1 sprite tileset
+$DEBDB5-$DEBE44	-> S-DD1 data chunk
+$DEBE45-$DEBED4	-> S-DD1 sprite tileset
+$DEBED5-$DEBF64	-> data transferred to VRAM $45A0 from $C0/2402
+$DEBF65-$DEBFEE	-> LZ data chunk
+$DEBFEF-$DEC077	-> S-DD1 sprite tileset
+$DEC078-$DEC0FF	-> LZ data chunk
+$DEC100-$DEC187	-> S-DD1 sprite tileset
+$DEC188-$DEC20E	-> LZ data chunk
+$DEC20F-$DEC295	-> LZ data chunk
+$DEC296-$DEC31C	-> S-DD1 sprite tileset
+$DEC31D-$DEC3A2	-> LZ data chunk
+$DEC3A3-$DEC425	-> LZ data chunk
+$DEC426-$DEC4A7	-> LZ data chunk
+$DEC4A8-$DEC528	-> LZ data chunk
+$DEC529-$DEC628	-> S-DD1 sprite tileset
+$DEC629-$DEC6A7	-> LZ data chunk
+$DEC6A8-$DEC723	-> LZ data chunk
+$DEC724-$DEC79A	-> LZ data chunk
+$DEC79B-$DEC80E	-> S-DD1 sprite tileset
+$DEC80F-$DEC882	-> LZ data chunk
+$DEC883-$DEC8F4	-> LZ data chunk
+$DEC8F5-$DEC965	-> LZ data chunk
+$DEC966-$DEC9D6	-> LZ data chunk
+$DEC9D7-$DECA45	-> S-DD1 sprite tileset
+$DECA46-$DECAB2	-> LZ data chunk
+$DECAB3-$DECB1D	-> LZ data chunk
+$DECB1E-$DECB87	-> LZ data chunk
+$DECB88-$DECBF0	-> S-DD1 sprite tileset
+$DECBF1-$DECC56	-> LZ data chunk
+$DECC57-$DECCBB	-> LZ data chunk
+$DECCBC-$DECD1F	-> S-DD1 data chunk
+$DECD20-$DECD83	-> LZ data chunk
+$DECD84-$DECDE5	-> LZ data chunk
+$DECDE6-$DECE45	-> LZ data chunk
+$DECE46-$DECEA3	-> LZ data chunk
+$DECEA4-$DECEFE	-> S-DD1 sprite tileset
+$DECEFF-$DECF57	-> LZ data chunk
+$DECF58-$DECFAE	-> LZ data chunk
+$DECFAF-$DED005	-> LZ data chunk
+$DED006-$DED05A	-> LZ data chunk
+$DED05B-$DED0AD	-> S-DD1 data chunk
+$DED0AE-$DED100	-> LZ data chunk
+$DED101-$DED152	-> LZ data chunk
+$DED153-$DED1A3	-> LZ data chunk
+$DED1A4-$DED1F4	-> LZ data chunk
+$DED1F5-$DED242	-> LZ data chunk
+$DED243-$DED28E	-> LZ data chunk
+$DED28F-$DED2DA	-> LZ data chunk
+$DED2DB-$DED326 -> LZ data chunk
+$DED327-$DED371	-> S-DD1 sprite tileset
+$DED372-$DED3BB	-> LZ data chunk
+$DED3BC-$DED403	-> LZ data chunk
+$DED404-$DED449	-> LZ data chunk
+$DED44A-$DED48E	-> S-DD1 sprite tileset
+$DED48F-$DED4D0	-> LZ data chunk
+$DED4D1-$DED511	-> LZ data chunk
+$DED512-$DED608	-> S-DD1 sprite tileset
+$DED609-$DED645	-> LZ data chunk
+$DED646-$DED67F	-> LZ data chunk
+$DED680-$DED796	-> S-DD1 sprite tileset
+$DED797-$DED7CA	-> BG tilemap data
+$DED7CB-$DED7FC	-> LZ data chunk
+$DED7FD-$DED82D	-> LZ data chunk
+$DED82E-$DED856	-> BG tilemap data
+$DED857-$DED87F	-> LZ data chunk
+$DED880-$DED8A6	-> LZ data chunk
+$DED8A7-$DED8C5	-> LZ data chunk
+$DED8C6-$DED8EF	-> padding
+$DED8F0-$DEDEEF	-> LZ data chunk
+$DEDEF0-$DEDEFF	-> padding
+$DEDF00-$DEEDA0	-> LZ data chunk
+$DEEDA1-$DEEDFF	-> padding
+$DEEE00-$DEFE8B	-> LZ data chunk
+$DEFE8C-$DEFFFF	-> padding
+
+
+BANK $DF
+--------
+$DF0000-$DF44C6	-> S-DD1 data chunk
+$DF44C7-$DF88F5	-> S-DD1 data chunk
+$DF88F6-$DFC9C7	-> S-DD1 data chunk
+$DFC9C8-$DFFEC5	-> S-DD1 data chunk
+$DFFEC6-$DFFFFF	-> S-DD1 data chunk
+
+ 
+BANK $E0
+--------
+$E00000-$E040A0	-> S-DD1 data chunk
+$E040A1-$E08133	-> S-DD1 data chunk
+$E08134-$E0C0AA	-> S-DD1 data chunk
+$E0C0AB-$E0FDE3	-> S-DD1 data chunk
+$E0FDE4-$E0FFFF	-> S-DD1 data chunk
+
+ 
+BANK $E1
+--------
+$E10000-$E13A9B	-> S-DD1 data chunk
+$E13A9C-$E17449	-> S-DD1 data chunk
+$E1744A-$E1AC43	-> S-DD1 data chunk
+$E1AC44-$E1E427	-> S-DD1 data chunk
+$E1E428-$E1FFA7	-> S-DD1 data chunk
+$E1FFA8-$E1FFFF -> LZ data chunk
+
+ 
+BANK $E2
+--------
+$E20000-$E237D8	-> S-DD1 data chunk
+$E237D9-$E26EFC	-> S-DD1 data chunk
+$E26EFD-$E2A25D	-> S-DD1 data chunk
+$E2A25E-$E2D5A6	-> S-DD1 data chunk
+$E2D5A7-$E2FF57	-> S-DD1 data chunk
+$E2FF58-$E2FFFF -> LZ data chunk
+
+ 
+BANK $E3
+--------
+$E30000-$E3333D	-> S-DD1 data chunk
+$E3333E-$E36557	-> S-DD1 data chunk
+$E36558-$E3974B	-> S-DD1 data chunk
+$E3974C-$E3C934	-> S-DD1 sprite tileset
+$E3C935-$E3F911	-> S-DD1 data chunk
+$E3F912-$E3FFF6 -> S-DD1 sprite tileset
+$E3FFF7-$E3FFFF	-> SDD-1 [image XX] line 0 & 3
+
+
+BANK $E4
+--------
+$E40000-$E40233	-> pointer table to event data and text for scenes
+$E40234-$E4FFFF	-> LZ-compressed event data and text
+ 
+ 
+BANK $E5
+--------
+$E50000-$E5FFFF	-> LZ-compressed event data and text
+ 
+ 
+BANK $E6
+--------
+$E60000-$E6FFFF	-> LZ-compressed event data and text
+ 
+ 
+BANK $E7
+--------
+$E70000-$E7FFFF	-> LZ-compressed event data and text
+ 
+
+BANK $E8
+--------
+$E80000-$E8FFFF	-> LZ-compressed event data and text
+ 
+
+BANK $E9
+--------
+$E90000-$E917FF	-> LZ-compressed event data and text
+$E91800-$E946EA	-> S-DD1 data chunk
+$E946EB-$E97545	-> S-DD1 data chunk
+$E97546-$E9A13F	-> S-DD1 data chunk
+$E9A140-$E9CC92	-> S-DD1 data chunk
+$E9CC93-$E9F73D	-> S-DD1 data chunk
+$E9F73E-$E9FFF3	-> LZ data chunk
+$E9FFF4-$E9FFFE	-> S-DD1 data chunk
+$E9FFFF		-> padding
+ 
+ 
+BANK $EA
+--------
+$EA0000-$EA288C	-> S-DD1 data chunk
+$EA288D-$EA50BA	-> S-DD1 data chunk
+$EA50BB-$EA7868	-> S-DD1 data chunk
+$EA7869-$EAA016	-> S-DD1 data chunk
+$EAA017-$EAC763	-> S-DD1 data chunk
+$EAC764-$EAEE6D	-> S-DD1 sprite tileset
+$EAEE6E-$EAFFAE	-> LZ data chunk
+$EAFFAF-$EAFFFF	-> LZ data chunk
+ 
+ 
+BANK $EB
+--------
+$EB0000-$EB2677	-> S-DD1 data chunk
+$EB2678-$EB4CDA	-> S-DD1 data chunk
+$EB4CDB-$EB7307	-> S-DD1 data chunk
+$EB7308-$EB98D0	-> S-DD1 data chunk
+$EB98D1-$EBBE0D	-> S-DD1 data chunk
+$EBBE0E-$EBE316	-> S-DD1 data chunk
+$EBE317-$EBFFAD	-> S-DD1 data chunk
+$EBFFAE-$EBFFFF	-> LZ data chunk
+
+ 
+BANK $EC
+--------
+$EC0000-$EC244C	-> S-DD1 sprite tileset
+$EC244D-$EC4888	-> S-DD1 data chunk
+$EC4889-$EC6BDA	-> S-DD1 data chunk
+$EC6BDB-$EC8F0F	-> S-DD1 data chunk
+$EC8F10-$ECB132	-> S-DD1 data chunk
+$ECB133-$ECD32B	-> S-DD1 sprite tileset
+$ECD32C-$ECF482	-> S-DD1 data chunk
+$ECF483-$ECFFEB	-> S-DD1 data chunk
+$ECFFEC-$ECFFFE	-> LZ data chunk
+$ECFFFF		-> padding
+
+ 
+BANK $ED
+--------
+$ED0000-$ED213A	-> S-DD1 data chunk
+$ED213B-$ED4228	-> S-DD1 data chunk
+$ED4229-$ED6100	-> S-DD1 data chunk
+$ED6101-$ED7E34	-> S-DD1 sprite tileset
+$ED7E35-$ED9992	-> S-DD1 data chunk
+$ED9993-$EDB465	-> S-DD1 sprite tileset
+$EDB466-$EDCF0C	-> LZ data chunk
+$EDCF0D-$EDE99E	-> S-DD1 data chunk
+$EDE99F-$EDFFB0	-> S-DD1 data chunk
+$EDFFB1-$EDFFFF	-> LZ data chunk
+
+
+BANK $EE
+--------
+$EE0000-$EE1A14	-> LZ data chunk
+$EE1A15-$EE99CB -> S-DD1 sprite tileset
+$EE99CC-$EEB263 -> S-DD1 data chunk
+$EEB264-$EECAAC	-> S-DD1 sprite tileset
+$EECAAD-$EEE1BC	-> S-DD1 data chunk
+$EEE1BD-$EEF8A6	-> S-DD1 sprite tileset
+$EEF8A7-$EEFFEC -> LZ data chunk
+$EEFFED-$EEFFFC -> LZ data chunk
+$EEFFFD-$EEFFFF	-> padding
+
+
+
+BANK $EF
+--------
+$EF0000-$EF1579	-> LZ data chunk
+$EF157A-$EF2AE5	-> S-DD1 sprite tileset
+$EF2AE6-$EF3EEB	-> S-DD1 data chunk
+$EF3EEC-$EF52BB	-> LZ data chunk
+$EF52BC-$EF667C	-> S-DD1 data chunk
+$EF667D-$EF7A3B	-> S-DD1 sprite tileset
+$EF7A3C-$EF8DA9	-> LZ data chunk
+$EF8DAA-$EFA031 -> LZ data chunk
+$EFA032-$EFB2AE -> LZ data chunk
+$EFB2AF-$EFC493	-> S-DD1 sprite tileset
+$EFC494-$EFD661	-> S-DD1 data chunk
+$EFD662-$EFE78E	-> LZ data chunk
+$EFE78F-$EFF8A1	-> LZ data chunk
+$EFF8A2-$EFFFFB	-> LZ data chunk
+$EFFFFC-$EFFFFF	-> padding
+
+
+BANK $F0
+--------
+$F00000-$F010DE	-> S-DD1 sprite tileset
+$F010DF-$F0230A	-> S-DD1 data chunk
+$F0230B-$F0324D	-> unknown
+$F0324E-$F0429B	-> LZ data chunk
+$F0429C-$F052E7	-> LZ data chunk
+$F052E8-$F0632F	-> S-DD1 data chunk
+$F06330-$F07332	-> LZ data chunk
+$F07333-$F082ED	-> LZ data chunk
+$F082EE-$F0929A	-> LZ data chunk
+$F0929B-$F0A194	-> S-DD1 sprite tileset
+$F0A195-$F0B030	-> LZ data chunk
+$F0B031-$F0BEB1	-> S-DD1 sprite tileset
+$F0BEB2-$F0CD28	-> LZ data chunk
+$F0CD29-$F0DB3D	-> LZ data chunk
+$F0DB3E-$F0E937	-> S-DD1 sprite tileset
+$F0E938-$F0F722	-> LZ data chunk
+$F0F723-$F0FFF9	-> LZ data chunk
+$F0FFFA-$F0FFFF	-> padding
+
+
+BANK $F1
+--------
+$F10000-$F10DE2	-> S-DD1 data chunk
+$F10DE3-$F11B8B	-> LZ data chunk
+$F11B8C-$F12933	-> LZ data chunk
+$F12934-$F136D9	-> LZ data chunk
+$F136DA-$F1447D	-> LZ data chunk
+$F1447E-$F1520B	-> LZ data chunk
+$F1520C-$F15F85	-> S-DD1 data chunk
+$F15F86-$F16CFA	-> LZ data chunk
+$F16CFB-$F17A65	-> LZ data chunk
+$F17A66-$F194F7 -> S-DD1 sprite tileset
+$F194F8-$F1A21A	-> LZ data chunk
+$F1A21B-$F1AF27	-> LZ data chunk
+$F1AF28-$F1BBBD	-> LZ data chunk
+$F1BBBE-$F1D4B7	-> S-DD1 sprite tileset
+$F1D4B8-$F1E122	-> LZ data chunk
+$F1E123-$F1ED62	-> LZ data chunk
+$F1ED63-$F1FFFD	-> S-DD1 sprite tileset
+$F1FFFE-$F1FFFF	-> padding
+
+
+BANK $F2
+--------
+$F20000-$F223BF	-> S-DD1 sprite tileset
+$F223C0-$F22F64	-> LZ data chunk
+$F22F65-$F23B02	-> LZ data chunk
+$F23B03-$F24636	-> LZ data chunk
+$F24637-$F25145	-> LZ data chunk
+$F25146-$F25C2A	-> LZ data chunk
+$F25C2B-$F266ED	-> S-DD1 sprite tileset
+$F266EE-$F27191	-> LZ data chunk
+$F27192-$F27C10	-> LZ data chunk
+$F27C11-$F28654	-> S-DD1 sprite tileset
+$F28655-$F2908F	-> LZ data chunk
+$F29090-$F29AC2	-> LZ data chunk
+$F29AC3-$F2A4B3	-> LZ data chunk
+$F2A4B4-$F2AE7F	-> LZ data chunk
+$F2AE80-$F2B84A	-> LZ data chunk
+$F2B84B-$F2C204	-> LZ data chunk
+$F2C205-$F2CBB0	-> LZ data chunk
+$F2CBB1-$F2D53F	-> LZ data chunk
+$F2D540-$F2DEBB -> S-DD1 sprite tileset
+$F2DEBC-$F2E82C	-> LZ data chunk
+$F2E82D-$F2F114 -> S-DD1 sprite tileset
+$F2F179-$F2FAAE	-> LZ data chunk
+$F2FAAF-$F2FFFB	-> LZ data chunk
+$F2FFFC-$F2FFFF	-> padding
+
+
+BANK $F3
+--------
+$F30000-$F3092C	-> LZ data chunk
+$F3092D-$F31B72 -> S-DD1 sprite tileset
+$F31B73-$F3248C	-> LZ data chunk
+$F3248D-$F32D97	-> LZ data chunk
+$F32D98-$F33692	-> LZ data chunk
+$F33693-$F33F8A	-> LZ data chunk
+$F33F8B-4F34875	-> S-DD1 sprite tileset
+$F34876-$F35158	-> LZ data chunk
+$F35159-$F35A3A	-> S-DD1 sprite tileset
+$F35A3B-$F36305	-> LZ data chunk
+$F36306-$F36BCB	-> LZ data chunk
+$F36BCC-$F37477	-> LZ data chunk
+$F37478-$F37D11	-> S-DD1 sprite tileset
+$F37D12-$F38596	-> LZ data chunk
+$F38597-$F38E17	-> LZ data chunk
+$F38E18-$F39698	-> LZ data chunk
+$F39699-$F3A787	-> S-DD1 sprite tileset
+$F3A788-$F3AFD9	-> LZ data chunk
+$F3AFDA-$F3B821	-> S-DD1 sprite tileset
+$F3B822-$F3C064	-> LZ data chunk
+$F3C065-$F3C8A5	-> LZ data chunk
+$F3C8A6-$F3D0C2	-> LZ data chunk
+$F3D0C3-$F3D87E	-> LZ data chunk
+$F3D87F-$F3E027	-> S-DD1 sprite tileset
+$F3E028-$F3E7CD	-> LZ data chunk
+$F3E7CE-$F3EF6C	-> LZ data chunk
+$F3EF6D-$F3F707	-> LZ data chunk
+$F3F708-$F3FE9C	-> S-DD1 sprite tileset
+$F3FE9D-$F3FFFF	-> LZ data chunk
+
+
+
+BANK $F4
+--------
+$F40000-$F4078E	-> S-DD1 sprite tileset
+$F4078F-$F40F07	-> LZ data chunk
+$F40F08-$F4167B	-> LZ data chunk
+$F4167C-$F41DEC	-> S-DD1 data chunk
+$F41DED-$F4255C	-> LZ data chunk
+$F4255D-$F42CC0	-> LZ data chunk
+$F42CC1-$F43404	-> LZ data chunk
+$F43405-$F43B48	-> LZ data chunk
+$F43B49-$F44288	-> LZ data chunk
+$F44289-$F449BF -> S-DD1 sprite tileset
+$F449C0-$F450EE	-> LZ data chunk
+$F450EF-$F45816	-> S-DD1 sprite tileset
+$F45817-$F45F1C	-> LZ data chunk
+$F45F1D-$F4661F	-> LZ data chunk
+$F46620-$F46D21	-> LZ data chunk
+$F46D22-$F47415	-> LZ data chunk
+$F47416-$F47AF9	-> LZ data chunk
+$F47AFA-$F481DC	-> LZ data chunk
+$F481DD-$F488BA	-> S-DD1 sprite tileset
+$F488BB-$F48F93	-> LZ data chunk
+$F48F94-$F49668	-> S-DD1 sprite tileset
+$F49669-$F49D35	-> LZ data chunk
+$F49D36-$F4A3FF	-> LZ data chunk
+$F4A400-$F4AAC5	-> LZ data chunk
+$F4AAC6-$F4B18A	-> S-DD1 sprite tileset
+$F4B18B-$F4B84F	-> LZ data chunk
+$F4B850-$F4BF12	-> LZ data chunk
+$F4BF13-$F4CC94	-> S-DD1 sprite tileset
+$F4CC95-$F4D353	-> LZ data chunk
+$F4D354-$F4DA11	-> LZ data chunk
+$F4DA12-$F4E770	-> S-DD1 sprite tileset
+$F4E771-$F4EE1C	-> LZ data chunk
+$F4EE1D-$F4F4C7	-> LZ data chunk
+$F4F4C8-$F4FB71	-> LZ data chunk
+$F4FB72-$F4FFFD	-> S-DD1 data chunk
+$F4FFFE-$F4FFFF	-> padding
+
+
+
+BANK $F5
+--------
+$F50000-$F506A9	-> LZ data chunk
+$F506AA-$F50D4D	-> LZ data chunk
+$F50D4E-$F513F0	-> LZ data chunk
+$F513F1-$F51A93	-> LZ data chunk
+$F51A94-$F52135	-> LZ data chunk
+$F52136-$F527CF	-> LZ data chunk
+$F527D0-$F534F9	-> S-DD1 sprite data chunk
+$F534FA-$F53B87	-> LZ data chunk
+$F53B88-$F54214	-> LZ data chunk
+$F54215-$F5489D	-> LZ data chunk
+$F5489E-$F54F24	-> LZ data chunk
+$F54F25-$F555A4	-> LZ data chunk
+$F555A5-$F55C23	-> LZ data chunk
+$F55C24-$F5629A	-> S-DD1 sprite tileset
+$F5629B-$F5690A	-> S-DD1 data chunk
+$F5690B-$F56F78	-> LZ data chunk
+$F56F79-$F582A2	-> S-DD1 sprite tileset
+$F582A3-$F58901	-> S-DD1 data chunk
+$F58902-$F58F5F	-> S-DD1 sprite tileset
+$F58F60-$F595B4	-> LZ data chunk
+$F595B5-$F59BFD	-> LZ data chunk
+$F59BFE-$F5A244	-> LZ data chunk
+$F5A245-$F5A888	-> LZ data chunk
+$F5A889-$F5AEC5	-> LZ data chunk
+$F5AEC6-$F5B4FC	-> LZ data chunk
+$F5B4FD-$F5BB2C	-> 8-byte data table
+$F5BB2D-$F5C157	-> LZ data chunk
+$F5C158-$F5C780	-> LZ data chunk
+$F5C781-$F5CD9F	-> LZ data chunk
+$F5CDA0-$F5D3BD	-> LZ data chunk
+$F5D3BE-$F5DFEC	-> S-DD1 sprite tileset
+$F5DFED-$F5E5FD	-> LZ data chunk
+$F5E5FE-$F5EC0D	-> LZ data chunk
+$F5EC0E-$F5F219	-> LZ data chunk
+$F5F21A-$F5F825	-> S-DD1 data chunk
+$F5F826-$F5FE2E	-> LZ data chunk
+$F5FE2F-$F5FFFE	-> LZ data chunk
+$F5FFFF		-> padding
+
+
+BANK $F6
+--------
+$F60000-$F60605	-> LZ data chunk
+$F60606-$F60C09	-> LZ data chunk
+$F60C0A-$F61203	-> LZ data chunk
+$F61204-$F617F8	-> LZ data chunk
+$F617F9-$F61DEC	-> LZ data chunk
+$F61DED-$F623D1	-> LZ data chunk
+$F623D2-$F629AE	-> LZ data chunk
+$F629AF-$F62F86	-> LZ data chunk
+$F62F87-$F63557	-> S-DD1 data chunk
+$F63558-$F63B27	-> LZ data chunk
+$F63B28-$F640EF	-> LZ data chunk
+$F640F0-$F646B2	-> S-DD1 data chunk
+$F646B3-$F64C73	-> LZ data chunk
+$F64C74-$F65233	-> LZ data chunk
+$F65234-$F657F1	-> S-DD1 data chunk
+$F657F2-$F66321	-> S-DD1 sprite tileset
+$F66322-$F668B3	-> LZ data chunk
+$F668B4-$F66E44	-> S-DD1 sprite tileset
+$F66E45-$F673D3	-> LZ data chunk
+$F673D4-$F67955	-> LZ data chunk
+$F67956-$F67ED3	-> LZ data chunk
+$F67ED4-$F6844E	-> LZ data chunk
+$F6844F-$F689BE	-> LZ data chunk
+$F689BF-$F68F2E	-> LZ data chunk
+$F68F2F-$F6949A	-> LZ data chunk
+$F6949B-$F699FB	-> LZ data chunk
+$F699FC-$F69F52	-> LZ data chunk
+$F69F53-$F6A49E	-> S-DD1 sprite tileset
+$F6A49F-$F6A9E9	-> LZ data chunk
+$F6A9EA-$F6AF31	-> LZ data chunk
+$F6AF32-$F6B479	-> S-DD1 sprite tileset
+$F6B479-$F6B9BD	-> LZ data chunk
+$F6B9BE-$F6BEFB	-> LZ data chunk
+$F6BEFC-$F6C3FE	-> LZ data chunk
+$F6C3FC-$F6C8F8	-> LZ data chunk
+$F6C8F9-$F6CDF4	-> LZ data chunk
+$F6CDF5-$F6D2EE	-> LZ data chunk
+$F6D2EF-$F6D7E0	-> LZ data chunk
+$F6D7E1-$F6DCCE	-> S-DD1 sprite tileset
+$F6DCCF-$F6E1B8	-> LZ data chunk
+$F6E1B9-$F6E6A1	-> LZ data chunk
+$F6E6A2-$F6EB89	-> S-DD1 sprite tileset
+$F6EB8A-$F6F070	-> LZ data chunk
+$F6F071-$F6F556	-> LZ data chunk
+$F6F557-$F6FA38	-> LZ data chunk
+$F6FA39-$F6FF19	-> LZ data chunk
+$F6FF1A-$F6FFFC	-> S-DD1 [image 0A] line 3
+
+
+BANK $F7
+--------
+$F70000-$F704DF	-> LZ data chunk
+$F704E0-$F709BD	-> S-DD1 sprite tileset
+$F709BE-$F70E90	-> LZ data chunk
+$F70E91-$F7135D	-> S-DD1 sprite tileset
+$F7135E-$F71823	-> LZ data chunk
+$F71824-$F71CE9	-> S-DD1 data chunk
+$F71CEA-$F721A8	-> LZ data chunk
+$F721A9-$F72661	-> LZ data chunk
+$F72662-$F72B14	-> LZ data chunk
+$F72B15-$F72FC6	-> LZ data chunk
+$F72FC7-$F7346E	-> LZ data chunk
+$F7346F-$F7390D	-> LZ data chunk
+$F7390E-$F73DA9	-> LZ data chunk
+$F73DAA-$F74243	-> LZ data chunk
+$F74244-$F746CF	-> S-DD1 sprite tileset
+$F746D0-$F74B57	-> LZ data chunk
+$F74B58-$F74FD9	-> S-DD1 sprite tileset
+$F74FDA-$F74550	-> LZ data chunk
+$F75451-$F758C5	-> LZ data chunk
+$F758C6-$F75D38	-> LZ data chunk
+$F75D39-$F761A0	-> S-DD1 data chunk
+$F761A1-$F76608	-> LZ data chunk
+$F76609-$F76A6E	-> LZ data chunk
+$F76A6F-$F76ED2 -> LZ data chunk
+$F76ED3-$F77334	-> S-DD1 data chunk
+$F77335-$F77BE7	-> S-DD1 sprite tileset
+$F77BE8-$F7802F	-> LZ data chunk
+$F78030-$F78471	-> S-DD1 sprite tileset
+$F78472-$F788AF -> LZ data chunk 
+$F788B0-$F78CE7	-> LZ data chunk
+$F78CE8-$F7911C	-> LZ data chunk
+$F7911D-$F7954F	-> LZ data chunk
+$F79550-$F7997E	-> LZ data chunk
+$F7997F-$F79DAB	-> S-DD1 sprite tileset
+$F79DAC-$F7A1CF	-> LZ data chunk
+$F7A1D0-$F7A5EE	-> LZ data chunk
+$F7A5ED-$F7AA07	-> LZ data chunk
+$F7AA08-$F7B22B	-> S-DD1 sprite tileset
+$F7B22C-$F7B638	-> LZ data chunk
+$F7B639-$F7BA44	-> LZ data chunk
+$F7BA45-$F7BE4F	-> S-DD1 data chunk
+$F7BE50-$F7C256	-> LZ data chunk
+$F7C257-$F7C655	-> LZ data chunk
+$F7C654-$F7CA50	-> LZ data chunk
+$F7CA51-$F7CE4B	-> S-DD1 data chunk
+$F7CE4C-$F7D244	-> LZ data chunk
+$F7D245-$F7D63D	-> LZ data chunk
+$F7D63E-$F7DA32	-> LZ data chunk
+$F7DA33-$F7DE24	-> LZ data chunk
+$F7DE25-$F7E216	-> LZ data chunk
+$F7E217-$F7E608	-> S-DD1 data chunk
+$F7E609-$F7E9F8	-> LZ data chunk
+$F7E9F9-$F7EDE8	-> S-DD1 data chunk
+$F7EDE9-$F7F1D4	-> LZ data chunk
+$F7F1D5-$F7F5C0	-> LZ data chunk
+$F7F5C1-$F7F9AB	-> LZ data chunk
+$F7F9AC-$F7FD8C	-> LZ data chunk
+$F7FD8D-$F7FFFF	-> LZ data chunk
+
+
+BANK $F8
+--------
+$F80000-$F803D8	-> LZ data chunk
+$F803D9-$F807AF	-> S-DD1 sprite tileset
+$F807B0-$F80B83	-> LZ data chunk
+$F80B84-$F80F55	-> LZ data chunk
+$F80F56-$F81321	-> LZ data chunk
+$F81322-$F816EA	-> LZ data chunk
+$F816EB-$F8223D	-> S-DD1 sprite tileset
+$F8223E-$F825FF	-> LZ data chunk
+$F82600-$F829C1	-> LZ data chunk
+$F829C2-$F82D81	-> LZ data chunk
+$F82D82-$F8313B	-> LZ data chunk
+$F8313C-$F834EE	-> LZ data chunk
+$F834EF-$F838A0	-> LZ data chunk
+$F838A1-$F83C4D	-> LZ data chunk
+$F83C4E-$F83FF6	-> LZ data chunk
+$F83FF7-$F8439E	-> LZ data chunk
+$F8439F-$F84744	-> LZ data chunk
+$F84745-$F84AE8	-> S-DD1 sprite tileset
+$F84AE9-$F84E86	-> LZ data chunk
+$F84E87-$F85223	-> LZ data chunk
+$F85224-$F855BD	-> LZ data chunk
+$F855BE-$F85951	-> S-DD1 data chunk
+$F85952-$F85CE4	-> LZ data chunk
+$F85CE5-$F86076	-> LZ data chunk
+$F86077-$F86407	-> S-DD1 data chunk
+$F86408-$F86797	-> S-DD1 data chunk
+$F86798-$F86B27	-> LZ data chunk
+$F86B28-$F86EB2	-> S-DD1 data chunk
+$F86EB3-$F8723D	-> LZ data chunk
+$F8723E-$F875C1	-> LZ data chunk
+$F875C2-$F87944	-> LZ data chunk
+$F87945-$F87CC6	-> S-DD1 sprite tileset
+$F87CC7-$F88045	-> LZ data chunk
+$F88046-$F883C3	-> LZ data chunk
+$F883C4-$F8873E	-> LZ data chunk
+$F8873F-$F88AB9	-> LZ data chunk
+$F88ABA-$F88E33	-> LZ data chunk
+$F88E34-$F891AC	-> LZ data chunk
+$F891AD-$F89524	-> LZ data chunk
+$F89525-$F89899	-> LZ data chunk
+$F8989A-$F89C0E	-> LZ data chunk
+$F89C0F-$F89F82	-> LZ data chunk
+$F89F83-$F8A2F3	-> LZ data chunk
+$F8A2F4-$F8A664	-> LZ data chunk
+$F8A665-$F8A9D3	-> LZ data chunk
+$F8A9D4-$F8AD40	-> LZ data chunk
+$F8AD41-$F8B0AC	-> LZ data chunk
+$F8B0AD-$F8B418	-> LZ data chunk
+$F8B419-$F8B783	-> S-DD1 data chunk
+$F8B784-$F8BAEE	-> LZ data chunk
+$F8BAEF-$F8BE58	-> S-DD1 data chunk
+$F8BE59-$F8C1BF	-> S-DD1 data chunk
+$F8C1C0-$F8C524	-> S-DD1 sprite tileset
+$F8C525-$F8C886	-> S-DD1 data chunk
+$F8C887-$F8CBE4	-> LZ data chunk
+$F8CBE5-$F8CF41	-> LZ data chunk
+$F8CF42-$F8D29E	-> S-DD1 data chunk
+$F8D29F-$F8D5FB	-> LZ data chunk
+$F8D5FC-$F8D956	-> LZ data chunk
+$F8D957-$F8DCAF	-> LZ data chunk
+$F8DCB0-$F8E005	-> LZ data chunk
+$F8E006-$F8E359	-> LZ data chunk
+$F8E35A-$F8E6AC	-> LZ data chunk
+$F8E6AD-$F8E9FF	-> LZ data chunk
+$F8EA00-$F8ED51	-> LZ data chunk
+$F8ED52-$F8F0A0	-> LZ data chunk
+$F8F0A1-$F8F3EF	-> LZ data chunk
+$F8F3F0-$F8F73D	-> LZ data chunk
+$F8F73E-$F8FA87	-> LZ data chunk
+$F8FA88-$F8FDCE	-> S-DD1 sprite tileset
+$F8FDCD-$F8FFFD	-> LZ data chunk
+$F8FFFE-$F8FFFF	-> padding
+
+
+BANK $F9
+--------
+$F90000-$F90343	-> LZ data chunk
+$F90344-$F90687	-> LZ data chunk
+$F90688-$F909CA	-> LZ data chunk
+$F909CB-$F90D0C	-> LZ data chunk
+$F90D0D-$F9104C	-> LZ data chunk
+$F9104D-$F91389	-> LZ data chunk
+$F9138A-$F916C5	-> LZ data chunk
+$F916C6-$F91A00	-> LZ data chunk
+$F91A01-$F91D38	-> LZ data chunk
+$F91D39-$F92070	-> S-DD1 sprite tileset
+$F92071-$F923A7	-> LZ data chunk
+$F923A8-$F926DD	-> LZ data chunk
+$F926DE-$F92A11	-> LZ data chunk
+$F92A12-$F92D44	-> LZ data chunk
+$F92D45-$F93075	-> LZ data chunk
+$F93076-$F933A6	-> S-DD1 data chunk
+$F933A7-$F936D6	-> LZ data chunk
+$F936D7-$F93A02	-> LZ data chunk
+$F93A03-$F93D2B	-> LZ data chunk
+$F93D2C-$F94054	-> LZ data chunk
+$F94055-$F9437C	-> S-DD1 data chunk
+$F9437D-$F946A4	-> LZ data chunk
+$F946A5-$F949C9	-> LZ data chunk
+$F949CA-$F94CED	-> LZ data chunk
+$F94CEE-$F95010	-> S-DD1 data chunk
+$F95011-$F95332	-> LZ data chunk
+$F95333-$F95653	-> LZ data chunk
+$F95654-$F95973	-> S-DD1 data chunk
+$F95974-$F95C93	-> LZ data chunk
+$F95C94-$F95FB0	-> LZ data chunk
+$F95FB1-$F962CB	-> LZ data chunk
+$F962CC-$F965E4	-> S-DD1 data chunk
+$F965E5-$F968F9	-> LZ data chunk
+$F968FA-$F96C09	-> S-DD1 sprite tileset
+$F96C0A-$F96F18	-> LZ data chunk
+$F96F19-$F97221	-> LZ data chunk
+$F97222-$F97529	-> LZ data chunk
+$F9752A-$F9782E	-> LZ data chunk
+$F9782F-$F97B2F	-> LZ data chunk
+$F97B30-$F97E30	-> LZ data chunk
+$F97E31-$F98130	-> S-DD1 data chunk
+$F98131-$F9842F	-> S-DD1 data chunk
+$F98430-$F9872B	-> LZ data chunk
+$F9872C-$F98A26	-> S-DD1 data chunk
+$F98A27-$F98D1B	-> LZ data chunk
+$F98D1C-$F9900D	-> S-DD1 data chunk
+$F9900E-$F992FF	-> S-DD1 data chunk
+$F99300-$F995EF	-> LZ data chunk
+$F995F0-$F998DB	-> LZ data chunk
+$F998DC-$F99BC5	-> LZ data chunk
+$F99BC6-$F99EAE	-> LZ data chunk
+$F99EAF-$F9A197	-> LZ data chunk
+$F9A198-$F9A47C	-> S-DD1 sprite tileset
+$F9A47D-$F9A75E -> S-DD1 data chunk
+$F9A75F-$F9AA40	-> LZ data chunk
+$F9AA41-$F9AD1D	-> LZ data chunk
+$F9AD1E-$F9AFFA	-> LZ data chunk
+$F9AFFB-$F9B2D7	-> S-DD1 data chunk
+$F9B2D8-$F9B5B3	-> LZ data chunk
+$F9B5B4-$F9B88C	-> LZ data chunk
+$F9B88D-$F9BB63	-> S-DD1 data chunk
+$F9BB64-$F9BE39	-> S-DD1 data chunk
+$F9BE3A-$F9C10E	-> S-DD1 data chunk
+$F9C10F-$F9C3E1	-> LZ data chunk
+$F9C3E2-$F9C6B2	-> LZ data chunk
+$F9C6B3-$F9C97F	-> S-DD1 data chunk
+$F9C980-$F9CC4C	-> S-DD1 data chunk
+$F9CC4D-$F9CF19	-> S-DD1 sprite tileset
+$F9CF1A-$F9D1E4	-> LZ data chunk
+$F9D1E5-$F9D4AD	-> LZ data chunk
+$F9D4AE-$F9D776	-> LZ data chunk
+$F9D777-$F9DA3D	-> LZ data chunk
+$F9DA3E-$F9DD02	-> LZ data chunk
+$F9DD03-$F9DFC6	-> LZ data chunk
+$F9DFC7-$F9E286	-> LZ data chunk
+$F9E287-$F9E543	-> LZ data chunk
+$F9E544-$F9E7FD	-> LZ data chunk
+$F9E7FE-$F9EAB5	-> S-DD1 data chunk
+$F9EAB6-$F9ED6C	-> LZ data chunk
+$F9ED6D-$F9F01F	-> LZ data chunk
+$F9F020-$F9F2D2	-> S-DD1 data chunk
+$F9F2D3-$F9F583	-> LZ data chunk
+$F9F584-$F9F834	-> S-DD1 data chunk
+$F9F835-$F9FAE4	-> LZ data chunk
+$F9FAE5-$F9FD92	-> S-DD1 data chunk
+$F9FD93-$F9FFFF	-> LZ data chunk
+
+
+BANK $FA
+--------
+$FA0000-$FA02AD	-> LZ data chunk
+$FA02AE-$FA055A	-> LZ data chunk
+$FA055B-$FA0806	-> LZ data chunk
+$FA0807-$FA0AB1	-> S-DD1 data chunk
+$FA0AB2-$FA0D5B	-> S-DD1 data chunk
+$FA0D5C-$FA1004 -> S-DD1 sprite tileset
+$FA1005-$FA12AC	-> LZ data chunk
+$FA12AD-$FA1554	-> S-DD1 data chunk
+$FA1555-$FA17FA	-> LZ data chunk
+$FA17FB-$FA1AA0	-> LZ data chunk
+$FA1AA1-$FA1D45	-> S-DD1 data chunk
+$FA1D46-$FA1FE9	-> LZ data chunk
+$FA1FEA-$FA228D	-> LZ data chunk
+$FA228E-$FA2531	-> S-DD1 data chunk
+$FA2532-$FA27D3	-> LZ data chunk
+$FA27D4-$FA2A75	-> S-DD1 data chunk
+$FA2A76-$FA2D15	-> LZ data chunk
+$FA2D16-$FA2FB4	-> LZ data chunk
+$FA2FB5-$FA3252	-> S-DD1 data chunk
+$FA3253-$FA34F0	-> S-DD1 data chunk
+$FA34F1-$FA378E	-> S-DD1 data chunk
+$FA378F-$FA3A28	-> LZ data chunk
+$FA3A29-$FA3CC1	-> LZ data chunk
+$FA3CC2-$FA3F59	-> LZ data chunk
+$FA3F5A-$FA41EF	-> LZ data chunk
+$FA41F0-$FA4483 -> S-DD1 sprite tileset
+$FA4484-$FA4710	-> LZ data chunk
+$FA4711-$FA499A	-> S-DD1 data chunk
+$FA499B-$FA4C23	-> S-DD1 data chunk
+$FA4C24-$FA4EAB	-> S-DD1 data chunk
+$FA4EAC-$FA5133	-> S-DD1 data chunk
+$FA5134-$FA53BB	-> S-DD1 data chunk
+$FA53BC-$FA5643	-> S-DD1 data chunk
+$FA5644-$FA58CB	-> LZ data chunk
+$FA58CC-$FA5B52	-> LZ data chunk
+$FA5B53-$FA605D -> S-DD1 sprite tileset
+$FA605E-$FA62E0	-> S-DD1 data chunk
+$FA62E1-$FA6561	-> LZ data chunk
+$FA6562-$FA67E1	-> S-DD1 data chunk
+$FA67E2-$FA6A61	-> S-DD1 data chunk
+$FA6A62-$FA6CE1	-> LZ data chunk
+$FA6CE2-$FA6F60	-> LZ data chunk
+$FA6F61-$FA71DA	-> LZ data chunk
+$FA71DB-$FA7453 -> S-DD1 sprite tileset
+$FA7454-$FA76CA	-> LZ data chunk
+$FA76CB-$FA793F	-> S-DD1 data chunk
+$FA7940-$FA7BB2 -> S-DD1 sprite tileset
+$FA7BB3-$FA7E21 -> S-DD1 data chunk
+$FA7E22-$FA808F	-> S-DD1 data chunk
+$FA8090-$FA82FD	-> LZ data chunk
+$FA82FE-$FA856B	-> LZ data chunk
+$FA856C-$FA87D7	-> S-DD1 data chunk
+$FA87D8-$FA8A41	-> LZ data chunk
+$FA8A42-$FA8CAB	-> S-DD1 data chunk
+$FA8CAC-$FA8F14	-> LZ data chunk
+$FA8F15-$FA917C	-> S-DD1 data chunk
+$FA917D-$FA93E4	-> S-DD1 data chunk
+$FA93E5-$FA964C	-> LZ data chunk
+$FA964D-$FA98B3	-> LZ data chunk
+$FA98B4-$FA9B1A	-> LZ data chunk
+$FA9B1B-$FA9D80	-> S-DD1 data chunk
+$FA9D81-$FA9FE6	-> S-DD1 data chunk
+$FA9FE7-$FAA24C	-> S-DD1 data chunk
+$FAA24D-$FAA57B	-> S-DD1 data chunk
+$FAA57C-$FAA597	-> unused S-DD1 sprite tileset
+$FAA598-$FAA714	-> S-DD1 sprite tileset
+$FAA715-$FAA978	-> S-DD1 data chunk
+$FAA979-$FAABDA	-> S-DD1 data chunk
+$FAABDB-$FAAE38	-> LZ data chunk
+$FAAE39-$FAB096	-> LZ data chunk
+$FAB097-$FAB2F4	-> LZ data chunk
+$FAB2F5-$FAB550	-> S-DD1 data chunk
+$FAB551-$FAB7AC	-> LZ data chunk
+$FAB7AD-$FABA05	-> LZ data chunk
+$FABA06-$FABC5E	-> LZ data chunk
+$FABC5F-$FABEB6	-> LZ data chunk
+$FABEB7-$FAC10D	-> S-DD1 data chunk
+$FAC10E-$FAC363	-> LZ data chunk
+$FAC364-$FAC5B8	-> S-DD1 data chunk
+$FAC5B9-$FAC809	-> S-DD1 data chunk
+$FAC80A-$FACA58	-> LZ data chunk
+$FACA59-$FACCA5	-> LZ data chunk
+$FACCA6-$FACEF1	-> S-DD1 data chunk
+$FACEF2-$FAD13B	-> LZ data chunk
+$FAD13C-$FAD384	-> S-DD1 data chunk
+$FAD385-$FAD5CB	-> LZ data chunk
+$FAD5CC-$FAD811	-> LZ data chunk
+$FAD812-$FADA57	-> LZ data chunk
+$FADA58-$FADC9C	-> S-DD1 data chunk
+$FADC9D-$FAE11D	-> S-DD1 sprite tileset
+$FAE11E-$FAE358	-> LZ data chunk
+$FAE359-$FAE591	-> LZ data chunk
+$FAE592-$FAE7CA	-> LZ data chunk
+$FAE7CB-$FAEA03	-> S-DD1 data chunk
+$FAEA04-$FAEC3B	-> LZ data chunk
+$FAEC3C-$FAEE73	-> LZ data chunk
+$FAEE74-$FAF0AA	-> LZ data chunk
+$FAF0AB-$FAF2E0	-> S-DD1 data chunk
+$FAF2E1-$FAF515	-> LZ data chunk
+$FAF516-$FAF749	-> S-DD1 data chunk
+$FAF74A-$FAF97D	-> LZ data chunk
+$FAF97E-$FAFBAE	-> LZ data chunk
+$FAFBAF-$FAFDDC	-> LZ data chunk
+$FAFDDD-$FAFFFE	-> LZ data chunk
+$FAFFFF		-> padding
+
+
+
+BANK $FB
+--------
+$FB0000-$FB022C	-> LZ data chunk
+$FB022D-$FB0458	-> LZ data chunk
+$FB0459-$FB0684	-> LZ data chunk
+$FB0685-$FB08AD	-> LZ data chunk
+$FB08AE-$FB0AD6	-> LZ data chunk
+$FB0AD7-$FB0CFE	-> LZ data chunk
+$FB0CFF-$FB0F25	-> LZ data chunk
+$FB0F26-$FB114C	-> S-DD1 data chunk
+$FB114D-$FB1370	-> LZ data chunk
+$FB1371-$FB1592	-> S-DD1 sprite tileset
+$FB1593-$FB17B3	-> LZ data chunk
+$FB17B4-$FB19D1	-> LZ data chunk
+$FB19D2-$FB1BEE	-> S-DD1 data chunk
+$FB1BEF-$FB1E0B	-> LZ data chunk
+$FB1E0C-$FB2028	-> LZ data chunk
+$FB2029-$FB2242	-> LZ data chunk
+$FB2243-$FB245B	-> LZ data chunk
+$FB245C-$FB2670	-> S-DD1 data chunk
+$FB2671-$FB2884	-> S-DD1 data chunk
+$FB2885-$FB2A98	-> LZ data chunk
+$FB2A99-$FB2CA8	-> S-DD1 data chunk
+$FB2CA9-$FB2EB8	-> S-DD1 data chunk
+$FB2EB9-$FB30C7	-> S-DD1 data chunk
+$FB30C8-$FB32D3	-> S-DD1 data chunk
+$FB32D4-$FB34DE	-> S-DD1 data chunk
+$FB34DF-$FB36E9	-> LZ data chunk
+$FB36EA-$FB38F4	-> LZ data chunk
+$FB38F5-$FB3AFF	-> S-DD1 sprite tileset
+$FB3B00-$FB3D09	-> S-DD1 data chunk
+$FB3D0A-$FB3F11	-> S-DD1 data chunk
+$FB3F12-$FB4119	-> S-DD1 data chunk
+$FB411A-$FB4321	-> LZ data chunk
+$FB4322-$FB4529	-> LZ data chunk
+$FB452A-$FB472F	-> S-DD1 data chunk
+$FB4730-$FB4934	-> S-DD1 data chunk
+$FB4935-$FB4B38	-> unused S-DD1 sprite tileset
+$FB4B39-$FB4D3A	-> LZ data chunk
+$FB4D3B-$FB4F3B	-> S-DD1 sprite tileset
+$FB4F3C-$FB533B	-> palette color data
+$FB533C-$FB553A	-> S-DD1 data chunk
+$FB553B-$FB5739	-> S-DD1 sprite tileset
+$FB573A-$FB5937	-> LZ data chunk
+$FB5938-$FB5B33	-> S-DD1 sprite tileset
+$FB5B34-$FB5D2E	-> S-DD1 data chunk
+$FB5D2F-$FB5F28	-> S-DD1 sprite tileset
+$FB5F29-$FB6121	-> LZ data chunk
+$FB6122-$FB6317	-> S-DD1 data chunk
+$FB6318-$FB650C	-> LZ data chunk
+$FB650D-$FB6700	-> S-DD1 data chunk
+$FB6701-$FB68F3	-> S-DD1 data chunk
+$FB68F4-$FB6AE6	-> LZ data chunk
+$FB6AE7-$FB6CD9	-> LZ data chunk
+$FB6CDA-$FB6ECA	-> LZ data chunk
+$FB6ECB-$FB70BA	-> S-DD1 data chunk
+$FB70BB-$FB72AA	-> LZ data chunk
+$FB72AB-$FB7498	-> S-DD1 data chunk
+$FB7499-$FB7685	-> LZ data chunk
+$FB7686-$FB7872	-> S-DD1 data chunk
+$FB7873-$FB7A5E	-> LZ data chunk
+$FB7A5F-$FB7C4A	-> LZ data chunk
+$FB7C4B-$FB7E36	-> S-DD1 sprite tileset
+$FB7E37-$FB8020	-> LZ data chunk
+$FB8021-$FB8209	-> S-DD1 data chunk
+$FB820A-$FB83F2	-> LZ data chunk
+$FB83F3-$FB85DA	-> S-DD1 data chunk
+$FB85DB-$FB87BF	-> S-DD1 data chunk
+$FB87C0-$FB89A3	-> S-DD1 data chunk
+$FB89A4-$FB8B86	-> S-DD1 data chunk
+$FB8B87-$FB8D69	-> S-DD1 data chunk
+$FB8D6A-$FB8F4B	-> S-DD1 data chunk
+$FB8F4C-$FB912D	-> LZ data chunk
+$FB912E-$FB930F	-> LZ data chunk
+$FB9310-$FB94F0	-> LZ data chunk
+$FB94F1-$FB96CF	-> S-DD1 data chunk
+$FB96D0-$FB98AE	-> S-DD1 data chunk
+$FB98AF-$FB9A8C	-> S-DD1 sprite tileset
+$FB9A8D-$FB9C69	-> S-DD1 data chunk
+$FB9C6A-$FB9E45	-> LZ data chunk
+$FB9E46-$FBA01F	-> LZ data chunk
+$FBA020-$FBA1F7	-> S-DD1 data chunk
+$FBA1F8-$FBA3CF	-> LZ data chunk
+$FBA3D0-$FBA5A7	-> LZ data chunk
+$FBA5A8-$FBA77D	-> LZ data chunk
+$FBA77E-$FBA952	-> LZ data chunk
+$FBA953-$FBAB26	-> LZ data chunk
+$FBAB27-$FBACF6	-> S-DD1 sprite tileset
+$FBACF7-$FBAEC5	-> S-DD1 data chunk
+$FBAEC6-$FBB094	-> LZ data chunk
+$FBB095-$FBB262	-> LZ data chunk
+$FBB263-$FBB42F	-> LZ data chunk
+$FBB430-$FBB5FB	-> LZ data chunk
+$FBB5FC-$FBB7C7	-> S-DD1 sprite tileset
+$FBB7C8-$FBB992	-> LZ data chunk
+$FBB993-$FBBB5A	-> LZ data chunk
+$FBBB5B-$FBBD21	-> LZ data chunk
+$FBBD22-$FBBEE7	-> S-DD1 data chunk
+$FBBEE8-$FBC0AB	-> LZ data chunk
+$FBC0AC-$FBC26E	-> LZ data chunk
+$FBC26F-$FBC430	-> LZ data chunk
+$FBC431-$FBC5F1	-> S-DD1 data chunk
+$FBC5F2-$FBC7B1	-> S-DD1 data chunk
+$FBC7B2-$FBC971	-> LZ data chunk
+$FBC972-$FBCB2E	-> LZ data chunk
+$FBCB2F-$FBCCE9	-> LZ data chunk
+$FBCCEA-$FBCEA4	-> S-DD1 sprite tileset
+$FBCEA5-$FBD05B	-> LZ data chunk
+$FBD05C-$FBD211	-> LZ data chunk
+$FBD212-$FBD3C5	-> LZ data chunk
+$FBD3C6-$FBD576	-> LZ data chunk
+$FBD577-$FBD727	-> LZ data chunk
+$FBD728-$FBD8D8	-> LZ data chunk
+$FBD8D9-$FBDA89 -> S-DD1 sprite tileset
+$FBDA8A-$FBDC39	-> LZ data chunk
+$FBDC3A-$FBDDE7	-> LZ data chunk
+$FBDDE8-$FBDF95	-> LZ data chunk
+$FBDF96-$FBE142	-> LZ data chunk
+$FBE143-$FBE2EE	-> LZ data chunk
+$FBE2EF-$FBE499 -> S-DD1 sprite tileset
+$FBE49A-$FBE644	-> LZ data chunk
+$FBE645-$FBE7EF	-> LZ data chunk
+$FBE7F0-$FBE99A	-> LZ data chunk
+$FBE99B-$FBEB44	-> S-DD1 data chunk
+$FBEB45-$FBECEE	-> LZ data chunk
+$FBECEF-$FBEE98 -> S-DD1 sprite tileset
+$FBEE99-$FBF03F	-> LZ data chunk
+$FBF040-$FBF1E6	-> LZ data chunk
+$FBF1E7-$FBF38D	-> LZ data chunk
+$FBF38E-$FBF533	-> LZ data chunk
+$FBF534-$FBF6D9	-> LZ data chunk
+$FBF6DA-$FBF87F -> S-DD1 sprite tileset
+$FBF880-$FBFA25	-> S-DD1 data chunk
+$FBFA26-$FBFBC9	-> LZ data chunk
+$FBFBCA-$FBFD6D	-> LZ data chunk
+$FBFD6E-$FBFF11	-> LZ data chunk
+$FBFF12-$FBFFFF	-> LZ data chunk
+
+
+BANK $FC
+--------
+$FC0000-$FC01A3 -> S-DD1 sprite tileset
+$FC01A4-$FC0346	-> LZ data chunk
+$FC0347-$FC04E8	-> LZ data chunk
+$FC04E9-$FC0689	-> LZ data chunk
+$FC068A-$FC0829	-> LZ data chunk
+$FC082A-$FC09C8	-> LZ data chunk
+$FC09C9-$FC0B67	-> LZ data chunk
+$FC0B68-$FC0D06	-> LZ data chunk
+$FC0D07-$FC0EA4	-> LZ data chunk
+$FC0EA5-$FC1042	-> LZ data chunk
+$FC1043-$FC11DE	-> SDD-1 [image 00] line 1
+$FC11DF-$FC1379	-> LZ data chunk
+$FC137A-$FC1511	-> LZ data chunk
+$FC1512-$FC16A8	-> LZ data chunk
+$FC16A9-$FC183F	-> LZ data chunk
+$FC1840-$FC19D5	-> LZ data chunk
+$FC19D6-$FC1B6B	-> LZ data chunk
+$FC1B6C-$FC1D00	-> LZ data chunk
+$FC1D01-$FC1E94	-> S-DD1 data chunk
+$FC1E95-$FC2025	-> LZ data chunk
+$FC2026-$FC21B3	-> LZ data chunk
+$FC21B4-$FC2341	-> LZ data chunk
+$FC2342-$FC24CE	-> LZ data chunk
+$FC24CF-$FC265B	-> LZ data chunk
+$FC265C-$FC27E8	-> LZ data chunk
+$FC27E9-$FC2975	-> LZ data chunk
+$FC2976-$FC2B01	-> LZ data chunk
+$FC2B02-$FC2C8B	-> LZ data chunk
+$FC2C8C-$FC2E15 -> S-DD1 sprite tileset
+$FC2E16-$FC2F9F	-> LZ data chunk
+$FC2FA0-$FC3129	-> LZ data chunk
+$FC312A-$FC32B3	-> SDD-1 [image 00] line 0
+$FC32B4-$FC343B -> S-DD1 sprite tileset
+$FC343C-$FC35C3	-> LZ data chunk
+$FC35C4-$FC374B	-> LZ data chunk
+$FC374C-$FC38D1	-> LZ data chunk
+$FC38D2-$FC3A57	-> LZ data chunk
+$FC3A58-$FC3BDC -> S-DD1 sprite tileset
+$FC3BDD-$FC3D60	-> LZ data chunk
+$FC3D61-$FC3EE3	-> LZ data chunk
+$FC3EE4-$FC4066	-> LZ data chunk
+$FC4067-$FC41E9 -> S-DD1 sprite tileset
+$FC41EA-$FC436C	-> LZ data chunk
+$FC436D-$FC44EE	-> LZ data chunk
+$FC44EF-$FC4670	-> LZ data chunk
+$FC4671-$FC47F2	-> LZ data chunk
+$FC47F3-$FC4972	-> LZ data chunk
+$FC4973-$FC4AF2	-> LZ data chunk
+$FC4AF3-$FC4C72	-> palette color data
+$FC4C73-$FC4DF1	-> LZ data chunk
+$FC4DF2-$FC4F70	-> LZ data chunk
+$FC4F71-$FC50EE	-> LZ data chunk
+$FC50EF-$FC526B	-> LZ data chunk
+$FC526C-$FC53E7	-> S-DD1 data chunk
+$FC53E8-$FC5563	-> LZ data chunk
+$FC5564-$FC56DD	-> LZ data chunk
+$FC56DE-$FC5857	-> LZ data chunk
+$FC5858-$FC59D1	-> LZ data chunk
+$FC59D2-$FC5B4B	-> SDD-1 [image 01] line 3
+$FC5B4C-$FC5CC4	-> LZ data chunk
+$FC5CC5-$FC5E3D	-> LZ data chunk
+$FC5E3E-$FC5FB3 -> S-DD1 sprite tileset
+$FC5FB4-$FC6129	-> LZ data chunk
+$FC612A-$FC629E	-> LZ data chunk
+$FC629F-$FC6413	-> LZ data chunk
+$FC6414-$FC6586 -> S-DD1 sprite tileset
+$FC6587-$FC66F7	-> LZ data chunk
+$FC66F8-$FC6865	-> S-DD1 data chunk
+$FC6866-$FC69D3	-> LZ data chunk
+$FC69D4-$FC6B40	-> LZ data chunk
+$FC6B41-$FC6CAD -> S-DD1 sprite tileset
+$FC6CAE-$FC6E19	-> S-DD1 data chunk
+$FC6E1A-$FC6F84	-> LZ data chunk
+$FC6F85-$FC70EE	-> LZ data chunk
+$FC70EF-$FC7258	-> LZ data chunk
+$FC7259-$FC73C2	-> LZ data chunk
+$FC73C3-$FC752C	-> LZ data chunk
+$FC752D-$FC7696	-> S-DD1 data chunk
+$FC7697-$FC7800 -> S-DD1 sprite tileset
+$FC7801-$FC7969	-> LZ data chunk
+$FC796A-$FC7AD1	-> LZ data chunk
+$FC7AD2-$FC7C37	-> LZ data chunk
+$FC7C38-$FC7D9D	-> LZ data chunk
+$FC7D9E-$FC7F03	-> LZ data chunk
+$FC7F04-$FC8068	-> LZ data chunk
+$FC8069-$FC81CB -> S-DD1 sprite tileset
+$FC81CC-$FC832C	-> LZ data chunk
+$FC832D-$FC848C -> SDD-1 [image 03] line 3
+$FC848D-$FC85EB	-> LZ data chunk
+$FC85EC-$FC8748	-> LZ data chunk
+$FC8749-$FC88A5	-> LZ data chunk
+$FC88A6-$FC8A02	-> LZ data chunk
+$FC8A03-$FC8B5C	-> LZ data chunk
+$FC8B5D-$FC8CB5	-> LZ data chunk
+$FC8CB6-$FC8E0E	-> S-DD1 data chunk
+$FC8E0F-$FC8F67 -> S-DD1 sprite tileset
+$FC8F68-$FC90BE	-> LZ data chunk
+$FC90BF-$FC9215	-> LZ data chunk
+$FC9216-$FC936B	-> LZ data chunk
+$FC936C-$FC94C1	-> LZ data chunk
+$FC94C2-$FC9616	-> LZ data chunk
+$FC9617-$FC976B	-> S-DD1 data chunk
+$FC976C-$FC98BF -> S-DD1 sprite tileset
+$FC98C0-$FC9A12	-> S-DD1 data chunk
+$FC9A13-$FC9B65	-> S-DD1 data chunk
+$FC9B66-$FC9CB7	-> LZ data chunk
+$FC9CB8-$FC9E09	-> SDD-1 [image 00] line 2
+$FC9E0A-$FC9F5A -> S-DD1 sprite tileset
+$FC9F5B-$FCA0AA	-> S-DD1 data chunk
+$FCA0AB-$FCA1FA	-> LZ data chunk
+$FCA1FB-$FCA349	-> S-DD1 data chunk
+$FCA34A-$FCA498	-> S-DD1 data chunk
+$FCA499-$FCA5E5	-> S-DD1 data chunk
+$FCA5E6-$FCA732	-> S-DD1 data chunk
+$FCA733-$FCA87F	-> LZ data chunk
+$FCA880-$FCA9CC	-> S-DD1 data chunk
+$FCA9CD-$FCAB18	-> S-DD1 data chunk
+$FCAB19-$FCAC64	-> S-DD1 data chunk
+$FCAC65-$FCADB0	-> S-DD1 data chunk
+$FCADB1-$FCAEFC	-> S-DD1 data chunk
+$FCAEFD-$FCB048	-> S-DD1 data chunk
+$FCB049-$FCB193	-> S-DD1 data chunk
+$FCB194-$FCB2DE	-> LZ data chunk
+$FCB2DF-$FCB428	-> S-DD1 data chunk
+$FCB429-$FCB572	-> LZ data chunk
+$FCB573-$FCB6BC	-> S-DD1 data chunk
+$FCB6BD-$FCB805	-> LZ data chunk
+$FCB806-$FCB94E	-> S-DD1 data chunk
+$FCB94F-$FCBA96	-> S-DD1 data chunk
+$FCBA97-$FCBBDD	-> S-DD1 data chunk
+$FCBBDE-$FCBD24	-> LZ data chunk
+$FCBD25-$FCBE6B	-> LZ data chunk
+$FCBE6C-$FCBFB1	-> LZ data chunk
+$FCBFB2-$FCC0F6	-> LZ data chunk
+$FCC0F7-$FCC23B	-> LZ data chunk
+$FCC23C-$FCC37F	-> S-DD1 data chunk
+$FCC380-$FCC4C1	-> S-DD1 data chunk
+$FCC4C2-$FCC603	-> S-DD1 data chunk
+$FCC604-$FCC744	-> S-DD1 [image 07] line 3
+$FCC745-$FCC884	-> LZ data chunk
+$FCC885-$FCC9C4	-> LZ data chunk
+$FCC9C5-$FCCB03	-> S-DD1 data chunk
+$FCCB04-$FCCC42	-> S-DD1 data chunk
+$FCCC43-$FCCD81	-> S-DD1 data chunk
+$FCCD82-$FCCEC0	-> S-DD1 data chunk
+$FCCEC1-$FCCFFF	-> S-DD1 data chunk
+$FCD000-$FCD13E	-> LZ data chunk
+$FCD13F-$FCD27D	-> LZ data chunk
+$FCD27E-$FCD3BB	-> S-DD1 data chunk
+$FCD3BC-$FCD4F9	-> LZ data chunk
+$FCD4FA-$FCD636	-> S-DD1 data chunk
+$FCD637-$FCD772	-> S-DD1 data chunk
+$FCD773-$FCD8AE	-> S-DD1 data chunk
+$FCD8AF-$FCD9E9	-> LZ data chunk
+$FCD9EA-$FCDB24	-> SDD-1 [image 00] line 3
+$FCDB25-$FCDC5C	-> LZ data chunk
+$FCDC5D-$FCDD94	-> LZ data chunk
+$FCDD95-$FCDECC	-> LZ data chunk
+$FCDECD-$FCE003	-> LZ data chunk
+$FCE004-$FCE13A	-> SDD-1 [image 02] line 4
+$FCE13B-$FCE270	-> LZ data chunk
+$FCE271-$FCE3A6	-> LZ data chunk
+$FCE3A7-$FCE4DA	-> LZ data chunk
+$FCE4DB-$FCE60E	-> LZ data chunk
+$FCE60F-$FCE742	-> S-DD1 data chunk
+$FCE743-$FCE874	-> LZ data chunk
+$FCE875-$FCE9A6	-> LZ data chunk
+$FCE9A7-$FCEAD6	-> LZ data chunk
+$FCEAD7-$FCEC05	-> LZ data chunk
+$FCEC06-$FCED34	-> S-DD1 data chunk
+$FCED35-$FCEE63	-> LZ data chunk
+$FCEE64-$FCEF91	-> LZ data chunk
+$FCEF92-$FCF0BE	-> LZ data chunk
+$FCF0BF-$FCF1EB	-> S-DD1 data chunk
+$FCF1EC-$FCF318 -> S-DD1 sprite tileset
+$FCF319-$FCF444	-> LZ data chunk
+$FCF445-$FCF56F	-> LZ data chunk
+$FCF570-$FCF698	-> LZ data chunk
+$FCF699-$FCF7C1	-> LZ data chunk
+$FCF7C2-$FCF8EA	-> LZ data chunk
+$FCF8EB-$FCFA12	-> S-DD1 [image 09] line 3
+$FCFA13-$FCFB39	-> S-DD1 data chunk
+$FCFB3A-$FCFC60	-> LZ data chunk
+$FCFC61-$FCFD83	-> LZ data chunk
+$FCFD84-$FCFEA6	-> S-DD1 data chunk
+$FCFEA7-$FCFFC9 -> S-DD1 sprite tileset
+$FCFFCA-$FCFFFF	-> LZ data chunk
+
+
+BANK $FD
+--------
+$FD0000-$FD0121	-> S-DD1 data chunk
+$FD0122-$FD0242	-> LZ data chunk
+$FD0243-$FD0363	-> S-DD1 data chunk
+$FD0364-$FD0483	-> LZ data chunk
+$FD0484-$FD05A3	-> LZ data chunk
+$FD05A4-$FD06C1	-> LZ data chunk
+$FD06C2-$FD07DF	-> S-DD1 data chunk
+$FD07E0-$FD08FD	-> S-DD1 data chunk
+$FD08FE-$FD0A1B	-> S-DD1 data chunk
+$FD0A1C-$FD0B39	-> S-DD1 data chunk
+$FD0B3A-$FD0C56	-> LZ data chunk
+$FD0C57-$FD0D71	-> LZ data chunk
+$FD0D72-$FD0E8B	-> LZ data chunk
+$FD0E8C-$FD0FA3	-> LZ data chunk
+$FD0FA4-$FD10BB	-> S-DD1 data chunk
+$FD10BC-$FD11D1	-> LZ data chunk
+$FD11D2-$FD12E7	-> LZ data chunk
+$FD12E8-$FD13FB	-> S-DD1 data chunk
+$FD13FC-$FD150D	-> LZ data chunk
+$FD150E-$FD161E	-> LZ data chunk
+$FD161F-$FD172F	-> LZ data chunk
+$FD1730-$FD183F	-> LZ data chunk
+$FD1840-$FD194F	-> LZ data chunk
+$FD1950-$FD1A5F -> S-DD1 sprite tileset
+$FD1A60-$FD1B6D	-> LZ data chunk
+$FD1B6E-$FD1C78	-> LZ data chunk
+$FD1C79-$FD1D83	-> S-DD1 data chunk
+$FD1D84-$FD1E8D	-> LZ data chunk
+$FD1E8E-$FD1F97	-> LZ data chunk
+$FD1F98-$FD20A0	-> LZ data chunk
+$FD20A1-$FD21A8	-> LZ data chunk
+$FD21A9-$FD22AF -> S-DD1 sprite tileset
+$FD22B0-$FD23B5	-> LZ data chunk
+$FD23B6-$FD24BB	-> S-DD1 data chunk
+$FD24BC-$FD25C1	-> S-DD1 data chunk
+$FD25C2-$FD26C6	-> LZ data chunk
+$FD26C7-$FD27CA	-> LZ data chunk
+$FD27CB-$FD28CC	-> LZ data chunk
+$FD28CD-$FD29CC	-> S-DD1 data chunk
+$FD29CD-$FD2ACB	-> S-DD1 data chunk
+$FD2ACC-$FD2BCA	-> LZ data chunk
+$FD2BCB-$FD2CC9	-> S-DD1 [image 01] line 2
+$FD2CCA-$FD2DC8	-> S-DD1 [image 0C] line 3
+$FD2DC9-$FD2EC5	-> S-DD1 data chunk
+$FD2EC6-$FD2FC1	-> LZ data chunk
+$FD2FC2-$FD30BC	-> LZ data chunk
+$FD30BD-$FD31B7	-> LZ data chunk
+$FD31B8-$FD32AF	-> LZ data chunk
+$FD32B0-$FD33A6	-> LZ data chunk
+$FD33A7-$FD349C	-> S-DD1 data chunk
+$FD349D-$FD3592	-> LZ data chunk
+$FD3593-$FD3687	-> LZ data chunk
+$FD3688-$FD377B	-> LZ data chunk
+$FD377C-$FD386A	-> LZ data chunk
+$FD386B-$FD3959	-> S-DD1 data chunk
+$FD395A-$FD3A48	-> S-DD1 data chunk
+$FD3A49-$FD3B36	-> S-DD1 [image 07] line 2
+$FD3B37-$FD3C22	-> S-DD1 data chunk
+$FD3C23-$FD3D0E	-> LZ data chunk
+$FD3D0F-$FD3DF8	-> S-DD1 data chunk
+$FD3DF9-$FD3EE2	-> S-DD1 data chunk
+$FD3EE3-$FD3FCC	-> S-DD1 data chunk
+$FD3FCD-$FD40B5	-> LZ data chunk
+$FD40B6-$FD419D	-> LZ data chunk
+$FD419E-$FD4284	-> LZ data chunk
+$FD4285-$FD436B -> S-DD1 sprite tileset
+$FD436C-$FD4452	-> S-DD1 data chunk
+$FD4453-$FD4534	-> LZ data chunk
+$FD4535-$FD4616	-> LZ data chunk
+$FD4617-$FD46F8 -> S-DD1 sprite tileset
+$FD46F9-$FD7D38	-> palette data color
+$FD7D39-$FD7E17	-> S-DD1 [image 05] line 3
+$FD7E18-$FD7EF4	-> LZ data chunk
+$FD7EF5-$FD7FCD	-> LZ data chunk
+$FD7FCE-$FD80A6	-> S-DD1 data chunk
+$FD80A7-$FD817E	-> LZ data chunk
+$FD817F-$FD8256	-> LZ data chunk
+$FD8257-$FD832E	-> LZ data chunk
+$FD832F-$FD8406	-> LZ data chunk
+$FD8407-$FD875E -> S-DD1 sprite tileset
+$FD875F-$FD8830	-> arena text IDs
+$FD8831-$FD8900	-> LZ data chunk
+$FD8901-$FD89D0	-> arena text IDs
+$FD89D1-$FD8A9E -> S-DD1 sprite tileset
+$FD8A9F-$FD8B6B	-> unused S-DD1 data
+$FD8B6C-$FD8CFF	-> S-DD1 sprite tileset
+$FD8D00-$FD8DC6	-> S-DD1 data chunk
+$FD8DC7-$FD8E8D	-> S-DD1 sprite tileset
+$FD8E8E-$FD8F51	-> S-DD1 data chunk
+$FD8F52-$FD9015	-> LZ data chunk
+$FD9016-$FD90D7	-> LZ data chunk
+$FD90D8-$FD9199	-> S-DD1 sprite tileset
+$FD919A-$FD96D9	-> palette data color
+$FD96DA-$FD9798	-> S-DD1 data chunk
+$FD9799-$FD9855	-> LZ data chunk
+$FD9856-$FD9912	-> S-DD1 [image 0B] line 3
+$FD9913-$FD99CE	-> LZ data chunk
+$FD99CF-$FD9A8A	-> LZ data chunk
+$FD9A8B-$FD9B42	-> S-DD1 data chunk
+$FD9B43-$FD9BFA	-> LZ data chunk
+$FD9BFB-$FD9CB1	-> LZ data chunk
+$FD9CB2-$FD9D67	-> LZ data chunk
+$FD9D68-$FD9E1D	-> S-DD1 data chunk
+$FD9E1E-$FD9ED2	-> LZ data chunk
+$FD9ED3-$FD9F83	-> LZ data chunk
+$FD9F84-$FDA031	-> LZ data chunk
+$FDA032-$FDA0DF	-> S-DD1 sprite tileset
+$FDA0E0-$FDA18C	-> LZ data chunk
+$FDA18D-$FDA239	-> LZ data chunk
+$FDA23A-$FDA236	-> LZ data chunk
+$FDA2E7-$FDA393	-> LZ data chunk
+$FDA394-$FDA43F	-> LZ data chunk
+$FDA440-$FDA4E9	-> S-DD1 sprite tileset
+$FDA4EA-$FDA593	-> S-DD1 data chunk
+$FDA594-$FDA63C	-> LZ data chunk
+$FDA63D-$FDA78E	-> LZ data chunk
+$FDA78F-$FDA836	-> LZ data chunk
+$FDA837-$FDA8DE	-> S-DD1 sprite tileset
+$FDA8DF-$FDA984	-> S-DD1 [image 09] line 2
+$FDA985-$FDAA28	-> LZ data chunk
+$FDAA29-$FDAACB	-> LZ data chunk
+$FDAACC-$FDAB6E	-> LZ data chunk
+$FDAB6F-$FDAC10	-> LZ data chunk
+$FDAC11-$FDADF0	-> palette data color
+$FDADF1-$FDAE8F	-> LZ data chunk
+$FDAE90-$FDAF2D	-> LZ data chunk
+$FDAF2E-$FDAFCA	-> LZ data chunk
+$FDAFCB-$FDB064	-> S-DD1 [image 04] line 3
+$FDB065-$FDB0FD	-> S-DD1 data chunk
+$FDB0FE-$FDB196	-> LZ data chunk
+$FDB197-$FDB22D	-> LZ data chunk
+$FDB22E-$FDB2C3	-> LZ data chunk
+$FDB2C4-$FDB359	-> LZ data chunk
+$FDB35A-$FDB3EE	-> S-DD1 sprite tileset
+$FDB3EF-$FDB483	-> LZ data chunk
+$FDB484-$FDB518	-> LZ data chunk
+$FDB519-$FDB5AC	-> LZ data chunk
+$FDB5AD-$FDB640	-> LZ data chunk
+$FDB641-$FDB6D4	-> LZ data chunk
+$FDB6D5-$FDB768	-> LZ data chunk
+$FDB769-$FDB7FA	-> LZ data chunk
+$FDB7FB-$FDB88B	-> LZ data chunk
+$FDB88C-$FDB919	-> LZ data chunk
+$FDB91A-$FDB9A6	-> LZ data chunk
+$FDB9A7-$FDBA32	-> LZ data chunk
+$FDBA33-$FDBABE	-> LZ data chunk
+$FDBABF-$FDBB4A	-> LZ data chunk
+$FDBB4B-$FDBBD5	-> S-DD1 sprite tileset
+$FDBBD6-$FDBC5F	-> LZ data chunk
+$FDBC60-$FDBCE7	-> LZ data chunk
+$FDBCE8-$FDBD6E	-> LZ data chunk
+$FDBD6F-$FDBDF5	-> LZ data chunk
+$FDBDF6-$FDBE7A	-> LZ data chunk
+$FDBE7B-$FDBEFF	-> LZ data chunk
+$FDBF00-$FDBF83	-> LZ data chunk
+$FDBF84-$FDC007	-> LZ data chunk
+$FDC008-$FDC08A	-> LZ data chunk
+$FDC08B-$FDC10D	-> S-DD1 data chunk
+$FDC10E-$FDC18F	-> LZ data chunk
+$FDC190-$FDC210	-> LZ data chunk
+$FDC211-$FDC291	-> LZ data chunk
+$FDC292-$FDC312	-> LZ data chunk
+$FDC313-$FDC393	-> LZ data chunk
+$FDC394-$FDC413	-> LZ data chunk
+$FDC414-$FDC613	-> palette data color
+$FDC614-$FDC693	-> LZ data chunk
+$FDC694-$FDC793	-> palette data color
+$FDC794-$FDC813	-> LZ data chunk
+$FDC814-$FDC893	-> palette data color
+$FDC894-$FDC912	-> LZ data chunk
+$FDC913-$FDC991	-> LZ data chunk
+$FDC992-$FDCA10 -> S-DD1 data chunk
+$FDCA11-$FDCA8F -> S-DD1 data chunk
+$FDCA90-$FDCB0D	-> LZ data chunk
+$FDCB0E-$FDCB8B	-> S-DD1 data chunk
+$FDCB8C-$FDCC08	-> S-DD1 data chunk indexed in $C2:910C
+$FDCC09-$FDCC84	-> S-DD1 data chunk indexed in $C2:910C
+$FDCC85-$FDCCEF	-> LZ data chunk
+$FDCD00-$FDCD7A -> S-DD1 data chunk indexed in $C2:910C
+$FDCD7B-$FDCDF4	-> LZ data chunk
+$FDCDF5-$FDCE6E	-> S-DD1 data chunk
+$FDCE6F-$FDCEE6	-> LZ data chunk
+$FDCEE7-$FDCF5E -> S-DD1 data chunk indexed in $C2:910C
+$FDCF5F-$FDCFD5	-> LZ data chunk
+$FDCFD6-$FDD04C	-> LZ data chunk
+$FDD04D-$FDD0C3	-> S-DD1 data chunk
+$FDD0C4-$FDD139	-> S-DD1 data chunk
+$FDD13A-$FDD1AF	-> LZ data chunk
+$FDD1B0-$FDD224	-> S-DD1 data chunk
+$FDD225-$FDD299	-> S-DD1 data chunk
+$FDD29A-$FDD30E	-> LZ data chunk
+$FDD30F-$FDD383	-> LZ data chunk
+$FDD384-$FDD3F7	-> LZ data chunk
+$FDD3F8-$FDD4DE	-> S-DD1 sprite tileset
+$FDD4DF-$FDD551	-> LZ data chunk
+$FDD552-$FDD5C3	-> LZ data chunk
+$FDD5C4-$FDD635	-> LZ data chunk
+$FDD636-$FDD6A6	-> LZ data chunk
+$FDD6A7-$FDD717	-> LZ data chunk
+$FDD718-$FDD787	-> LZ data chunk
+$FDD788-$FDD7F7	-> LZ data chunk
+$FDD7F8-$FDD867	-> S-DD1 sprite tileset
+$FDD868-$FDD8D6 -> S-DD1 data chunk indexed in $C2:910C
+$FDD8D7-$FDD944	-> LZ data chunk
+$FDD945-$FDD9B2	-> LZ data chunk
+$FDD9B3-$FDDA20	-> S-DD1 sprite tileset
+$FDDA21-$FDDA8D	-> LZ data chunk
+$FDDA8E-$FDDAFA	-> LZ data chunk
+$FDDAFB-$FDDB67 -> S-DD1 data chunk indexed in $C2:910C
+$FDDB68-$FDDBD3	-> LZ data chunk
+$FDDBD4-$FDDC3F -> S-DD1 data chunk indexed in $C2:910C
+$FDDC40-$FDDCAA	-> S-DD1 [image 08] line 3
+$FDDCAB-$FDDD13	-> LZ data chunk
+$FDDD14-$FDDD7B	-> LZ data chunk
+$FDDD7C-$FDDDE3	-> LZ data chunk
+$FDDDE4-$FDDE4B	-> LZ data chunk
+$FDDE4C-$FDDEB2	-> LZ data chunk
+$FDDEB3-$FDCF19	-> LZ data chunk
+$FDDF1A-$FDDF80	-> LZ data chunk
+$FDDF81-$FDDFE7	-> LZ data chunk
+$FDDFE8-$FDE04D	-> LZ data chunk
+$FDE04E-$FDE0B3	-> LZ data chunk
+$FDE0B4-$FDE119	-> LZ data chunk
+$FDE11A-$FDE17F	-> S-DD1 data chunk
+$FDE180-$FDE1E4	-> LZ data chunk
+$FDE1E5-$FDE249	-> S-DD1 data chunk
+$FDE24A-$FDE2AD	-> LZ data chunk
+$FDE2AE-$FDE311	-> S-DD1 data chunk
+$FDE312-$FDE374	-> LZ data chunk
+$FDE375-$FDE2D7	-> LZ data chunk
+$FDE3D8-$FDE43A	-> S-DD1 [image 06] line 3
+$FDE43B-$FDE49C	-> LZ data chunk
+$FDE49D-$FDE4FE	-> LZ data chunk
+$FDE4FF-$FDE560	-> LZ data chunk
+$FDE561-$FDE5C2	-> LZ data chunk
+$FDE5C3-$FDE624	-> LZ data chunk
+$FDE625-$FDE685	-> LZ data chunk
+$FDE686-$FDE6E6	-> LZ data chunk
+$FDE6E7-$FDE747	-> LZ data chunk
+$FDE748-$FDE7A7	-> LZ data chunk
+$FDE7A8-$FDE807	-> palette data color
+$FDE808-$FDE866	-> LZ data chunk
+$FDE867-$FDE8C5	-> LZ data chunk
+$FDE8C6-$FDE924	-> LZ data chunk
+$FDE925-$FDE983	-> LZ data chunk
+$FDE984-$FDE9E2	-> LZ data chunk
+$FDE9E3-$FDEA40	-> LZ data chunk
+$FDEA41-$FDEA9D	-> LZ data chunk
+$FDEA9E-$FDEAFA	-> LZ data chunk
+$FDEAFB-$FDEB57	-> LZ data chunk
+$FDEB58-$FDEBB4	-> LZ data chunk
+$FDEBB5-$FDEC10	-> LZ data chunk
+$FDEC11-$FDEC6C	-> LZ data chunk
+$FDEC6D-$FDECC8	-> LZ data chunk
+$FDECC9-$FDED24	-> LZ data chunk
+$FDED25-$FDED80	-> LZ data chunk
+$FDED81-$FDEDDB	-> LZ data chunk
+$FDEDDC-$FDEE36	-> LZ data chunk
+$FDEE37-$FDEE90	-> LZ data chunk
+$FDEE91-$FDEEEA	-> LZ data chunk
+$FDEEEB-$FDEF44	-> LZ data chunk
+$FDEF45-$FDEF9E	-> LZ data chunk
+$FDEF9F-$FDEFF8	-> LZ data chunk
+$FDEFF9-$FDF052	-> LZ data chunk
+$FDF053-$FDF0AC	-> LZ data chunk
+$FDF0AD-$FDF106	-> LZ data chunk
+$FDF107-$FDF160	-> LZ data chunk
+$FDF161-$FDF1BA	-> LZ data chunk
+$FDF1BB-$FDF213	-> LZ data chunk
+$FDF214-$FDF26C	-> LZ data chunk
+$FDF26D-$FDF2C5	-> LZ data chunk
+$FDF2C6-$FDF31E	-> LZ data chunk
+$FDF31F-$FDF377	-> LZ data chunk
+$FDF378-$FDF3D0	-> LZ data chunk
+$FDF3D1-$FDF429	-> S-DD1 data chunk
+$FDF42A-$FDF481	-> LZ data chunk
+$FDF482-$FDF4D8	-> LZ data chunk
+$FDF4D9-$FDF52F	-> LZ data chunk
+$FDF530-$FDF586	-> LZ data chunk
+$FDF587-$FDF5DD	-> LZ data chunk
+$FDF5DE-$FDF634	-> LZ data chunk
+$FDF635-$FDF68B	-> LZ data chunk
+$FDF68C-$FDF6E1	-> LZ data chunk
+$FDF6E2-$FDF737 -> S-DD1 data chunk indexed in $C2:910C
+$FDF738-$FDF78C	-> LZ data chunk
+$FDF78D-$FDF7E1	-> LZ data chunk
+$FDF7E2-$FDF836	-> LZ data chunk
+$FDF837-$FDF88B	-> LZ data chunk
+$FDF88C-$FDF8E0	-> LZ data chunk
+$FDF8E1-$FDF935	-> LZ data chunk
+$FDF936-$FDF98A	-> LZ data chunk
+$FDF98B-$FDF9DF -> S-DD1 data chunk
+$FDF9E0-$FDFA34 -> S-DD1 data chunk
+$FDFA35-$FDFA88	-> LZ data chunk
+$FDFA89-$FDFADC	-> LZ data chunk
+$FDFADD-$FDFB30	-> LZ data chunk
+$FDFB31-$FDFB83	-> LZ data chunk
+$FDFB84-$FDFBD6	-> LZ data chunk
+$FDFBD7-$FDFC29	-> LZ data chunk
+$FDFC2A-$FDFC7B	-> LZ data chunk
+$FDFC7C-$FDFCCD	-> LZ data chunk
+$FDFCCE-$FDFD1E	-> LZ data chunk
+$FDFD1F-$FDFD6F	-> S-DD1 data chunk
+$FDFD70-$FDFDBF	-> LZ data chunk
+$FDFDC0-$FDFE0F	-> LZ data chunk
+$FDFE10-$FDFE5F	-> LZ data chunk
+$FDFE60-$FDFEAF	-> LZ data chunk
+$FDFEB0-$FDFEFF	-> LZ data chunk
+$FDFF00-$FDFF4F	-> LZ data chunk
+$FDFF50-$FDFF9F	-> LZ data chunk
+$FDFFA0-$FDFFEF	-> LZ data chunk
+$FDFFF0-$FDFFFE -> S-DD1 data chunk indexed in $C2:910C
+$FDFFFF		-> padding
+
+
+
+BANK $FE
+--------
+$FE0000-$FE052C	-> S-DD1 data chunk
+$FE052D-$FE0B3C	-> S-DD1 data chunk
+$FE0B3D-$FE1064	-> S-DD1 data chunk
+$FE1065-$FE14CB	-> S-DD1 data chunk
+$FE14CC-$FE19E4	-> S-DD1 data chunk
+$FE19E5-$FE1ECE	-> S-DD1 data chunk
+$FE1ECF-$FE2322	-> S-DD1 data chunk
+$FE2323-$FE285F	-> S-DD1 data chunk
+$FE2860-$FE2DF8	-> S-DD1 data chunk
+$FE2DF9-$FE3352	-> S-DD1 data chunk
+$FE3353-$FE37F1	-> S-DD1 data chunk
+$FE37F2-$FE3C8C	-> S-DD1 data chunk
+$FE3C8D-$FE3CAC	-> palette 16-colour data
+$FE3CAD-$FE450C	-> S-DD1 data chunk descompressed in routine $CA6328
+$FE450D-$FE452C	-> palette 16-colour data
+$FE452D-$FE475D	-> S-DD1 data chunk 
+$FE475E-$FE4770	-> unknown data
+$FE4771-$FE4A55	-> S-DD1 data chunk
+$FE4A56-$FE4B5A	-> S-DD1 data chunk
+$FE4B5B-$FE4EB2	-> S-DD1 data chunk descompressed in routine $CA6328
+$FE4EB3-$FE51BB	-> S-DD1 data chunk descompressed in routine $CA6328
+$FE51BC-$FE51C4	-> palette 4-colour data
+$FE51C5-$FE539C	-> unknown data
+$FE539D-$FE5410	-> S-DD1 data chunk descompressed in routine $CA6328
+$FE5411-$FE5418	-> palette 4-colour data
+$FE5419-$FE588A	-> S-DD1 data chunk
+$FE588B-$FE58AA	-> palette 16-colour data
+$FE58AB-$FE58E3	-> unknown data
+$FE58E4-$FE5CCD	-> S-DD1 data chunk
+$FE5CCE-$FE5CE5	-> S-DD1 data chunk descompressed in routine $CA6328
+$FE5CE6-$FE5CEF	-> unknown data
+$FE5CF0-$FE612E	-> pointers to skill description text (S-DD1 compressed)
+$FE612F-$FE63A0	-> pointers to skill description text's IDs (S-DD1 compressed) 
+$FE63A1-$FEA2DF -> LZ-compressed text for skill descriptions
+$FEA2E0-$FEBBFF	-> text for menus
+$FEBC00-$FEBC4F	-> LZ data chunk
+$FEBC50-$FEBC9F	-> LZ data chunk
+$FEBCA0-$FEBCEF	-> LZ data chunk
+$FEBCF0-$FEBD3E	-> LZ data chunk
+$FEBD3F-$FEBD8D	-> LZ data chunk
+$FEBD8E-$FEBDDB	-> LZ data chunk
+$FEBDDC-$FEBE29	-> LZ data chunk
+$FEBE2A-$FEBE77	-> LZ data chunk
+$FEBE78-$FEBEC4	-> LZ data chunk
+$FEBEC5-$FEBF11	-> LZ data chunk
+$FEBF12-$FEBF5E	-> LZ data chunk
+$FEBF5F-$FEBFAB	-> LZ data chunk
+$FEBFAC-$FEBFF8	-> LZ data chunk
+$FEBFF9-$FEC045	-> LZ data chunk
+$FEC046-$FEC091 -> S-DD1 data chunk
+$FEC092-$FEC0DD	-> LZ data chunk
+$FEC0DE-$FEC128	-> LZ data chunk
+$FEC129-$FEC173	-> S-DD1 sprite tileset
+$FEC174-$FEC1BE	-> LZ data chunk
+$FEC1BF-$FEC208	-> LZ data chunk
+$FEC209-$FEC252	-> LZ data chunk
+$FEC253-$FEC29C	-> LZ data chunk
+$FEC29D-$FEC2E6	-> LZ data chunk
+$FEC2E7-$FEC330	-> LZ data chunk
+$FEC331-$FEC37A	-> LZ data chunk
+$FEC37B-$FEC3C4	-> LZ data chunk
+$FEC3C5-$FEC40D	-> LZ data chunk
+$FEC40E-$FEC456	-> LZ data chunk
+$FEC457-$FEC49F	-> LZ data chunk
+$FEC4A0-$FEC4E8	-> LZ data chunk
+$FEC4E9-$FEC530	-> LZ data chunk
+$FEC531-$FEC578	-> LZ data chunk
+$FEC579-$FEC5C0	-> LZ data chunk
+$FEC5C1-$FEC608	-> LZ data chunk
+$FEC609-$FEC650	-> LZ data chunk
+$FEC651-$FEC698	-> LZ data chunk
+$FEC699-$FEC6E0	-> LZ data chunk
+$FEC6E1-$FEC728	-> LZ data chunk
+$FEC729-$FEC76F	-> LZ data chunk
+$FEC770-$FEC7B6	-> LZ data chunk
+$FEC7B7-$FEC7FD	-> LZ data chunk
+$FEC7FE-$FEC844	-> LZ data chunk
+$FEC845-$FEC88A	-> LZ data chunk
+$FEC88B-$FEC8D0	-> LZ data chunk
+$FEC8D1-$FEC916	-> LZ data chunk
+$FEC917-$FEC95B	-> LZ data chunk
+$FEC95C-$FEC9A0	-> LZ data chunk
+$FEC9A1-$FEC9E5	-> LZ data chunk
+$FEC9E6-$FECA2A	-> LZ data chunk
+$FECA2B-$FECA6E	-> LZ data chunk
+$FECA6F-$FECAB2	-> LZ data chunk
+$FECAB3-$FECAF6	-> LZ data chunk
+$FECAF7-$FECB3A	-> LZ data chunk
+$FECB3B-$FECB7E	-> LZ data chunk
+$FECB7F-$FECBC2	-> LZ data chunk
+$FECBC3-$FECC05	-> LZ data chunk
+$FECC06-$FECC48	-> S-DD1 data chunk
+$FECC49-$FECC8B	-> S-DD1 data chunk
+$FECC8C-$FECCCE	-> S-DD1 sprite tileset
+$FECCCF-$FECD10	-> LZ data chunk
+$FECD11-$FECD52	-> LZ data chunk
+$FECD53-$FECD94	-> LZ data chunk
+$FECD95-$FECDD5	-> LZ data chunk
+$FECDD6-$FECE16	-> LZ data chunk
+$FECE17-$FECE57	-> LZ data chunk
+$FECE58-$FECE98	-> LZ data chunk
+$FECE99-$FECED9	-> LZ data chunk
+$FECEDA-$FECF19	-> LZ data chunk
+$FECF1A-$FECF59	-> 32-color palette
+$FECF5A-$FECF99	-> LZ data chunk
+$FECF9A-$FECFD9	-> LZ data chunk
+$FECFDA-$FED018	-> LZ data chunk
+$FED019-$FED057	-> LZ data chunk
+$FED058-$FED096	-> LZ data chunk
+$FED097-$FED0D4	-> LZ data chunk
+$FED0D5-$FED112	-> LZ data chunk
+$FED113-$FED150	-> LZ data chunk
+$FED151-$FED18E	-> LZ data chunk
+$FED18F-$FED1CB	-> LZ data chunk
+$FED1CC-$FED208	-> LZ data chunk
+$FED209-$FED245	-> LZ data chunk
+$FED246-$FED282	-> LZ data chunk
+$FED283-$FED2BE	-> LZ data chunk
+$FED2BF-$FED2FA	-> LZ data chunk
+$FED2FB-$FED335	-> LZ data chunk
+$FED336-$FED370	-> LZ data chunk
+$FED371-$FED3AB	-> LZ data chunk
+$FED3AC-$FED3E6	-> LZ data chunk
+$FED3E7-$FED421	-> LZ data chunk
+$FED422-$FED45C	-> LZ data chunk
+$FED45D-$FED496	-> LZ data chunk
+$FED497-$FED4D0	-> LZ data chunk
+$FED4D1-$FED50A	-> LZ data chunk
+$FED50B-$FED544	-> LZ data chunk
+$FED545-$FED57D	-> LZ data chunk
+$FED57E-$FED5B6	-> LZ data chunk
+$FED5B7-$FED5EF	-> LZ data chunk
+$FED5F0-$FED628	-> LZ data chunk
+$FED629-$FED661	-> LZ data chunk
+$FED662-$FED69A	-> S-DD1 data chunk
+$FED69B-$FED6D3	-> S-DD1 data chunk
+$FED6D4-$FED70B	-> LZ data chunk
+$FED70C-$FED743	-> LZ data chunk
+$FED744-$FED77B	-> LZ data chunk
+$FED77C-$FED7B3	-> LZ data chunk
+$FED7B4-$FED7EB	-> LZ data chunk
+$FED7EC-$FED823	-> LZ data chunk
+$FED824-$FED85B	-> LZ data chunk
+$FED85C-$FED893	-> LZ data chunk
+$FED894-$FED8CA	-> LZ data chunk
+$FED8CB-$FED901	-> LZ data chunk
+$FED902-$FED938	-> LZ data chunk
+$FED939-$FED96F	-> LZ data chunk
+$FED970-$FED9A6	-> LZ data chunk
+$FED9A7-$FED9DC	-> LZ data chunk
+$FED9DD-$FEDA12	-> LZ data chunk
+$FEDA13-$FEDA48	-> LZ data chunk
+$FEDA49-$FEDA7E	-> LZ data chunk
+$FEDA7F-$FEDAB3	-> LZ data chunk
+$FEDAB4-$FEDAE8	-> LZ data chunk
+$FEDAE9-$FEDB1D	-> LZ data chunk
+$FEDB1E-$FEDB52	-> LZ data chunk
+$FEDB53-$FEDB87	-> LZ data chunk
+$FEDB88-$FEDBBC	-> LZ data chunk
+$FEDBBD-$FEDBF1	-> LZ data chunk
+$FEDBF2-$FEDC26	-> LZ data chunk
+$FEDC27-$FEDC5B	-> LZ data chunk
+$FEDC5C-$FEDC90	-> S-DD1 data chunk
+$FEDC91-$FEDCC4	-> LZ data chunk
+$FEDCC5-$FEDCF8	-> LZ data chunk
+$FEDCF9-$FEDD2C	-> LZ data chunk
+$FEDD2D-$FEDD60	-> LZ data chunk
+$FEDD61-$FEDD94	-> LZ data chunk
+$FEDD95-$FEDDC8	-> LZ data chunk
+$FEDDC9-$FEDDFC	-> LZ data chunk
+$FEDDFD-$FEDE2F	-> LZ data chunk
+$FEDE30-$FEDE62	-> LZ data chunk
+$FEDE63-$FEDE95	-> LZ data chunk
+$FEDE96-$FEDEC8	-> LZ data chunk
+$FEDEC9-$FEDEFB	-> LZ data chunk
+$FEDEFC-$FEDF2E	-> LZ data chunk
+$FEDF2F-$FEDF61	-> S-DD1 data chunk
+$FEDF62-$FEDF93	-> LZ data chunk
+$FEDF94-$FEDFC5	-> LZ data chunk
+$FEDFC6-$FEDFF7	-> LZ data chunk
+$FEDFF8-$FEE029	-> LZ data chunk
+$FEE02A-$FEE05B	-> LZ data chunk
+$FEE05C-$FEE08D	-> LZ data chunk
+$FEE08E-$FEE0BE	-> LZ data chunk
+$FEE0BF-$FEE0EF	-> LZ data chunk
+$FEE0F0-$FEE11F	-> LZ data chunk
+$FEE120-$FEE14F	-> LZ data chunk
+$FEE150-$FEE17F	-> LZ data chunk
+$FEE180-$FEE1AF	-> LZ data chunk
+$FEE1B0-$FEE1DF	-> LZ data chunk
+$FEE1E0-$FEE20F	-> LZ data chunk
+$FEE210-$FEE23E	-> LZ data chunk
+$FEE23F-$FEE26D	-> LZ data chunk
+$FEE26E-$FEE29C	-> LZ data chunk
+$FEE29D-$FEE2CB	-> LZ data chunk
+$FEE2CC-$FEE2FA	-> LZ data chunk
+$FEE2FB-$FEE329	-> LZ data chunk
+$FEE32A-$FEE358	-> LZ data chunk
+$FEE359-$FEE387	-> LZ data chunk
+$FEE388-$FEE3B6	-> LZ data chunk
+$FEE3B7-$FEE3E5	-> S-DD1 data chunk
+$FEE3E6-$FEE413	-> LZ data chunk
+$FEE414-$FEE441	-> LZ data chunk
+$FEE442-$FEE46F	-> LZ data chunk
+$FEE470-$FEE49C	-> LZ data chunk
+$FEE49D-$FEE4C9	-> LZ data chunk
+$FEE4CA-$FEE4F6	-> LZ data chunk
+$FEE4F7-$FEE523	-> LZ data chunk
+$FEE524-$FEE54F	-> LZ data chunk
+$FEE550-$FEE57B	-> LZ data chunk
+$FEE57C-$FEE5A7	-> LZ data chunk
+$FEE5A8-$FEE5D3	-> LZ data chunk
+$FEE5D4-$FEE5FF	-> LZ data chunk
+$FEE600-$FEE62B	-> S-DD1 data chunk
+$FEE62C-$FEE656	-> LZ data chunk
+$FEE657-$FEE681	-> LZ data chunk
+$FEE682-$FEE6AC	-> LZ data chunk
+$FEE6AD-$FEE6D7	-> LZ data chunk
+$FEE6D8-$FEE702	-> LZ data chunk
+$FEE703-$FEE72D	-> LZ data chunk
+$FEE72E-$FEE758	-> LZ data chunk
+$FEE759-$FEE783	-> LZ data chunk
+$FEE784-$FEE7AD	-> LZ data chunk
+$FEE7AE-$FEE7D7	-> LZ data chunk
+$FEE7D8-$FEE801	-> LZ data chunk
+$FEE802-$FEE82B	-> LZ data chunk
+$FEE82C-$FEE855	-> LZ data chunk
+$FEE856-$FEE87F	-> LZ data chunk
+$FEE880-$FEE8A8	-> LZ data chunk
+$FEE8A9-$FEE8D1	-> LZ data chunk
+$FEE8D2-$FEE8FA	-> LZ data chunk
+$FEE8FB-$FEE923	-> LZ data chunk
+$FEE924-$FEE94C	-> LZ data chunk
+$FEE94D-$FEE974	-> LZ data chunk
+$FEE975-$FEE99C	-> LZ data chunk
+$FEE99D-$FEE9C4	-> LZ data chunk
+$FEE9C5-$FEE9EC	-> LZ data chunk
+$FEE9ED-$FEEA14	-> LZ data chunk
+$FEEA15-$FEEA3B	-> LZ data chunk
+$FEEA3C-$FEEA62	-> LZ data chunk
+$FEEA63-$FEEA89	-> LZ data chunk
+$FEEA8A-$FEEAB0	-> LZ data chunk
+$FEEAB1-$FEEAD7	-> LZ data chunk
+$FEEAD8-$FEEAFE	-> S-DD1 sprite tileset
+$FEEAFF-$FEEB24	-> LZ data chunk
+$FEEB25-$FEEB4A	-> LZ data chunk
+$FEEB4B-$FEEB70	-> LZ data chunk
+$FEEB71-$FEEB96	-> LZ data chunk
+$FEEB97-$FEEBBC	-> LZ data chunk
+$FEEBBD-$FEEBE2	-> LZ data chunk
+$FEEBE3-$FEEC08	-> LZ data chunk
+$FEEC09-$FEEC2E	-> LZ data chunk
+$FEEC2F-$FEEC54	-> LZ data chunk
+$FEEC55-$FEEC7A	-> LZ data chunk
+$FEEC7B-$FEEC9F	-> LZ data chunk
+$FEECA0-$FEECC4	-> LZ data chunk
+$FEECC5-$FEECE9	-> LZ data chunk
+$FEECEA-$FEED0E	-> LZ data chunk
+$FEED0F-$FEED33	-> LZ data chunk
+$FEED34-$FEED58	-> LZ data chunk
+$FEED59-$FEED7D	-> LZ data chunk
+$FEED7E-$FEEDA2	-> LZ data chunk
+$FEEDA3-$FEEDC6	-> LZ data chunk
+$FEEDC7-$FEEDEA	-> LZ data chunk
+$FEEDEB-$FEEE0E	-> LZ data chunk
+$FEEE0F-$FEEE32	-> LZ data chunk
+$FEEE33-$FEEE56	-> LZ data chunk
+$FEEE57-$FEEE7A	-> LZ data chunk
+$FEEE7B-$FEEE9D	-> LZ data chunk
+$FEEE9E-$FEEEC0	-> LZ data chunk
+$FEEEC1-$FEEEE3	-> LZ data chunk
+$FEEEE4-$FEEF06	-> LZ data chunk
+$FEEF07-$FEEF29	-> LZ data chunk
+$FEEF2A-$FEEF4C	-> LZ data chunk
+$FEEF4D-$FEEF6F	-> LZ data chunk
+$FEEF70-$FEEF91	-> LZ data chunk
+$FEEF92-$FEEFB3	-> LZ data chunk
+$FEEFB4-$FEEFD5	-> LZ data chunk
+$FEEFD6-$FEEFF7	-> LZ data chunk
+$FEEFF8-$FEF019	-> LZ data chunk
+$FEF01A-$FEF03B	-> LZ data chunk
+$FEF03C-$FEF05D	-> LZ data chunk
+$FEF05E-$FEF07F	-> LZ data chunk
+$FEF080-$FEF0A0	-> S-DD1 data chunk
+$FEF0A1-$FEF0C1	-> S-DD1 data chunk
+$FEF0C2-$FEF0E2	-> S-DD1 data chunk
+$FEF0E3-$FEF103	-> S-DD1 data chunk
+$FEF104-$FEF124	-> LZ data chunk
+$FEF125-$FEF145	-> LZ data chunk
+$FEF146-$FEF166	-> LZ data chunk
+$FEF167-$FEF187	-> LZ data chunk
+$FEF188-$FEF1A8	-> LZ data chunk
+$FEF1A9-$FEF1C8	-> unused palette 16-color data
+$FEF1C9-$FEF1E8	-> palette 16-color data
+$FEF1E9-$FEF208	-> LZ data chunk
+$FEF209-$FEF228	-> LZ data chunk
+$FEF229-$FEF248	-> LZ data chunk
+$FEF249-$FEF268	-> LZ data chunk
+$FEF269-$FEF288	-> palette 16-colour data
+$FEF289-$FEF2A8	-> LZ data chunk
+$FEF2A9-$FEF348	-> palette color data
+$FEF349-$FEF368	-> LZ data chunk
+$FEF369-$F3F668	-> palette color data
+$FEF669-$FEF687	-> LZ data chunk
+$FEF688-$FEF6A6	-> LZ data chunk
+$FEF6A7-$FEF6C5	-> LZ data chunk
+$FEF6C6-$FEF6E4	-> LZ data chunk
+$FEF6E5-$FEF703	-> LZ data chunk
+$FEF704-$FEF722	-> LZ data chunk
+$FEF723-$FEF741	-> LZ data chunk
+$FEF742-$FEF760	-> LZ data chunk
+$FEF761-$FEF77F	-> LZ data chunk
+$FEF780-$FEF79E	-> LZ data chunk
+$FEF79F-$FEF7BD	-> LZ data chunk
+$FEF7BE-$FEF7DC	-> LZ data chunk
+$FEF7DD-$FEF7FB	-> LZ data chunk
+$FEF7FC-$FEF81A	-> LZ data chunk
+$FEF81B-$FEF838	-> LZ data chunk
+$FEF839-$FEF856	-> LZ data chunk
+$FEF857-$FEF874	-> LZ data chunk
+$FEF875-$FEF892	-> LZ data chunk
+$FEF893-$FEF8B0	-> LZ data chunk
+$FEF8B1-$FEF8CE	-> LZ data chunk
+$FEF8CF-$FEF8EC	-> LZ data chunk
+$FEF8ED-$FEF90A	-> LZ data chunk
+$FEF90B-$FEF927	-> LZ data chunk
+$FEF928-$FEF944	-> LZ data chunk
+$FEF945-$FEF961	-> LZ data chunk
+$FEF962-$FEF97E	-> LZ data chunk
+$FEF97F-$FEF99B	-> LZ data chunk
+$FEF99C-$FEF9B8	-> LZ data chunk
+$FEF9B9-$FEF9D5	-> LZ data chunk
+$FEF9D6-$FEF9F2	-> LZ data chunk
+$FEF9F3-$FEFA0F	-> LZ data chunk
+$FEFA10-$FEFA2C	-> LZ data chunk
+$FEFA2D-$FEFA48	-> LZ data chunk
+$FEFA49-$FEFA64	-> LZ data chunk
+$FEFA65-$FEFA80	-> LZ data chunk
+$FEFA81-$FEFA9C	-> LZ data chunk
+$FEFA9D-$FEFAB8	-> S-DD1 data chunk
+$FEFAB9-$FEFAD4	-> S-DD1 data chunk
+$FEFAD5-$FEFAF0	-> S-DD1 data chunk
+$FEFAF1-$FEFB0C	-> S-DD1 data chunk
+$FEFB0D-$FEFB28	-> LZ data chunk
+$FEFB29-$FEFB44	-> LZ data chunk
+$FEFB45-$FEFB60	-> LZ data chunk
+$FEFB61-$FEFB7C	-> LZ data chunk
+$FEFB7D-$FEFB98	-> LZ data chunk
+$FEFB99-$FEFBB4	-> LZ data chunk
+$FEFBB5-$FEFBD0	-> LZ data chunk
+$FEFBD1-$FEFBEB	-> LZ data chunk
+$FEFBEC-$FEFC06	-> LZ data chunk
+$FEFC07-$FEFC21	-> LZ data chunk
+$FEFC22-$FEFC3C	-> LZ data chunk
+$FEFC3D-$FEFC57	-> LZ data chunk
+$FEFC58-$FEFC71	-> LZ data chunk
+$FEFC72-$FEFC8A	-> LZ data chunk
+$FEFC8B-$FEFCA2	-> LZ data chunk
+$FEFCA3-$FEFCBA	-> LZ data chunk
+$FEFCBB-$FEFCD1	-> LZ data chunk
+$FEFCD2-$FEFCE8	-> LZ data chunk
+$FEFCE9-$FEFCFF	-> LZ data chunk
+$FEFD00-$FEFD15	-> LZ data chunk
+$FEFD16-$FEFD2B	-> LZ data chunk
+$FEFD2C-$FEFD41	-> LZ data chunk
+$FEFD42-$FEFD57	-> LZ data chunk
+$FEFD58-$FEFD6D	-> LZ data chunk
+$FEFD6E-$FEFD78	-> S-DD1 data chunk
+$FEFD79-$FEFD83	-> S-DD1 data chunk
+$FEFD84-$FEFD8E	-> S-DD1 data chunk
+$FEFD8F-$FEFD99	-> S-DD1 data chunk
+$FEFD9A-$FEFDA4	-> S-DD1 data chunk
+$FEFDA5-$FEFDAF	-> S-DD1 data chunk
+$FEFDB0-$FEFDBA	-> S-DD1 data chunk
+$FEFDBB-$FEFE1B -> palette color data
+$FEFE1C-$FEFFFF	-> padding
+
+
+
+BANK $FF
+--------
+$FF0000-$FFC7FF	-> 1BPP japanese font
+$FFC800-$FFED2E	-> LZ-compressed scene configuration
+$FFED2F-$FFEFFF	-> padding
+$FFF000-$FFFFFF	-> palette color data
+
+
+
+BANK $40 (MAPPED TO SNES BANK $E0)
+----------------------------------
+$E00000-$E03C14	-> SPC700 sample block 528
+$E03C15-$E072CC	-> S-DD1 data chunk
+$E072CD-$E0A5E1	-> SPC700 sample block 77
+$E0A5E2-$E0D84B	-> SPC700 sample block 572
+$E0D84C-$E0FEB8	-> SPC700 sample block 344
+$E0FEB9-$E0FFA3	-> LZ data chunk
+$E0FFA4-$E0FFFB	-> LZ data chunk
+$E0FF4C-$E0FFFF -> padding
+
+
+
+BANK $41 (MAPPED TO SNES BANK $E1)
+----------------------------------
+$E10000-$E12EA6	-> SPC700 sample block 381
+$E12EA7-$E15C7E	-> SPC700 sample block 79
+$E15C7F-$E189EA	-> SPC700 sample block 564
+$E189EB-$E1B474	-> SPC700 sample block 377
+$E1B475-$E1DEC8	-> SPC700 sample block 314
+$E1DEC9-$E1FFC2	-> SPC700 sample block 529
+$E1FFC3-$E1FFE6	-> SPC700 sample block 6
+$E1FFE7-$E1FFFF	-> padding
+
+
+BANK $42 (MAPPED TO SNES BANK $E2)
+----------------------------------
+$E20000-$E228BE	-> SPC700 sample block 571
+$E228BF-$E25147	-> SPC700 sample block 339
+$E25148-$E279BE	-> SPC700 sample block 585
+$E279BF-$E29FE3	-> SPC700 sample block 334
+$E29FE4-$E2C419	-> SPC700 sample block 368
+$E2C41A-$E2E6D5	-> SPC700 sample block 500
+$E2E6D6-$E2FF83	-> SPC700 sample block 338
+$E2FF84-$E2FFEF	-> SPC700 sample block 30
+$E1FFF0-$E2FFFF	-> padding
+
+
+BANK $43 (MAPPED TO SNES BANK $E3)
+----------------------------------
+$E30000-$E3227C	-> SPC700 sample block 530
+$E3227D-$E344D0	-> LZ data chunk (SPC700 code)
+$E344D1-$E36717	-> SPC700 sample block 513
+$E36718-$E388F2	-> SPC700 sample block 362
+$E388F3-$E3AAC4	-> SPC700 sample block 183
+$E3AAC5-$E3CC96	-> SPC700 sample block 335
+$E3CC97-$E3EC79	-> SPC700 sample block 80
+$E3EC7A-$E3FFEA	-> SPC700 sample block 457
+$E3FFEB-$E3FFFF	-> padding
+
+
+BANK $44 (MAPPED TO SNES BANK $E4)
+----------------------------------
+$E40000-$E41FE2	-> SPC700 sample block 345
+$E41FE3-$E43F47	-> SPC700 sample block 131
+$E43F48-$E45E7F	-> SPC700 sample block 65
+$E45E80-$E47D39	-> SPC700 sample block 366
+$E47D3A-$E49B75	-> SPC700 sample block 333
+$E49B76-$E4B957	-> SPC700 sample block 75
+$E4B958-$E4D730	-> SPC700 sample block 331
+$E4D731-$E4F362	-> SPC700 sample block 317
+$E4F363-$E4FFF8	-> SPC700 sample block 62
+$E4FFF9-$E4FFFF	-> padding
+
+
+BANK $45 (MAPPED TO SNES BANK $E5)
+----------------------------------
+$E50000-$E51C1F	-> SPC700 sample block 232
+$E51C20-$E53800	-> SPC700 sample block 340
+$E53801-$E55399	-> SPC700 sample block 127
+$E5539A-$E56EFC	-> SPC700 sample block 265
+$E56EFD-$E58A44	-> SPC700 sample block 584
+$E58A45-$E5A55F	-> SPC700 sample block 361
+$E5A560-$E5C00E	-> SPC700 sample block 587
+$E5C00F-$E5D9D3	-> SPC700 sample block 550
+$E5D9D4-$E5F25D	-> SPC700 sample block 325
+$E5F25E-$E5FFF8	-> SPC700 sample block 245
+$E5FFF9-$E5FFFF	-> padding
+
+
+BANK $46 (MAPPED TO SNES BANK $E6)
+----------------------------------
+$E60000-$E61880	-> SPC700 sample block 119
+$E61881-$E630FB	-> S-DD1 data chunk
+$E630FC-$E64973	-> SPC700 sample block 534
+$E64974-$E661EB	-> SPC700 sample block 537
+$E661EC-$E67A12	-> SPC700 sample block 364
+$E67A13-$E69230	-> SPC700 sample block 289
+$E69231-$E6AA2A	-> SPC700 sample block 324
+$E6AA2B-$E6C212	-> SPC700 sample block 290
+$E6C213-$E6D9E8	-> SPC700 sample block 28
+$E6D9E9-$E6F1AC	-> SPC700 sample block 512
+$E6F1AD-$E6FFF2	-> SPC700 sample block 503
+$E6FFF3-$E6FFFF	-> padding
+
+
+BANK $47 (MAPPED TO SNES BANK $E7)
+----------------------------------
+$E70000-$E71769	-> SPC700 sample block 185
+$E7176A-$E72ED3	-> SPC700 sample block 365
+$E72ED4-$E74634	-> SPC700 sample block 241
+$E74635-$E75D8C	-> SPC700 sample block 527
+$E75D8D-$E774DB	-> SPC700 sample block 266
+$E774DC-$E78C18	-> SPC700 sample block 357
+$E78C19-$E7A31E	-> SPC700 sample block 184
+$E7A31F-$E7B9CB	-> SPC700 sample block 214
+$E7B9CC-$E7D078	-> SPC700 sample block 303
+$E7D079-$E7E725	-> SPC700 sample block 38
+$E7E726-$E7FDC9	-> SPC700 sample block 269
+$E7FDCA-$E7FFF7	-> SPC700 sample block 27
+$E7FFF8-$E7FFFF	-> padding
+
+
+BANK $48 (MAPPED TO SNES BANK $E8)
+----------------------------------
+$E80000-$E816A3	-> SPC700 sample block 336
+$E816A4-$E82D3F	-> LZ data chunk
+$E82D40-$E843DA	-> SPC700 sample block 292
+$E843DB-$E85A51	-> SPC700 sample block 260
+$E85A52-$E8709B	-> SPC700 sample block 566
+$E8709C-$E8869D	-> SPC700 sample block 415
+$E8869E-$E89C84	-> SPC700 sample block 59
+$E89C85-$E8B1FF	-> SPC700 sample block 549
+$E8B200-$E8C768	-> SPC700 sample block 56
+$E8C769-$E8DCBF	-> SPC700 sample block 186
+$E8DCC0-$E8F216	-> SPC700 sample block 210
+$E8F217-$E8FFF0	-> SPC700 sample block 135
+$E8FFF1-$E8FFFF	-> padding
+
+
+BANK $49 (MAPPED TO SNES BANK $E9)
+----------------------------------
+$E90000-$E91544	-> SPC700 sample block 539
+$E91545-$E92A6E	-> SPC700 sample block 231
+$E92A6F-$E93F98	-> SPC700 sample block 511
+$E93F99-$E954A7	-> SPC700 sample block 273
+$E954A8-$E969A4	-> SPC700 sample block 343
+$E969A5-$E97E98	-> SPC700 sample block 319
+$E97E99-$E99383	-> SPC700 sample block 580
+$E99384-$E9A85C	-> SPC700 sample block 525
+$E9A85D-$E9BD2C	-> SPC700 sample block 281
+$E9BD2D-$E9D1E1	-> SPC700 sample block 514
+$E9D1E2-$E9E68D	-> SPC700 sample block 295
+$E9E68E-$E9FB30	-> SPC700 sample block 369
+$E9FB31-$E9FFF8	-> SPC700 sample block 37
+$E8FFF9-$E9FFFF	-> padding
+
+
+BANK $4A (MAPPED TO SNES BANK $EA)
+----------------------------------
+$EA0000-$EA145A	-> SPC700 sample block 129
+$EA145B-$EA28B5	-> SPC700 sample block 199
+$EA28B6-$EA3D10	-> SPC700 sample block 510
+$EA3D11-$EA5162	-> SPC700 sample block 583
+$EA5163-$EA65A2	-> SPC700 sample block 318
+$EA65A3-$EA797F	-> SPC700 sample block 536
+$EA7980-$EA8D53	-> SPC700 sample block 225
+$EA8D54-$EAA127	-> SPC700 sample block 316
+$EAA128-$EAB4E0	-> SPC700 sample block 209
+$EAB4E1-$EAC887	-> SPC700 sample block 459
+$EAC888-$EADBE6	-> SPC700 sample block 249
+$EADBE7-$EAEF0F	-> SPC700 sample block 206
+$EAEF10-$EAFFF8	-> SPC700 sample block 531
+$EAFFF9-$EAFFFF	-> padding
+
+
+BANK $4B (MAPPED TO SNES BANK $EB)
+----------------------------------
+$EB0000-$EB131F	-> SPC700 sample block 108
+$EB1320-$EB2636	-> SPC700 sample block 538
+$EB2637-$EB3934	-> LZ data chunk
+$EB3935-$EB4C30	-> SPC700 sample block 107
+$EB4C31-$EB5F2C	-> SPC700 sample block 323
+$EB5F2D-$EB721F	-> SPC700 sample block 347
+$EB7220-$EB8500	-> SPC700 sample block 548
+$EB8501-$EB97C6	-> SPC700 sample block 492
+$EB97C7-$EBAA83	-> SPC700 sample block 471
+$EBAA84-$EBBD25	-> SPC700 sample block 205
+$EBBD26-$EBCFB5	-> SPC700 sample block 102
+$EBCFB6-$EBE233	-> SPC700 sample block 267
+$EBE234-$EBF4A8	-> SPC700 sample block 140
+$EBF4A9-$EBFFF1	-> SPC700 sample block 438
+$EBFFF2-$EBFFFF	-> padding
+
+
+BANK $4C (MAPPED TO SNES BANK $EC)
+----------------------------------
+$EC0000-$EC1250	-> SPC700 sample block 109
+$EC1251-$EC24A1	-> SPC700 sample block 337
+$EC24A2-$EC36E0	-> SPC700 sample block 400
+$EC36E1-$EC4916	-> SPC700 sample block 274
+$EC4917-$EC5B4C	-> SPC700 sample block 461
+$EC5B4D-$EC6D70	-> SPC700 sample block 118
+$EC6D71-$EC7F82	-> SPC700 sample block 455
+$EC7F83-$EC9179	-> SPC700 sample block 372
+$EC917A-$ECA343	-> SPC700 sample block 106
+$ECA344-$ECB4E9	-> SPC700 sample block 166
+$ECB4EA-$ECC67D	-> SPC700 sample block 55
+$ECC67E-$ECD808	-> SPC700 sample block 288
+$ECD809-$ECE993	-> SPC700 sample block 405
+$ECE994-$ECFB1E	-> SPC700 sample block 547
+$ECFB1F-$ECFFF8	-> SPC700 sample block 422
+$ECFFF9-$ECFFFF	-> padding
+
+
+BANK $4D (MAPPED TO SNES BANK $ED)
+----------------------------------
+$ED0000-$ED1178	-> SPC700 sample block 261
+$ED1179-$ED22F1	-> SPC700 sample block 356
+$ED22F2-$ED3461	-> SPC700 sample block 517
+$ED3462-$ED45C8	-> SPC700 sample block 191
+$ED45C9-$ED572F	-> SPC700 sample block 268
+$ED5730-$ED687B	-> SPC700 sample block 453
+$ED687C-$ED79BE	-> SPC700 sample block 105
+$ED79BF-$ED8B01	-> SPC700 sample block 332
+$ED8B02-$ED9C29	-> SPC700 sample block 272
+$ED9C2A-$EDAD3F	-> SPC700 sample block 495
+$EDAD40-$EDBE43	-> SPC700 sample block 64
+$EDBE44-$EDCF23	-> SPC700 sample block 207
+$EDCF24-$EDDFFA	-> SPC700 sample block 330
+$EDDFFB-$EDF0B6	-> SPC700 sample block 312
+$EDF0B7-$EDFFF8	-> SPC700 sample block 477
+$EDFFF9-$EDFFFF	-> padding
+
+
+BANK $4E (MAPPED TO SNES BANK $EE)
+----------------------------------
+$EE0000-$EE10BB	-> SPC700 sample block 451
+$EE10BC-$EE216E	-> SPC700 sample block 54
+$EE216F-$EE3221	-> SPC700 sample block unused
+$EE3222-$EE42D4	-> SPC700 sample block 452
+$EE42D5-$EE537E	-> SPC700 sample block 115
+$EE537F-$EE6416	-> SPC700 sample block 370
+$EE6417-$EE74A5	-> SPC700 sample block 416
+$EE74A6-$EE852B	-> SPC700 sample block 116
+$EE852C-$EE95B1	-> SPC700 sample block 326
+$EE95B2-$EEA625	-> SPC700 sample block 521
+$EEA626-$EEB690	-> SPC700 sample block 134
+$EEB691-$EEC6FB	-> SPC700 sample block 402
+$EEC6FC-$EED766	-> SPC700 sample block 447
+$EED767-$EEE7B6	-> SPC700 sample block 53
+$EEE7B7-$EEF7FD	-> SPC700 sample block 133
+$EEF7FE-$EEFFF8	-> SPC700 sample block 132
+$EEFFF9-$EEFFFF	-> padding
+
+
+BANK $4F (MAPPED TO SNES BANK $EF)
+----------------------------------
+$EF0000-$EF1046	-> SPC700 sample block 515
+$EF1047-$EF2069	-> SPC700 sample block 384
+$EF206A-$EF3083	-> SPC700 sample block 526
+$EF3084-$EF4094	-> SPC700 sample block 117
+$EF4095-$EF508A	-> SPC700 sample block 203
+$EF508B-$EF6077	-> SPC700 sample block 43
+$EF6078-$EF7052	-> SPC700 sample block 83
+$EF7053-$EF802D	-> SPC700 sample block 111
+$EF802E-$EF9008	-> SPC700 sample block 254
+$EF9009-$EF9FDA	-> SPC700 sample block 141
+$EF9FDB-$EFAF9A	-> SPC700 sample block 229
+$EFAF9B-$EFBF5A	-> SPC700 sample block 311
+$EFBF5B-$EFCF11	-> SPC700 sample block 91
+$EFCF12-$EFDEC8	-> SPC700 sample block 154
+$EFDEC9-$EFEE7F	-> SPC700 sample block 351
+$EFEE80-$EFFE36	-> SPC700 sample block 546
+$EFFE37-$EFFFF8	-> SPC700 sample block 49
+$EFFFF9-$EFFFFF	-> padding
+
+
+BANK $50 (MAPPED TO SNES BANK $F0)
+----------------------------------
+$F00000-$F00FAD	-> SPC700 sample block 60
+$F00FAE-$F01F52	-> SPC700 sample block 297
+$F01F53-$F02EF7	-> SPC700 sample block 403
+$F02EF8-$F03E93	-> SPC700 sample block 291
+$F03E94-$F04E26	-> SPC700 sample block 153
+$F04E27-$F05DB0	-> SPC700 sample block 61
+$F05DB1-$F06D3A	-> SPC700 sample block 523
+$F06D3B-$F07CB2	-> SPC700 sample block 190
+$F07CB3-$F08C21	-> SPC700 sample block 385
+$F08C22-$F09B87	-> SPC700 sample block 216
+$F09B88-$F0AAED	-> SPC700 sample block 40
+$F0AAEE-$F0BA38	-> SPC700 sample block 445
+$F0BA39-$F0C983	-> SPC700 sample block 475
+$F0C984-$F0D8C5	-> SPC700 sample block 496
+$F0D8C6-$F0E7EC	-> SPC700 sample block 406
+$F0E7ED-$F0F70A	-> SPC700 sample block 248
+$F0F70B-$F0FFF9	-> LZ data chunk
+$F0FFFA-$F0FFFF	-> padding
+
+
+BANK $51 (MAPPED TO SNES BANK $F1)
+----------------------------------
+$F10000-$F10F14	-> SPC700 sample block 463
+$F10F15-$F11E29	-> SPC700 sample block 476
+$F11E2A-$F12D35	-> SPC700 sample block 489
+$F12D36-$F13C41	-> SPC700 sample block 561
+$F13C42-$F14B44	-> SPC700 sample block 313
+$F14B45-$F15A3E	-> SPC700 sample block 410
+$F15A3F-$F1692F	-> SPC700 sample block 282
+$F16930-$F17820	-> SPC700 sample block 449
+$F17821-$F18708	-> SPC700 sample block 382
+$F18709-$F195F0	-> SPC700 sample block 516
+$F195F1-$F1A4C6	-> SPC700 sample block 435
+$F1A4C7-$F1B39C	-> SPC700 sample block 577
+$F1B39D-$F1C245	-> SPC700 sample block 388
+$F1C246-$F1D0D3	-> SPC700 sample block 138
+$F1D0D4-$F1DF61	-> SPC700 sample block 359
+$F1DF62-$F1EDE6	-> SPC700 sample block 392
+$F1EDE7-$F1FC62	-> SPC700 sample block 494
+$F1FC63-$F1FFF8	-> SPC700 sample block 270
+$F1FFF9-$F1FFFF	-> padding
+
+
+BANK $52 (MAPPED TO SNES BANK $F2)
+----------------------------------
+$F20000-$F20E7B	-> SPC700 sample block 519
+$F20E7C-$F21C9D	-> SPC700 sample block 128
+$F21C9E-$F22AB6	-> SPC700 sample block 342
+$F22AB7-$F238C6	-> SPC700 sample block 233
+$F238C7-$F246D6	-> SPC700 sample block 258
+$F246D7-$F254E6	-> SPC700 sample block 298
+$F254E7-$F262F6	-> SPC700 sample block 533
+$F262F7-$F27106	-> SPC700 sample block 570
+$F27107-$F27F04	-> SPC700 sample block 221
+$F27F05-$F28D02	-> SPC700 sample block 395
+$F28D03-$F29B00	-> SPC700 sample block 520
+$F29B01-$F2A8F5	-> SPC700 sample block 222
+$F2A8F6-$F2B6EA	-> SPC700 sample block 466
+$F2B6EB-$F2C4C4	-> SPC700 sample block 386
+$F2C4C5-$F2D29E	-> SPC700 sample block 431
+$F2D29F-$F2E078	-> SPC700 sample block 488
+$F2E079-$F2EE49	-> SPC700 sample block 508
+$F2EE4A-$F2FC11	-> SPC700 sample block 450
+$F2FC12-$F2FFEF	-> SPC700 sample block 125
+$F2FFF0-$F2FFFF	-> padding
+
+
+BANK $53 (MAPPED TO SNES BANK $F3)
+----------------------------------
+$F30000-$F30DBE	-> SPC700 sample block 504
+$F30DBF-$F31B74	-> SPC700 sample block 179
+$F31B75-$F32918	-> SPC700 sample block 394
+$F32919-$F336BC	-> SPC700 sample block 522
+$F336BD-$F34460	-> SPC700 sample block 562
+$F34461-$F351FB	-> SPC700 sample block 390
+$F351FC-$F35F96	-> SPC700 sample block 490
+$F35F97-$F36D28	-> SPC700 sample block 157
+$F36D29-$F37AA8	-> SPC700 sample block 441
+$F37AA9-$F38816	-> SPC700 sample block 200
+$F38817-$F39584	-> SPC700 sample block 280
+$F39585-$F3A2F2	-> SPC700 sample block 434
+$F3A2F3-$F3B060	-> SPC700 sample block 443
+$F3B061-$F3BDCE	-> SPC700 sample block 491
+$F3BDCF-$F3CB2A	-> SPC700 sample block 315
+$F3CB2B-$F3D87D	-> SPC700 sample block 437
+$F3D87E-$F3E5C7	-> SPC700 sample block 239
+$F3E5C8-$F3F311	-> SPC700 sample block 482
+$F3F312-$F3FFF8	-> SPC700 sample block 371
+$F3FFF9-$F3FFFF	-> padding
+
+
+
+BANK $54 (MAPPED TO SNES BANK $F4)
+----------------------------------
+$F40000-$F40D40	-> SPC700 sample block 432
+$F40D41-$F41A81	-> SPC700 sample block 474
+$F41A82-$F427B0	-> SPC700 sample block 123
+$F427B1-$F434D6	-> SPC700 sample block 284
+$F434D7-$F441F3	-> SPC700 sample block 404
+$F441F4-$F44F10	-> SPC700 sample block 428
+$F44F11-$F45C2D	-> SPC700 sample block 544
+$F45C2E-$F46941	-> SPC700 sample block 121
+$F46942-$F47655	-> SPC700 sample block 509
+$F47656-$F48357	-> SPC700 sample block 223
+$F48358-$F49059	-> SPC700 sample block 436
+$F4905A-$F49D5B	-> SPC700 sample block 46
+$F49D5C-$F4AA54	-> SPC700 sample block 563
+$F4AA55-$F4B729	-> SPC700 sample block 299
+$F4B72A-$F4C3EC	-> SPC700 sample block 425
+$F4C3ED-$F4D0A6	-> SPC700 sample block 352
+$F4D0A7-$F4DD60	-> SPC700 sample block 484
+$F4DD61-$F4EA11	-> SPC700 sample block 215
+$F4EA12-$F4F6B9	-> SPC700 sample block 181
+$F4F6BA-$F4FFF8	-> SPC700 sample block 172
+$F4FFF9-$F4FFFF	-> padding
+
+
+BANK $55 (MAPPED TO SNES BANK $F5)
+----------------------------------
+$F50000-$F50C9E	-> SPC700 sample block 448
+$F50C9F-$F51934	-> SPC700 sample block 353
+$F51935-$F525CA	-> SPC700 sample block 439
+$F525CB-$F53260	-> SPC700 sample block 468
+$F53261-$F53EED	-> SPC700 sample block 208
+$F53EEE-$F54B7A	-> SPC700 sample block 480
+$F54B7B-$F557F5	-> SPC700 sample block 101
+$F557F6-$F56470	-> SPC700 sample block 136
+$F56471-$F570EA -> LZ data chunk       
+$F570EB-$F57D5C	-> SPC700 sample block 375
+$F57D5D-$F589CE	-> SPC700 sample block 407
+$F589CF-$F59640	-> SPC700 sample block 569
+$F59641-$F5A2B2	-> SPC700 sample block 581
+$F5A2B3-$F5AF12	-> SPC700 sample block 419
+$F5AF13-$F5BB72	-> SPC700 sample block 575
+$F5BB73-$F5C7D2	-> SPC700 sample block 582
+$F5C7D3-$F5D429	-> SPC700 sample block 114
+$F5D42A-$F5E080	-> SPC700 sample block 202
+$F5E081-$F5ECCE	-> SPC700 sample block 454
+$F5ECCF-$F5F91C	-> SPC700 sample block 586
+$F5F91D-$F5FFCA	-> SPC700 sample block 418
+$F5FFCB-$F5FFFF	-> padding
+
+
+BANK $56 (MAPPED TO SNES BANK $F6)
+----------------------------------
+$F60000-$F60C44	-> SPC700 sample block 374
+$F60C45-$F61882	-> LZ data chunk
+$F61883-$F624BE	-> SPC700 sample block 226
+$F624BF-$F630E8	-> SPC700 sample block 142
+$F630E9-$F63D09	-> SPC700 sample block 420
+$F63D0A-$F64918	-> SPC700 sample block 112
+$F64919-$F6551E	-> SPC700 sample block 397
+$F6551F-$F6611B	-> SPC700 sample block 39
+$F6611C-$F66D06	-> SPC700 sample block 146
+$F66D07-$F678E8	-> SPC700 sample block 387
+$F678E9-$F684CA	-> SPC700 sample block 551
+$F684CB-$F690AC	-> SPC700 sample block 22
+$F690AD-$F69C85	-> SPC700 sample block 201
+$F69C86-$F6A85E	-> SPC700 sample block 354
+$F6A85F-$F6B42E	-> SPC700 sample block 227
+$F6B42F-$F6BFFE	-> SPC700 sample block 423
+$F6BFFF-$F6CBBC	-> SPC700 sample block 58
+$F6CBBD-$F6D77A	-> SPC700 sample block 122
+$F6D77B-$F6E338	-> SPC700 sample block 196
+$F6E339-$F6EEED	-> SPC700 sample block 304
+$F6EEEE-$F6FAA2	-> SPC700 sample block 48
+$F6FAA3-$F6FFD6	-> SPC700 sample block 236
+$F6FFD7-$F6FFFF	-> padding
+
+
+BANK $57 (MAPPED TO SNES BANK $F7)
+----------------------------------
+$F70000-$F70BAB	-> SPC700 sample block 259
+$F70BAC-$F7174E	-> SPC700 sample block 376
+$F7174F-$F722E8	-> SPC700 sample block 433
+$F722E9-$F72E82	-> SPC700 sample block 493
+$F72E83-$F73A0A	-> SPC700 sample block 99
+$F73A0B-$F74592	-> SPC700 sample block 430
+$F74593-$F75111	-> SPC700 sample block 296
+$F75112-$F75C90	-> SPC700 sample block 383
+$F75C91-$F76806	-> SPC700 sample block 275
+$F76807-$F7736A	-> SPC700 sample block 501
+$F7736B-$F77EC5	-> SPC700 sample block 67
+$F77EC6-$F78A20	-> SPC700 sample block 150
+$F78A21-$F79569	-> SPC700 sample block 3
+$F7956A-$F7A0A9	-> SPC700 sample block 57
+$F7A0AA-$F7ABE9	-> SPC700 sample block 429
+$F7ABEA-$F7B729	-> SPC700 sample block 456
+$F7B72A-$F7C24E	-> SPC700 sample block 243
+$F7C24F-$F7CD73	-> SPC700 sample block 507
+$F7CD74-$F7D886	-> SPC700 sample block 230
+$F7D887-$F7E399	-> SPC700 sample block 412
+$F7E39A-$F7EEA3	-> SPC700 sample block 426
+$F7EEA4-$F7F9AD	-> SPC700 sample block 479
+$F7F9AE-$F7FFF6 -> LZ data chunk
+$F7FFF7-$F7FFFF	-> padding
+
+
+BANK $58 (MAPPED TO SNES BANK $F8)
+----------------------------------
+$F80000-$F80B00	-> SPC700 sample block 411
+$F80B01-$F815F8	-> SPC700 sample block 144
+$F815F9-$F820C3	-> SPC700 sample block 246
+$F820C4-$F82B7C	-> SPC700 sample block 358
+$F82B7D-$F83633	-> LZ data chunk
+$F83634-$F840E3	-> SPC700 sample block 86
+$F840E4-$F84B8A	-> SPC700 sample block 139
+$F84B8B-$F85628	-> SPC700 sample block 72
+$F85629-$F860C6	-> SPC700 sample block 126
+$F860C7-$F86B5B	-> SPC700 sample block 198
+$F86B5C-$F875F0	-> SPC700 sample block 228
+$F875F1-$F8807C	-> SPC700 sample block 90
+$F8807D-$F88AF6	-> SPC700 sample block 21
+$F88AF7-$F89567	-> SPC700 sample block 553
+$F89568-$F89FCF	-> SPC700 sample block unused
+$F89FD0-$F8AA37	-> SPC700 sample block 182
+$F8AA38-$F8B49F	-> SPC700 sample block 237
+$F8B4A0-$F8BEFE	-> SPC700 sample block 396
+$F8BEFF-$F8C942	-> SPC700 sample block 327
+$F8C943-$F8D386	-> SPC700 sample block 417
+$F8D387-$F8DDC1	-> SPC700 sample block 253
+$F8DDC2-$F8E7F3	-> SPC700 sample block 309
+$F8E7F4-$F8F225	-> SPC700 sample block 444
+$F8F226-$F8FC45	-> SPC700 sample block 346
+$F8FC46-$F8FFF2	-> LZ data block
+$F8FFF3-$F8FFFF	-> padding
+
+
+BANK $59 (MAPPED TO SNES BANK $F9)
+----------------------------------
+$F90000-$F90A16	-> SPC700 sample block 110
+$F90A17-$F91424	-> SPC700 sample block 399
+$F91425-$F91E32	-> SPC700 sample block 478
+$F91E33-$F92837	-> SPC700 sample block 92
+$F92838-$F93233	-> SPC700 sample block 486
+$F93234-$F93C2F	-> SPC700 sample block 552
+$F93C30-$F94622	-> SPC700 sample block 197
+$F94623-$F95015	-> SPC700 sample block 263
+$F95016-$F95A08	-> SPC700 sample block 24
+$F95A09-$F963F2	-> SPC700 sample block 322
+$F963F3-$F96DDC	-> SPC700 sample block 41
+$F96DDD-$F977AB	-> SPC700 sample block 257
+$F977AC-$F9817A	-> SPC700 sample block 389
+$F9817B-$F98B40	-> SPC700 sample block 505
+$F98B41-$F994FC	-> LZ data chunk       
+$F994FD-$F99EB5	-> LZ data chunk       
+$F99EB6-$F9A860	-> SPC700 sample block 84
+$F9A861-$F9B20B	-> SPC700 sample block 96
+$F9B20C-$F9BBAD	-> SPC700 sample block 73
+$F9BBAE-$F9C54F	-> SPC700 sample block 130
+$F9C550-$F9CEE8	-> SPC700 sample block 63
+$F9CEE9-$F9D878	-> SPC700 sample block 103
+$F9D879-$F9E208	-> SPC700 sample block 247
+$F9E209-$F9EB8F	-> SPC700 sample block 194
+$F9EB90-$F9F516	-> SPC700 sample block 341
+$F9F517-$F9FE9D	-> SPC700 sample block 393
+$F9FE9E-$F9FF7E	-> SPC700 sample block 10
+$F9FF7F-$F9FFFC	-> SPC700 sample block 15
+$F9FFFD-$F9FFFF	-> padding
+
+
+
+BANK $5A (MAPPED TO SNES BANK $FA)
+----------------------------------
+$FA0000-$FA0986	-> SPC700 sample block 560
+$FA0987-$FA1304	-> SPC700 sample block 565
+$FA1305-$FA1C79	-> SPC700 sample block 74
+$FA1C7A-$FA25EE	-> SPC700 sample block 469
+$FA25EF-$FA2F5A	-> SPC700 sample block 367
+$FA2F5B-$FA38BD	-> SPC700 sample block 414
+$FA38BE-$FA4220	-> SPC700 sample block 483
+$FA4221-$FA4B7A	-> SPC700 sample block 104
+$FA4B7B-$FA54D4	-> LZ data chunk
+$FA54D5-$FA5E0A	-> SPC700 sample block 350
+$FA5E0B-$FA6737	-> SPC700 sample block 401
+$FA6738-$FA7064	-> SPC700 sample block 442
+$FA7065-$FA7988	-> SPC700 sample block 302
+$FA7989-$FA82A3	-> SPC700 sample block 137
+$FA82A4-$FA8BB5	-> SPC700 sample block 379
+$FA8BB6-$FA94BA	-> LZ data chunk
+$FA94BB-$FA9DBA	-> SPC700 sample block 163
+$FA9DBB-$FAA6BA	-> SPC700 sample block 542
+$FAA6BB-$FAAFB1	-> SPC700 sample block 473
+$FAAFB2-$FAB8A8	-> SPC700 sample block 45
+$FAB8A9-$FAC196	-> SPC700 sample block 81
+$FAC197-$FACA7C	-> LZ data chunk
+$FACA7D-$FAD346	-> SPC700 sample block 192
+$FAD347-$FADC10	-> SPC700 sample block 328
+$FADC11-$FAE4C9	-> LZ data chunk
+$FAE4CA-$FAED81	-> SPC700 sample block 277
+$FAED82-$FAF630	-> SPC700 sample block 360
+$FAF631-$FAFEDF	-> SPC700 sample block 559
+$FAFEE0-$FAFF7A	-> LZ data chunk
+$FAFF8B-$FAFFED	-> SPC700 sample block 8
+$FAFFEE-$FAFFFF	-> padding
+
+
+
+BANK $5B (MAPPED TO SNES BANK $FB)
+----------------------------------
+$FB0000-$FB08AE	-> SPC700 sample block 17
+$FB08AF-$FB1154	-> SPC700 sample block 556
+$FB1155-$FB19F1	-> SPC700 sample block 349
+$FB19F2-$FB228E	-> SPC700 sample block 355
+$FB228F-$FB2B2B	-> SPC700 sample block 380
+$FB2B2C-$FB33C8	-> SPC700 sample block 462
+$FB33C9-$FB3C4A	-> SPC700 sample block 446
+$FB3C4B-$FB44CC	-> SPC700 sample block 460
+$FB44CD-$FB4D45	-> SPC700 sample block 178
+$FB4D46-$FB55B5	-> SPC700 sample block 71
+$FB55B6-$FB5E1C	-> SPC700 sample block 235
+$FB5E1D-$FB6683	-> SPC700 sample block 545
+$FB6684-$FB6EE1	-> SPC700 sample block 568
+$FB6EE2-$FB7724	-> SPC700 sample block 262
+$FB7725-$FB7F67	-> SPC700 sample block 524
+$FB7F68-$FB87AA	-> LZ data chunk
+$FB87AB-$FB8FEC	-> LZ data chunk
+$FB8FED-$FB9826	-> SPC700 sample block 113
+$FB9827-$FBA060	-> SPC700 sample block 9
+$FBA061-$FBA891	-> SPC700 sample block 155
+$FBA892-$FBB0B2	-> LZ data chunk
+$FBB0B3-$FBB8C8	-> SPC700 sample block 310
+$FBB8C9-$FBC0BA	-> SPC700 sample block 76
+$FBC0BB-$FBC8A7	-> LZ data chunk
+$FBC8A8-$FBD087	-> SPC700 sample block 156
+$FBD088-$FBD867	-> SPC700 sample block 413
+$FBD868-$FBE047	-> SPC700 sample block 440
+$FBE048-$FBE823	-> LZ data chunk
+$FBE824-$FBEFE8	-> SPC700 sample block 204
+$FBEFE9-$FBF7AD	-> SPC700 sample block 47
+$FBF7AE-$FBFF69	-> SPC700 sample block 82
+$FBFF6A-$FBFFBA	-> SPC700 sample block 0
+$FBFFBB-$FBFFFF	-> padding
+
+
+
+BANK $5C (MAPPED TO SNES BANK $FC)
+----------------------------------
+$FC0000-$FC07BB	-> SPC700 sample block 170
+$FC07BC-$FC0F77	-> SPC700 sample block 421
+$FC0F78-$FC172A	-> SPC700 sample block 161
+$FC172B-$FC1EDD	-> SPC700 sample block 187
+$FC1EDE-$FC2690	-> SPC700 sample block 363
+$FC2691-$FC2E3A	-> SPC700 sample block 124
+$FC2E3B-$FC35DB	-> SPC700 sample block 66
+$FC35DC-$FC3D7C	-> SPC700 sample block 120
+$FC3D7D-$FC451D	-> SPC700 sample block 481
+$FC451E-$FC4CB5	-> SPC700 sample block 398
+$FC4CB6-$FC544D	-> SPC700 sample block 487
+$FC544E-$FC5BDC	-> SPC700 sample block 158
+$FC5BDD-$FC636B	-> SPC700 sample block 213
+$FC636C-$FC6AFA	-> SPC700 sample block 409
+$FC6AFB-$FC7280	-> SPC700 sample block 26
+$FC7281-$FC79F4	-> SPC700 sample block 285
+$FC79F5-$FC8168	-> SPC700 sample block 391
+$FC8169-$FC88DC	-> SPC700 sample block 458
+$FC88DD-$FC9050	-> SPC700 sample block 555
+$FC9051-$FC97C4	-> SPC700 sample block 557
+$FC97C5-$FC9F34	-> LZ data chunk                               
+$FC9F35-$FCA69F	-> SPC700 sample block 240
+$FCA6A0-$FCAE0A	-> SPC700 sample block 540
+$FCAE0B-$FCB56C	-> SPC700 sample block 147
+$FCB56D-$FCBCCE	-> SPC700 sample block 242
+$FCBCCF-$FCC430	-> SPC700 sample block 286
+$FCC431-$FCCB89	-> SPC700 sample block 220
+$FCCB8A-$FCD2E2	-> SPC700 sample block 465
+$FCD2E3-$FCDA29	-> SPC700 sample block 535
+$FCDA2A-$FCE155	-> SPC700 sample block 573
+$FCE156-$FCE86F	-> SPC700 sample block 68
+$FCE870-$FCEF80	-> SPC700 sample block 100
+$FCEF81-$FCF691	-> SPC700 sample block 558
+$FCF692-$FCFD9C	-> LZ data chunk 
+$FCFD9D-$FCFFF9	-> LZ data chunk 
+$FCFFFA-$FCFFFF	-> padding
+
+
+BANK $5D (MAPPED TO SNES BANK $FD)
+----------------------------------
+$FD0000-$FD0704	-> SPC700 sample block 472
+$FD0706-$FD0E0A	-> SPC700 sample block 485
+$FD0E0C-$FD1510	-> SPC700 sample block 499
+$FD1512-$FD1C10	-> SPC700 sample block 33
+$FD1C11-$FD230F	-> SPC700 sample block 4
+$FD2310-$FD2A05	-> SPC700 sample block 175
+$FD2A06-$FD30FB	-> SPC700 sample block 467
+$FD30FC-$FD37E8	-> SPC700 sample block 97
+$FD37E9-$FD3ED5	-> SPC700 sample block 98
+$FD3ED6-$FD45C2	-> SPC700 sample block 19
+$FD45C3-$FD4CAF	-> SPC700 sample block 2
+$FD4CB0-$FD5393	-> SPC700 sample block 554
+$FD5394-$FD5A1D	-> SPC700 sample block 176
+$FD5A1E-$FD609E	-> SPC700 sample block 78
+$FD609F-$FD671F	-> SPC700 sample block 307
+$FD6720-$FD6DA0	-> SPC700 sample block 543
+$FD6DA1-$FD7418	-> SPC700 sample block 321
+$FD7419-$FD7A8F	-> LZ data chunk                           
+$FD7A90-$FD80FE	-> SPC700 sample block 143
+$FD80FF-$FD8764	-> SPC700 sample block 244
+$FD8765-$FD8DC1	-> SPC700 sample block 329
+$FD8DC2-$FD9415	-> SPC700 sample block 148
+$FD9416-$FD9A69	-> SPC700 sample block 255
+$FD9A6A-$FDA0BD	-> SPC700 sample block 464
+$FDA0BE-$FDA6FF	-> SPC700 sample block 308
+$FDA700-$FDAD41	-> SPC700 sample block 427
+$FDAD42-$FDB37A	-> SPC700 sample block 576
+$FDB37B-$FDB9AA	-> SPC700 sample block 212
+$FDB9AB-$FDBFDA	-> LZ data chunk
+$FDBFDB-$FDC607	-> LZ data chunk
+$FDC608-$FDCC2E	-> SPC700 sample block 506
+$FDCC2F-$FDD255	-> SPC700 sample block 579
+$FDD256-$FDD87C	-> S-DD1 data chunk
+$FDD87D-$FDDE91	-> SPC700 sample block 177
+$FDDE92-$FDE4A6	-> SPC700 sample block 264
+$FDE4A7-$FDEAB2	-> SPC700 sample block 180
+$FDEAB3-$FDF0BE	-> SPC700 sample block 541
+$FDF0BF-$FDF6C1	-> SPC700 sample block 152
+$FDF6C2-$FDFCC4	-> SPC700 sample block 589
+$FDFCC5-$FDFFF7	-> SPC700 sample block 29
+$FDFFF8-$FDFFFF	-> padding
+
+
+
+BANK $5E (MAPPED TO SNES BANK $FE)
+----------------------------------
+$FE0000-$FE0601	-> LZ data chunk
+$FE0602-$FE0BF2	-> SPC700 sample block 294
+$FE0BF3-$FE11E3	-> SPC700 sample block 373
+$FE11E4-$FE17CA	-> LZ data chunk
+$FE17CB-$FE1DA9	-> SPC700 sample block 408
+$FE1DAA-$FE237F	-> SPC700 sample block 256
+$FE2380-$FE2955	-> SPC700 sample block 12
+$FE2956-$FE2F2B	-> SPC700 sample block 5
+$FE2F2C-$FE34FA	-> LZ data chunk
+$FE34FB-$FE3AC7	-> SPC700 sample block 238
+$FE3AC8-$FE4094	-> SPC700 sample block 518
+$FE4095-$FE4661	-> SPC700 sample block 32
+$FE4662-$FE4C2D	-> LZ data chunk
+$FE4C2E-$FE51F1	-> SPC700 sample block 70
+$FE51F2-$FE57AC	-> SPC700 sample block 87
+$FE57AD-$FE5D67	-> SPC700 sample block 164
+$FE5D68-$FE6310	-> SPC700 sample block 588
+$FE6311-$FE68B9	-> LZ data chunk
+$FE68BA-$FE6E3E	-> SPC700 sample block 497
+$FE6E3F-$FE73C3	-> SPC700 sample block 532
+$FE73C4-$FE7945	-> SPC700 sample block 31
+$FE7946-$FE7EBB	-> LZ data chunk
+$FE7EBC-$FE842E	-> SPC700 sample block 283
+$FE842F-$FE899D	-> S-DD1 data chunk
+$FE899E-$FE8F07	-> SPC700 sample block 320
+$FE8F08-$FE9471	-> SPC700 sample block 378
+$FE9472-$FE99DB	-> SPC700 sample block 498
+$FE99DC-$FE9F45	-> SPC700 sample block 7
+$FE9F46-$FEA4A6	-> SPC700 sample block 173
+$FEA4A7-$FEAA07	-> SPC700 sample block 502
+$FEAA08-$FEAF3B	-> SPC700 sample block 578
+$FEAF3C-$FEB465	-> LZ data chunk
+$FEB466-$FEB975	-> SPC700 sample block 42
+$FEB976-$FEBE83	-> LZ data chunk
+$FEBE84-$FEC38A	-> LZ data chunk
+$FEC38B-$FEC88E	-> SPC700 sample block 162
+$FEC88F-$FEC890 -> padding
+$FEC891-$FECD92	-> LZ data chunk
+$FECD93-$FED27E	-> SPC700 sample block 306
+$FED27F-$FED769	-> S-DD1 data chunk
+$FED76A-$FEDC3A	-> SPC700 sample block 159
+$FEDC3B-$FEE10A	-> LZ data chunk
+$FEE10B-$FEE5C9	-> SPC700 sample block 36
+$FEE5CA-$FEEA84	-> LZ data chunk
+$FEEA85-$FEEF3A	-> SPC700 sample block 234
+$FEEF3B-$FEF3EC	-> LZ data chunk
+$FEF3ED-$FEF896	-> LZ data chunk
+$FEF897-$FEFD39	-> LZ data chunk
+$FEFD3A-$FEFFEE	-> SPC700 sample block 169
+$FEFFEF-$FEFFFF	-> padding
+
+
+BANK $5F (MAPPED TO SNES BANK $FF)
+----------------------------------
+$FF0000-$FF049A	-> SPC700 sample block 95
+$FF049B-$FF0923	-> SPC700 sample block 93
+$FF0924-$FF0DA3	-> SPC700 sample block 160
+$FF0DA4-$FF1211	-> SPC700 sample block 218
+$FF1212-$FF167F	-> SPC700 sample block 23
+$FF1680-$FF1AE5	-> LZ data chunk
+$FF1AE6-$FF1F4A	-> SPC700 sample block 85
+$FF1F4B-$FF23AF	-> SPC700 sample block 348
+$FF23B0-$FF2814	-> SPC700 sample block 470
+$FF2815-$FF2C70	-> SPC700 sample block 44
+$FF2C71-$FF30C3	-> SPC700 sample block 94
+$FF30C4-$FF350D	-> SPC700 sample block 69
+$FF350E-$FF3945	-> SPC700 sample block 168
+$FF3946-$FF3D7D	-> LZ data chunk
+$FF3D7E-$FF41AC	-> SPC700 sample block 1
+$FF41AD-$FF45D3	-> LZ data chunk
+$FF45D4-$FF49F9	-> SPC700 sample block 300
+$FF49FA-$FF4E16	-> SPC700 sample block 424
+$FF4E17-$FF521F	-> LZ data chunk
+$FF5220-$FF5621	-> SPC700 sample block 211
+$FF5622-$FF5A23	-> SPC700 sample block 305
+$FF5A24-$FF5E13	-> SPC700 sample block 149
+$FF5E14-$FF61F1	-> SPC700 sample block 271
+$FF61F2-$FF65CF	-> SPC700 sample block 293
+$FF65D0-$FF699B	-> SPC700 sample block 195
+$FF699C-$FF6D59	-> LZ data chunk
+$FF6D5A-$FF7101	-> SPC700 sample block 88
+$FF7102-$FF74A0	-> SPC700 sample block 165
+$FF74A1-$FF7825	-> LZ data chunk
+$FF7826-$FF7BA0	-> SPC700 sample block 89
+$FF7BA1-$FF7F1A	-> LZ data chunk
+$FF7F1B-$FF8271	-> SPC700 sample block 219
+$FF8272-$FF85C8	-> SPC700 sample block 13
+$FF85C9-$FF891C	-> LZ data chunk
+$FF891D-$FF8C6A	-> SPC700 sample block 193
+$FF8C6B-$FF8FAF	-> SPC700 sample block 188
+$FF8FB0-$FF92EB	-> SPC700 sample block 189
+$FF92EC-$FF9627	-> SPC700 sample block 252
+$FF9628-$FF9963	-> SPC700 sample block 20
+$FF9964-$FF9C93	-> LZ data chunk
+$FF9C94-$FF9FBE	-> LZ data chunk
+$FF9FBF-$FFA2E8	-> SPC700 sample block 276
+$FFA2E9-$FFA612	-> SPC700 sample block 301
+$FFA613-$FFA921	-> SPC700 sample block 34
+$FFA922-$FFAC22	-> LZ data chunk
+$FFAC23-$FFAF1F	-> SPC700 sample block 567
+$FFAF20-$FFB21C	-> SPC700 sample block 574
+$FFB21D-$FFB512	-> LZ data chunk
+$FFB513-$FFB806	-> SPC700 sample block 18
+$FFB807-$FFBAFA	-> SPC700 sample block 52
+$FFBAFB-$FFBDEB	-> LZ data chunk
+$FFBDEC-$FFC0CD	-> SPC700 sample block 224
+$FFC0CE-$FFC39D	-> SPC700 sample block 35
+$FFC39E-$FFC66A	-> LZ data chunk
+$FFC66B-$FFC90D	-> SPC700 sample block 251
+$FFC90E-$FFCBA7	-> SPC700 sample block 167
+$FFCBA8-$FFCE2B -> LZ data chunk
+$FFCE2C-$FFD0AA	-> SPC700 sample block 287
+$FFD0AB-$FFD328	-> S-DD1 data chunk
+$FFD329-$FFD595	-> SPC700 sample block 151
+$FFD596-$FFD7F0	-> SPC700 sample block 145
+$FFD7F1-$FFDA42	-> SPC700 sample block 174
+$FFDA43-$FFDC8B	-> SPC700 sample block 217
+$FFDC8C-$FFDED4	-> SPC700 sample block 51
+$FFDED5-$FFE111	-> LZ data chunk
+$FFE112-$FFE34B	-> LZ data chunk
+$FFE34C-$FFE584	-> LZ data chunk
+$FFE585-$FFE7BB	-> SPC700 sample block 250
+$FFE7BC-$FFE9E2	-> LZ data chunk
+$FFE9E3-$FFEC07	-> SPC700 sample block 278
+$FFEC08-$FFEE29 -> LZ data chunk
+$FFEE2A-$FFF045	-> SPC700 sample block 171
+$FFF046-$FFF25D	-> LZ data chunk
+$FFF25E-$FFF470	-> LZ data chunk
+$FFF471-$FFF682	-> LZ data chunk
+$FFF683-$FFF88C	-> SPC700 sample block 279
+$FFF88D-$FFFA72	-> SPC700 sample block 11
+$FFFA73-$FFFC1A	-> LZ data chunk
+$FFFC1B-$FFFD9D	-> SPC700 sample block 50
+$FFFD9E-$FFFDEE	-> SPC700 sample block 16
+$FFFDEF-$FFFE3F	-> SPC700 sample block 14
+$FFFE40-$FFFE87	-> SPC700 sample block 25
+$FFFE88-$FEFFFF	-> padding
