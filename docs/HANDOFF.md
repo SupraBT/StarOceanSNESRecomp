@@ -155,7 +155,7 @@ idénticos entre runner y bsnes. El mecanismo real era el MMC del S-DD1.
   sin haber escrito nunca a `$2140` (`apu_runToGuestCycle` no avanza si `portTimeValid=false`,
   que solo se activa con un write CPU a $2140). Se forzó `force_lle` de la zona C0:8xxx en
   `config/bankC0.cfg` (VÁLIDO) pero el cuelgue persistió con generated regenerados.
-- **RESOLUCIÓN PRÁCTICA:** restaurar el generated minimal (57 AOT) de `E:\StarOceanTest2-ccc`
+- **RESOLUCIÓN PRÁCTICA:** restaurar el generated minimal (57 AOT) de `<alt-worktree>`
   (también en `build-cosim/backup_gen_minimal/`). Con él, 2.Beta arranca y corre (34 FPS,
   imagen, audio init OK). **1.Release nunca se tocó.**
 
@@ -467,13 +467,13 @@ verificar con cosim (misma metodología que los fondos):
 Se actualizaron dos carpetas hermanas con el estado validado de **1.Release**
 (fondos correctos + audio, SIN el fast-forward de 2.Beta):
 
-- **`F:\Recompilador Super Nintendo\StarOceanSNESRecomp\`** (fuente): `git archive HEAD`
+- **`$PROJECT_ROOT\StarOceanSNESRecomp\`** (fuente): `git archive HEAD`
   (base commit ccc523c = 1.Release equivalente) + overlay de los fixes validados:
   - `snesrecomp/runner/src/snes/cart.c` — fix MMC/S-DD1 (fondos del puente)
   - `snesrecomp/runner/src/common_rtl.c/.h` — `rtl_apu_pace_check` (audio en AOT)
   - `config/bank00.cfg` + `config/bankC0.cfg` — `force_lle` de boot (estabilidad)
   - Verificado: sin fast-forward (0), con MMC fix (1), APU pacing (1), replay (0).
-- **`F:\Recompilador Super Nintendo\StarOceanRecomp-win-1.0\`** (paquete):
+- **`$PROJECT_ROOT\StarOceanRecomp-win-1.0\`** (paquete):
   - `StarOcean.exe` = el exe validado de 1.Release (el original del upstream queda
     como `StarOceanSNESRecomp.exe`)
   - `config.ini`, `keybinds.ini`, `rom.cfg` (apuntando a F:), tier2 jsons de 1.Release
@@ -725,7 +725,7 @@ runner = 0 coincidencias. Solo restan los 4 FF + intro en la lista VFF.
 
 **✔️ ESTADO ACTUALIZADO (el .bsv SÍ está en el workspace):** la "caminata"
 nueva está en la raíz del proyecto:
-`F:\Recompilador Super Nintendo\StarOceanTest2\Star Ocean (Japan)-20260828-173819.bsv`
+`$PROJECT_ROOT\StarOceanTest2\Star Ocean (Japan)-20260828-173819.bsv`
 (557598 B, grabada hoy 17:39 con Record Movie y Reset System). Desarrollo:
 edificios nuevos, diálogos, 3 batallas, salida del pueblo a zona nueva y
 savestate (guardar partida).
@@ -850,7 +850,7 @@ La vía fiable para tener la caminata larga es **re-grabarla con SOLO Record
 Movie (sin Reset System), jugada entera pulsando A en los diálogos**.
 
 **HALLAZGO DEFINITIVO del formato (2026-08-28, sesión 2 — cierra el caso):**
-tenía fuentes del serializador en disco (`/f/Recompilador Super
+tenía fuentes del serializador en disco (`$PROJECT_ROOT
 Nintendo/bsnes-plus-master/bsnes/ui-qt/movie/movie.{cpp,hpp}`: cabecera 16B
 `BSV1`+ver{LE}+crc{LE}+state.size{LE} + savestate + stream de 2 bytes/frame
 con bit order `JoypadID` B=0,Y=1,SEL=2,STA=3,Up=4,Dn=5,Lf=6,Rt=7,A=8,X=9,L=10,
@@ -1002,7 +1002,7 @@ f1066-f1301, A+B f1403+, Start f1473.
 **Cómo grabar (usuario):** abrir la ROM en snes9x y pulsar Record SIN tocar
 nada (o Reset justo antes) → el movie sale reset-anchored y el frame 0
 coincide con el boot en frío de la beta. NO cargar savestates ni pausar
-antes de grabar. El exe de snes9x está en `F:/Recompilador Super
+antes de grabar. El exe de snes9x está en `$PROJECT_ROOT
 Nintendo/snes9x-1.63-1615-cf95f09-win32-x64` (y la fuente en `F:/.../snes9x`).
 
 **Pendiente:** grabar la caminata larga completa en snes9x desde boot,

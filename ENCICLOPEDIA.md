@@ -24,7 +24,7 @@
 ## 2. Builds y ejecutables (¡CRÍTICO!)
 
 > ⚠️ **HAY DOS COPIAS DEL RUNNER** (descubierto 2026-08-24):
-> `E:\Recompilador Super Nintendo\Snesrecomp\` (raíz) y
+> `$PROJECT_ROOT\Snesrecomp\` (raíz) y
 > `StarOceanTest2\snesrecomp\` (**la que compila el build** según CMakeLists).
 > Editar SIEMPRE con rutas desde StarOceanTest2; las rutas relativas pueden caer en
 > la copia raíz y el cambio no llega al exe. Verificar con `grep` en la copia correcta
@@ -88,7 +88,7 @@
 
 ## 6. Trace de bsnes-plus (referencia para validación)
 
-- Archivo: `E:\Recompilador Super Nintendo\Star Ocean (Japan)-trace.log` (**249 MB, está
+- Archivo: `$PROJECT_ROOT\Star Ocean (Japan)-trace.log` (**249 MB, está
   FUERA del proyecto**, en la raíz de E:).
 - Formato por línea: `ca6382 sta $2105 [002105] A:0000 X:5800 ... V:225 H:208 F:21`
   - `V:` = scanline, `H:` = dot, `F:` = **framecounter MÓDULO 60** (no frame absoluto).
@@ -269,7 +269,7 @@ Comandos verificados:
 
 ## 12. Harness de CO-SIMULACIÓN (SNES_COSIM, 2026-08-24)
 
-El framework `Snesrecomp` (E:\Recompilador Super Nintendo\Snesrecomp) trae un harness
+El framework `Snesrecomp` ($PROJECT_ROOT\Snesrecomp) trae un harness
 diferencial completo; nuestro árbol ya contenía el motor byte-idéntico (cosim.c,
 cosim_state.c, interp816.c) y los hooks en common_rtl.c. Solo faltaba el lado juego.
 
@@ -315,7 +315,7 @@ cosim_state.c, interp816.c) y los hooks en common_rtl.c. Solo faltaba el lado ju
   usa SPC HLE en el runner) — inofensivo, el PPM se escribe igual.
 
 ### Pendiente Track B (oracle bsnes externo)
-- Construir `bsnes_libretro.dll` desde `E:\Recompilador Super Nintendo\bsnes\bsnes\target-libretro`
+- Construir `bsnes_libretro.dll` desde `$PROJECT_ROOT\bsnes\bsnes\target-libretro`
   y extender `Snesrecomp/tools/snesref/frontend.cpp` para exportar por frame: regs CPU,
   $2100-$2133, hashes VRAM/CGRAM/WRAM (el "consulta tras cada frame" del diseño).
   Alineación: ruler master_cycles + boot-offset (cosim/align_diff.py).
@@ -333,7 +333,7 @@ cosim_state.c, interp816.c) y los hooks en common_rtl.c. Solo faltaba el lado ju
 - ✅ **Test de regresión con hashes** (VRAM/CGRAM/WRAM del menú, cerrando el juego al
   terminar) — **COMPLETADO**: `regression_test.py` + `namescreen_ref.json` (frame 236).
 - Generar traces nuevos de bsnes-plus cuando haga falta: binarios en
-  `E:\Recompilador Super Nintendo\bsnes-plus-v05.105\` (bsnes-accuracy.exe /
+  `$PROJECT_ROOT\bsnes-plus-v05.105\` (bsnes-accuracy.exe /
   bsnes-performance.exe). ⚠️ asegurar traceMask OFF y que F: es módulo 60.
 
 ## 14. Track B — Cosimulación bsnes oracle (COMPLETADO parcial)
@@ -381,7 +381,7 @@ validar frame-a-frame.
 ### Utilización
 ```powershell
 # bsnes oracle
-cd "E:\Recompilador Super Nintendo\StarOceanTest2"
+cd "$PROJECT_ROOT\StarOceanTest2"
 set SNESREF_STATE_OUT=%CD%\build-cosim\trackb_bsnes.bin
 tools\snesref\drive_bsnes.exe "E:\...\bsnes\bsnes\out\bsnes_libretro.dll" "build\Release\Star Ocean (Japan).sfc" --frames 240
 

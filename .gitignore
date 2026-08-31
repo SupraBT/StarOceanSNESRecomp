@@ -115,3 +115,4 @@ cosim/shipref/
 cosim/view/
 bg3_render.png
 
+sanitize_paths.py

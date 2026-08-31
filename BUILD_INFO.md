@@ -7,7 +7,7 @@
 - **md5:** `4b27b861c14a13c2801efb4b9300bd3e`
 - **Base:** commit `ccc523c` (Track B cosim)
 - **Features:** Imagen ✅, Música ✅, FPS counter en título ✅
-- **generated/:** Minimalista (6 archivos: bank00, bankC0, bankC1, dispatch) desde StarOceanTest2-ccc
+- **generated/:** Minimalista (6 archivos: bank00, bankC0, bankC1, dispatch)
 - **NO MODIFICAR** hasta nuevo aviso del usuario
 
 ## `2.Beta/` — Versión de Pruebas 🧪
@@ -20,7 +20,7 @@
 ## Cómo compilar una nueva versión Beta
 
 ```bash
-cd "F:\Recompilador Super Nintendo\StarOceanTest2"
+cd "$PROJECT_ROOT\StarOceanTest2"
 # Asegurar que source está en ccc523c
 git checkout ccc523c
 
@@ -44,7 +44,7 @@ cp build-beta/Release/StarOcean.exe 2.Beta/
 - `rom.cfg`
 
 ## Generated mínimo que funciona
-Ubicación de referencia: `E:\Recompilador Super Nintendo\StarOceanTest2-ccc\generated\`
+Ubicación de referencia: `<alt-worktree>\generated\`
 - `bank00_v2.c` — 571KB (10787 líneas)
 - `bankc0_v2.c` — 27KB (694 líneas)
 - `bankc1_v2.c` — 446 bytes (17 líneas, stub)

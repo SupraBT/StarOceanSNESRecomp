@@ -9,7 +9,7 @@
 # Configure (MSVC + Ninja, matching build-trace):
 #   cmake -S cosim -B build-cosim -G Ninja
 #         -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl
-#         -DSDL2_DIR=E:/Recompilador\ Super\ Nintendo/StarOceanTest2/deps/SDL2-2.30.5/x86_64-w64-mingw32/lib/cmake/SDL2
+#         -DSDL2_DIR=$PROJECT_ROOT/deps/SDL2-2.30.5/x86_64-w64-mingw32/lib/cmake/SDL2
 #   cmake --build build-cosim
 # (run from a shell with vcvars64.bat loaded, like build_trace.bat does)
 cmake_minimum_required(VERSION 3.16)
