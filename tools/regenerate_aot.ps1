@@ -4,6 +4,7 @@ param(
     [switch]$InPlace,
     [string[]]$ProfileManifest = @(),
     [string]$Python = "",
+    [string]$ExpectedSha1 = "A616EE3466256482BC0ADC11F1FDA7C30E66EF8D",
     [string]$ExpectedSha256 = "",
     [switch]$AllowPatchedRom
 )
@@ -36,7 +37,14 @@ if (-not $AllowPatchedRom -and $RomLeaf -match '(?i)(\btr\b|translated|traducida
     throw "Refusing likely patched ROM '$([System.IO.Path]::GetFileName($Rom))'. Use an unmodified authentic dump for AOT/config work, or pass -AllowPatchedRom for diagnostics only."
 }
 
-if ($ExpectedSha256) {
+if (-not $AllowPatchedRom -and $ExpectedSha1) {
+    $ActualSha1 = (Get-FileHash -Algorithm SHA1 -LiteralPath $Rom).Hash
+    if ($ActualSha1 -ne $ExpectedSha1) {
+        throw "ROM SHA1 mismatch. Expected authentic Star Ocean (Japan) SHA1 $ExpectedSha1, got $ActualSha1. Pass -AllowPatchedRom for diagnostics only."
+    }
+}
+
+if (-not $AllowPatchedRom -and $ExpectedSha256) {
     $ActualSha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $Rom).Hash
     if ($ActualSha256 -ne $ExpectedSha256) {
         throw "ROM SHA256 mismatch. Expected $ExpectedSha256, got $ActualSha256."
