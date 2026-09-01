@@ -1421,6 +1421,7 @@ error_reading:;
             if (s_phase_on) {
                 s_phase_emu += (double)(t_emu1 - t_emu0) * 1000.0 / SDL_GetPerformanceFrequency();
                 s_phase_draw += (double)(t_draw1 - t_emu1) * 1000.0 / SDL_GetPerformanceFrequency();
+#ifdef SNESRECOMP_INTERP_PROFILE
                 extern void rtl_apu_perf_snapshot(uint64_t *, uint64_t *);
                 static uint64_t s_p_apu_ns = 0, s_p_apu_calls = 0;
                 uint64_t apu_ns = 0, apu_calls = 0;
@@ -1428,7 +1429,9 @@ error_reading:;
                 if (s_phase_n == 0) {
                     s_p_apu_ns = apu_ns; s_p_apu_calls = apu_calls;
                 }
+#endif
                 if (++s_phase_n >= 120) {
+#ifdef SNESRECOMP_INTERP_PROFILE
                     double apu_ms = (double)(apu_ns - s_p_apu_ns) / 1e6;
                     fprintf(stderr, "[phase] emu=%.2fms draw=%.2fms total=%.2fms -> %.1f FPS | apuSync=%.2fms(%.0f%% emu,%llu calls)\n",
                             s_phase_emu / s_phase_n, s_phase_draw / s_phase_n,
@@ -1441,6 +1444,12 @@ error_reading:;
                     interp816_perf_dump();
                     extern void interp816_opcode_hist_dump(void);
                     interp816_opcode_hist_dump();
+#else
+                    fprintf(stderr, "[phase] emu=%.2fms draw=%.2fms total=%.2fms -> %.1f FPS\n",
+                            s_phase_emu / s_phase_n, s_phase_draw / s_phase_n,
+                            (s_phase_emu + s_phase_draw) / s_phase_n,
+                            1000.0 / ((s_phase_emu + s_phase_draw) / s_phase_n));
+#endif
                     s_phase_n = 0; s_phase_emu = s_phase_draw = 0;
                 }
             }
