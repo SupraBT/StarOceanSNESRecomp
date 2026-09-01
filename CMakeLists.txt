@@ -54,6 +54,7 @@ set(GAME_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/so_rtl.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/so_cpu_infra.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/so_spc_player.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/state_file.c
     ${CMAKE_CURRENT_SOURCE_DIR}/snesrecomp/runner/src/desktop/mmx_config.c
 )
 

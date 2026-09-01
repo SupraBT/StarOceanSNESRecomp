@@ -23,6 +23,8 @@
 #include "util.h"
 #include "widescreen.h"
 #include "so_spc_player.h"
+int debug_server_save_state_file(const char *path);
+int debug_server_load_state_file(const char *path);
 
 #define WINDOW_TITLE "Star Ocean (S-DD1 Test)"
 #define SO_DEBUG_PORT 13308
@@ -579,10 +581,26 @@ static void HandleCommand(uint32 j, bool pressed) {
 
   if (!pressed)
     return;
-  if (j <= kKeys_Load_Last) {
-    RtlSaveLoad(kSaveLoad_Load, j - kKeys_Load);
+  if (j == kKeys_Load + 8) {
+    char name[128];
+    RtlEnsureSaveDir();
+    RtlSaveSlotPath(9, name, sizeof(name));
+    debug_server_save_state_file(name);
+  } else if (j == kKeys_Load + 9) {
+    char name[128];
+    RtlEnsureSaveDir();
+    RtlSaveSlotPath(9, name, sizeof(name));
+    debug_server_load_state_file(name);
+  } else if (j <= kKeys_Load_Last) {
+    char name[128];
+    RtlEnsureSaveDir();
+    RtlSaveSlotPath(j - kKeys_Load, name, sizeof(name));
+    debug_server_load_state_file(name);
   } else if (j <= kKeys_Save_Last) {
-    RtlSaveLoad(kSaveLoad_Save, j - kKeys_Save);
+    char name[128];
+    RtlEnsureSaveDir();
+    RtlSaveSlotPath(j - kKeys_Save, name, sizeof(name));
+    debug_server_save_state_file(name);
   } else {
     switch (j) {
     case kKeys_Fullscreen:
@@ -1353,6 +1371,25 @@ error_reading:;
             continue;
         }
 
+        {
+            extern int debug_server_consume_loadstate(void);
+            extern int debug_server_consume_savestate(void);
+            int ls = debug_server_consume_loadstate();
+            if (ls >= 0) {
+                char name[128];
+                RtlEnsureSaveDir();
+                RtlSaveSlotPath(ls, name, sizeof(name));
+                debug_server_load_state_file(name);
+            }
+            int ss = debug_server_consume_savestate();
+            if (ss >= 0) {
+                char name[128];
+                RtlEnsureSaveDir();
+                RtlSaveSlotPath(ss, name, sizeof(name));
+                debug_server_save_state_file(name);
+            }
+        }
+
         // Clear gamepad axis inputs when keyboard directions are pressed
         if (g_input_state & 0xf0)
             g_gamepad[0].axis_buttons = 0;
@@ -1397,6 +1434,8 @@ error_reading:;
                     debug_server_get_controller_inputs() |
                     debug_server_get_controller_active_mask());
         uint64 t_emu1 = SDL_GetPerformanceCounter();
+        { extern void debug_server_wait_if_paused(void);
+          debug_server_wait_if_paused(); }
         /* Per-frame guest master_cycles (dev): SNESRECOMP_MC_LOG=1 logs
          * "frame master" to stderr — used to A/B the VFF guards (VFF ON vs
          * SNESRECOMP_NO_VBLANK_FF=1 must yield identical masters if every
