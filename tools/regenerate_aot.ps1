@@ -2,7 +2,10 @@ param(
     [string]$RomPath = "Star Ocean (Japan).sfc",
     [string]$OutDir = "out\aot-static",
     [switch]$InPlace,
-    [string[]]$ProfileManifest = @()
+    [string[]]$ProfileManifest = @(),
+    [string]$Python = "",
+    [string]$ExpectedSha256 = "",
+    [switch]$AllowPatchedRom
 )
 
 Set-StrictMode -Version Latest
@@ -28,8 +31,56 @@ if (-not (Test-Path -LiteralPath $Rom -PathType Leaf)) {
     throw "ROM not found: $Rom"
 }
 
-git -C (Join-Path $Root "snesrecomp") submodule update --init --recursive
-cargo build --release --manifest-path (Join-Path $AnalyzerProject "Cargo.toml")
+$RomLeaf = [System.IO.Path]::GetFileNameWithoutExtension($Rom)
+if (-not $AllowPatchedRom -and $RomLeaf -match '(?i)(\btr\b|translated|traducida|patched|patch|hack)') {
+    throw "Refusing likely patched ROM '$([System.IO.Path]::GetFileName($Rom))'. Use an unmodified authentic dump for AOT/config work, or pass -AllowPatchedRom for diagnostics only."
+}
+
+if ($ExpectedSha256) {
+    $ActualSha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $Rom).Hash
+    if ($ActualSha256 -ne $ExpectedSha256) {
+        throw "ROM SHA256 mismatch. Expected $ExpectedSha256, got $ActualSha256."
+    }
+}
+
+function Invoke-Checked {
+    param(
+        [string]$FilePath,
+        [string[]]$Arguments
+    )
+
+    & $FilePath @Arguments
+    if ($LASTEXITCODE -ne 0) {
+        throw "$FilePath failed with exit code $LASTEXITCODE"
+    }
+}
+
+function Resolve-Python {
+    if ($Python) {
+        return @($Python)
+    }
+
+    $launcher = Get-Command py -ErrorAction SilentlyContinue
+    if ($launcher) {
+        return @($launcher.Source, "-3")
+    }
+
+    $candidate = Get-Command python -All |
+        Where-Object {
+            $_.Source -notmatch "\\(msys2|msys64|cygwin)\\" -and
+            $_.Source -notmatch "\\devkitPro\\"
+        } |
+        Select-Object -First 1
+
+    if (-not $candidate) {
+        throw "No Windows Python found. Pass -Python with an absolute python.exe path."
+    }
+
+    return @($candidate.Source)
+}
+
+Invoke-Checked "git" @("-C", (Join-Path $Root "snesrecomp"), "submodule", "update", "--init", "--recursive")
+Invoke-Checked "cargo" @("build", "--release", "--manifest-path", (Join-Path $AnalyzerProject "Cargo.toml"))
 
 $env:SNESRECOMP_NATIVE_ANALYZER = $Analyzer
 $EmitArgs = @(
@@ -44,4 +95,12 @@ foreach ($manifest in $ProfileManifest) {
     $EmitArgs += @("--profile-manifest", $manifest)
 }
 
-python @EmitArgs
+$PythonCommand = Resolve-Python
+$PythonExe = $PythonCommand[0]
+$PythonArgs = @()
+if ($PythonCommand.Length -gt 1) {
+    $PythonArgs += $PythonCommand[1..($PythonCommand.Length - 1)]
+}
+$PythonArgs += $EmitArgs
+
+Invoke-Checked $PythonExe $PythonArgs

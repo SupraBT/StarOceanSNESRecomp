@@ -40,6 +40,10 @@ unless you have permission.
 
 ## Regenerate AOT Headlessly
 
+Use an unmodified authentic `Star Ocean (Japan)` ROM dump for regeneration.
+Language-patched or otherwise modified ROMs can shift code addresses and make
+the `config/` function boundaries unsafe for AOT output.
+
 After placing your local ROM at `Star Ocean (Japan).sfc`, run:
 
 ```powershell
@@ -49,3 +53,7 @@ After placing your local ROM at `Star Ocean (Japan).sfc`, run:
 The default output is `out\aot-static`, so it does not replace a known-good
 `generated\` tree. Add `-InPlace` only after the regenerated output has been
 validated.
+
+For repeatable local work, pass `-ExpectedSha256 <hash>` with the known hash of
+your dump. The script refuses obvious patched ROM filenames by default; use
+`-AllowPatchedRom` only for diagnostics, not for coverage/config changes.
