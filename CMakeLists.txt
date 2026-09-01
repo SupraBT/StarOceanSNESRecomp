@@ -41,9 +41,12 @@ if(SNESRECOMP_ENABLE_TRACE)
     add_compile_definitions(SNESRECOMP_TRACE=1)
 endif()
 
+set(STAROCEAN_GENERATED_DIR "${CMAKE_CURRENT_SOURCE_DIR}/generated"
+    CACHE PATH "Directory containing generated Star Ocean AOT C sources")
+
 # Generated sources from snesrecomp
 file(GLOB GENERATED_SOURCES CONFIGURE_DEPENDS
-    "${CMAKE_CURRENT_SOURCE_DIR}/generated/*.c")
+    "${STAROCEAN_GENERATED_DIR}/*.c")
 
 # Game sources
 set(GAME_SOURCES
@@ -65,7 +68,7 @@ target_include_directories(StarOcean PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${SNESRECOMP_RUNNER_INCLUDE_DIRS}
     ${SNESRECOMP_ROOT}/runner/src/desktop
-    ${CMAKE_CURRENT_SOURCE_DIR}/generated
+    ${STAROCEAN_GENERATED_DIR}
 )
 
 target_compile_definitions(StarOcean PRIVATE
