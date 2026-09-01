@@ -10,7 +10,7 @@
 > (ROM layout & engine) → docs/ENCYCLOPEDIA.md (tooling, BSV converter) →
 > docs/PERF_REPORT.md (performance, partly stale — see §5).*
 
-**Última actualización:** 2026-08-30 · **Builds:** `1.Release/` = versión ESTABLE (NO tocar; exe 449024B md5 `3f026ac1`, generated minimal 57 AOT). `2.Beta/` = versión de pruebas (exe md5 `81a1ef66`, C3 + 4 FF + intro paso-48 + guard VFF campo `$C2:0B82/0B87` + MC_LOG + POLL-GATE del intérprete, bit-exacto — ver §4.11, § PASO 1b, § POLL-GATE). Los exe tienen rutas hardcoded a `build/Release` y `build-beta/Release` respectivamente (rom.cfg).
+**Última actualización:** 2026-09-01 · **Builds:** `1.Release/` = versión ESTABLE (NO tocar; exe 449024B md5 `3f026ac1`, generated minimal 57 AOT). `2.Beta/` = versión de pruebas (exe md5 `a0485444` = D9FF: especialización del wait de batalla $00D9 a ~58-59 FPS en combate; backup del build validado previo `e5a86e3a` en `2.Beta/StarOcean_OFF_e5a86e3a.exe`; ver §13 D9FF). Los exe tienen rutas hardcoded a `build/Release` y `build-beta/Release` respectivamente (rom.cfg).
 
 ---
 
@@ -260,8 +260,33 @@ idénticos entre runner y bsnes. El mecanismo real era el MMC del S-DD1.
 - **F9** guarda en `saves/snapshot.st` (crea el dir si falta — verificado), **F10** carga.
 - **TCP**: `save_state <path>` / `load_state <path>` (deferidos al frame boundary vía
   `dbgs_set_pending_file`, consumidos por `debug_server_flush_pending_file` en el main loop).
-- **Formato**: magic `L3SN` + version + blob `snes_saveload` (incl. PPU v2 con cgramPointer)
-  + chunk `CpuSnapshot`. Tras load: `sync_g_cpu_to_snes_cpu()`.
+- **Formato (v2)**: magic `L3SN` + version + blob `snes_saveload` (incl. PPU v2 con cgramPointer)
+  + chunk `CpuSnapshot` + chunk **host-APU-pacing** (`apu_pace_save_snapshot`). Tras load:
+  `sync_g_cpu_to_snes_cpu()` + `RtlPostLoadReanchorApu()` (re-ancla el pacing APU y resetea
+  la caché dinámica del detector de quiescencia del bridge, `interp_bridge_reset_dynamic_cache`).
+- **v1 -> v2 (2026-08-31)**: v1 NO serializaba el pacing host del SPC (cola de port-writes,
+  anchors guest<->portClock, frame-timeline, `g_apu_pace_cycles_estimate`). Tras un load esos
+  valores quedaban vivos de la sesión previa: `apu_schedulePortWrite` no re-anclaba
+  (`guest_cycle < portLastGuest` era falso) y el primer write post-load se programaba a
+  ~276M ciclos SPC en el futuro -> el write nunca aterrizaba -> handshakes colgados,
+  spam `[apu] sync timed out`, "a veces carga, a veces no". v2 serializa y restaura ese
+  estado (host-only) -> 0 sync timeouts en los tests de esta sesión.
+- **Determinismo del load (medido)**: dos cargas del mismo snapshot desde estados pre-load
+  comparables producen master por frame IDÉNTICO (offset de bookkeeping constante de ~34
+  ciclos, benigno). Cargas desde estados pre-load muy distintos pueden arrancar con el
+  primer frame post-load "completo" vs "sliver" (34 vs ~355860 ciclos) por estado host del
+  bridge (profundidad scheduler/bounce) NO serializado -> offset de master constante que
+  no crece y deltas por frame equivalentes desde f4484; en el peor caso jitter residual
+  de +-pocos ciclos en ~92% de frames. **No afecta al gameplay** (el juego continúa
+  correcto); bloquea SOLO la comparación bit-exacta de master entre cargas desde puntos
+  pre-load muy distintos (el A/B de guards VFF usa arranque en frío, no loadstate).
+- **FPS post-load**: con v2, cargas limpias NO degradan el framerate sostenido
+  (43-45 FPS, fases emu~5ms draw~18ms, 0 sync timeouts). El bajón a 12 FPS observado en
+  sesión fue causado por el log de diagnóstico `SNESRECOMP_FRAMEDBG` (2 fprintf/frame en
+  el rango 4470-4800), no por el load.
+- **Cuidado**: pulsar F9 sobreescribe `saves/save9.sav`. En la sesión 2026-08-31 un F9 de
+  prueba piso el savestate de batallas (f17377); el actual es v2 en ~f4482 (menú principal).
+  Regenerable con `replay_3_peleas.txt` (llega a f17377).
 - Los `.bst` de bsnes-plus/otros emuladores **NO son compatibles** (magic BSTC, específicos
   del motor) — solo referencia.
 - Estados reproducibles usados en diagnóstico: `bridge-2600.st` / `bridge-4900.st`
@@ -278,6 +303,8 @@ idénticos entre runner y bsnes. El mecanismo real era el MMC del S-DD1.
 | previo | `debug_server.c` | Gating de copias WRAM/VRAM cuando no hay cliente TCP | VÁLIDO (perf) |
 | previo | interp_bridge fast-path | Fast-path de 10 opcodes → **REVERTIDO** (pantalla negra) | REVERTIDO |
 | previo | MMC mapping fix | 587 variantes AOT (offset ROM corregido para la ROM de 8MB mirrored) | VÁLIDO |
+| 2026-08-31 | `state_file.c`, `common_rtl.c/.h`, `interp_bridge.c/.h` | **Savestate L3SN v2**: serializa pacing host del APU/SPC (cola de ports + anchors + frame-timeline + estimaciones) y resetea la caché dinámica del detector de quiescencia en el load -> elimina el bug de writes de port a ~276M ciclos en el futuro (handshakes colgados / sync timed out / "a veces no carga"). Determinismo validado: cargas desde estados comparables bit-idénticas. 0 sync timeouts post-load. | **VÁLIDO** (2.Beta `58c62828`; 1.Release intacta `6402619e`) |
+| 2026-08-31 | `src/so_rtl.c` | Diag env-gated `SNESRECOMP_FRAMEDBG` (log por-frame resume/master/beam, rango 4470-4800) para depurar el primer frame post-load | VÁLIDO (diagnóstico, coste ~0 cuando off) |
 | 2026-08-28 | `interp_bridge.c` | Intro FF `$C2:0B51/57` paso 48 (LDA-long 0xAF), §4.9; validado A/B 3050 frames §4.11 | **VÁLIDO** (en 2.Beta) |
 | 2026-08-28 | docs | §4.11 (validación final 2.Beta) + §12 (grabación nueva + plan) | VÁLIDO (doc) |
 
@@ -1993,3 +2020,365 @@ top del intérprete con OPCODE_HIST tras el fix (ya hecho: A5 14.4%, 8D 9.3%,
 9F 8.3%, B9 8.2%) y atacar el siguiente con la misma metodología (medir →
 cambiar mínimo bit-exacto → A/B → medir). Después, savestate (plan §PLAN
 SAVESTATE abajo).
+
+
+## SESION 2026-08-31 (tarde) — MEDICION PPU: EL RENDER NO ES EL CUELLO + REVISION DE REPOS GITHUB
+
+### Veredicto de la medicion del render PPU (tramo boot->titulo->menu de nombre)
+
+Instrumentacion usada: temporizadores PPU (PPU_T0/PPU_ACC, guard SNESRECOMP_INTERP_PROFILE
+o SNESRECOMP_PPU_MS_PROF) + volcado [ppusplit] en main.c (env PHASE_MS), build diag temporal,
+luego REVERTIDO byte-exacto (ppu.c limpio vs HEAD, CMake sin define, main.c sin ppusplit).
+
+**Numeros reales (run limpio, sin MC_LOG, replay_casa_dialogos):**
+
+| ventana | emu | draw real | total | FPS (fase) |
+|---|---|---|---|---|
+| f~120 boot logos | 19.9ms | 9.6ms | 29.6ms | 33.8 |
+| f~240 logo 2 | 11.9ms | 3.8ms | 15.6ms | 64 |
+| f~360 | 7.9ms | 5.8ms | 13.7ms | 73 |
+| f~480 titulo | 1.8ms | 6.6ms | 8.3ms | paced 60 |
+| f~600-720 titulo/estrellas | 1.7-2.3ms | 6-9ms | ~8-11ms | paced 60 |
+
+Desglose interno del render (split ppusplit, por frame):
+PpuDrawWholeLine total ~ 1.75ms (bg ~ 0.7ms, compose ~ 1.07ms, eval ~ 0.25ms, sprites ~ 0).
+El resto del draw (~5ms en limpio) = lock textura + memcpy 256x224 + present.
+
+**CONCLUSION PLAN-CAMBIANTE: el render PPU NO es el cuello de botella.** El trabajo real del
+render es ~2ms/frame; el tramo titulo/menu ya va PACED a 60 FPS desde f~240. Los unicos
+bajones reales del tramo son picos de EMU: boot f~120 (19.9ms: SPC handshake C085xx ~30%,
+RAM-init C0:CA50, delay C084FB, main-loop C8:F42D) y transicion a menu de nombre f~1200
+(9.9ms: C086BA-C6, bucle de lectura de $2140 — APU port wait). NO implementar optimizacion
+de render PPU (el P1 anterior queda descartado con datos).
+
+**TRAMPA DE MEDICION (importante):** SNESRECOMP_MC_LOG=1 infla el draw de 5ms a ~16.5ms
+constante — el fprintf(stderr) del [mc] cae DENTRO de la ventana t_emu1..t_draw1 en main.c.
+Cualquier medicion de fase con MC_LOG activo da draw falsamente alto. Medir draw con el log OFF.
+
+### Revision de repos GitHub (todo el proyecto, no solo savestates)
+
+- **Snaggletooth (etroimcasso)**: core SNES clean-room audio-first, determinista, SPC700+65816
+  con suite de vectores SingleStepTests. Confirma nuestro modelo de velocidad por-region
+  6/8/12 ciclos master y el snapshot determinista (diseno savestate v2). Util como ORACULO
+  de validacion del timing SPC/APU (no acelerador). docs/ en la rama ci/snes-ipl-and-blargg.
+- **snesrecomp upstream (mstan/sp00nznet)**: nuestro motor (runner local = este codigo + mods).
+  Su palanca real = AOT nativo casi total; el resto es el mismo trabajo funcion-a-funcion
+  que hacemos. Sin trucos que copiar.
+- **BombermanRecomp (elliotttate)**: ideas aprovechables -> host headless determinista que sale
+  con error si la pantalla nunca es visible (regresion rapida tipo Gate) y medidores
+  BENCHMARK/FPS_STATS/pacer fijo (nuestro [phase] emu/draw ya cubre el mismo terreno).
+- **Lufia2Recomp (Cellenseres)**: confirma renderer separable (snesrecomp-platform, SDL/GL);
+  valida la decision de NO tocar el render (su coste real es ~2ms aqui).
+
+### Estado del build
+
+2.Beta exe reconstruido desde las mismas fuentes que 58c62828 tras revertir el diag
+(md5 cambia por timestamp PE: 861c5072, comportamiento identico). 1.Release intacta.
+Fuentes revertidas byte-exacto: ppu.c (guard #ifdef SNESRECOMP_INTERP_PROFILE), CMakeLists
+(sin define), main.c (sin [ppusplit]). Nuevo tool: build-cosim/disasm_hot3.py (desensamblador
+mode-aware con mapeo MMC off = addr24 & 0xFFFFF).
+
+### PROXIMO PASO (batalla, Opcion A aprobada — guard VFF hIrq-safe)
+
+El guard de vblank ($C2:0B82/0B87 y familia) se desactiva con !g_snes->hIrqEnabled (linea
+interp_bridge.c:1060). La batalla usa H-IRQ -> el spin corre LLE entero -> ~43 FPS en batalla.
+El disparador H-IRQ (snes.c:300): con solo hIrq activo, line_matches=true en CADA linea y
+dispara en hPos == hTimer*4. Por tanto un FF que cruce lineas con H-IRQ activo saltaria IRQs
+-> NO es seguro incondicionalmente. Falta determinar EMPIRICAMENTE el patron de la batalla:
+(el handler de H-IRQ de batalla desactiva $4200.4 tras disparar -> FF seguro antes de la linea
+trigger) o (queda activo toda la linea -> FF solo mismo-linea, inutil). Test: correr la batalla
+con SNESRECOMP_VFF_LOG=1 + watch de escrituras a $4200 y ver el estado de hIrqEnabled en las
+entradas del spin. Requiere savestate de batalla (f~17377, perdido — regenerar con
+replay_3_peleas.txt ~6 min) o replay completo.
+
+
+
+## SESION 2026-08-31 (noche) — DESCUBRIMIENTO DEL CUELLO DE BATALLA: vIRQ vTimer=216 BLOQUEA EL FF DEL SPIN (43 FPS)
+
+### Contexto y metodologia
+
+El objetivo era la Opcion A aprobada (guard VFF hIrq-safe para la batalla). Se midio con un
+log VFF a archivo (SNESRECOMP_VFF_LOG_FILE, bufferizado — el pipe de stderr de PowerShell
+bloquea ~ms por write y ralentiza ~4x; los fprintf al pipe congelaron el juego en f4 en un
+intento previo) + replay_3_peleas.txt (~15 min hasta las batallas). Hallazgos, todos con
+datos del run real (f20460-f22250):
+
+1. **HIPOTESIS ORIGINAL (hIrq-safe) REFUTADA**: el guard NO esta bloqueado por H-IRQ en
+   batalla. Entradas del spin en batalla: 203913, TODAS con (i=0, hIrq=0, autoq=1, dl=0) —
+   las condiciones del guard pasan. El spin $C20B87 se LLE-loop-ea a 42 ciclos/iter,
+   ~1882 iter/frame = ~79K ciclos = **~22% de los ciclos del frame y ~55% del tiempo de
+   interprete en batalla** (perfil PHASE_MS f20520-f22320: emu=16-22ms, draw=2-5ms; PCs
+   calientes C20B87/C20B8A ~55-62% en la 2a pelea, C084B2/B4 ~40-60% en la 1a).
+
+2. **CAUSA RAZON REAL ENCONTRADA (dato directo)**: en batalla el juego activa el **vIRQ con
+   vTimer=216** ($4200 bit 5). El guard de vblank, por seguridad, se niega a FF cruzando la
+   linea del vIRQ (`!(vIrqEnabled && vTimer > v && vTimer <= 224)`), asi que el spin LLE-corre
+   desde v~77 hasta v=216, donde el vIRQ dispara el handler del juego, y SOLO desde v>=216
+   el guard puede FF a vblank (los 644 fires reales en batalla son esos). La condicion de
+   bloqueo NO aparece en el flag bail del log (solo cubre i/hIrq/autoq/dl) — por eso el
+   analisis inicial parecia "el guard pasa pero no dispara".
+
+3. **FIX IMPLEMENTADO (2.Beta, md5 10a63b9d, pendiente de A/B)**: FF parcial vIRQ-safe en
+   el guard (interp_bridge.c, rama is_bpl): cuando el vIRQ bloquea el salto completo, FF a
+   EXACTAMENTE el inicio de la linea trigger (vTimer*1364): el avance del beam en
+   snes_sync_master_clock aserta inIrq en v==vTimer igual que haria el LLE, el handler del
+   juego corre, y en la siguiente entrada (v>=vTimer) el guard ya puede FF completo a vblank.
+   Fuera de batalla vT=0 -> la rama nueva nunca se ejecuta (el campo tambien tiene vIrq=1
+   pero vT=0, asi que no bloquea). El cambio es efectivamente batalla-solo.
+
+### Estado del A/B (en curso al escribir esto)
+
+- Exe OFF (referencia): build-cosim/StarOcean_vffOFF_1cf74835.exe (mismas fuentes sin el FF
+  vIRQ-safe). Exe ON: 2.Beta (10a63b9d).
+- Protocolo: replay_3_peleas.txt + SNESRECOMP_MC_LOG=1, comparar [mc] frame master en el
+  tramo f20460-f22250 (ON vs OFF). MC_LOG ralentiza ~2x (fprintf en la ventana de draw).
+- Si 0 divergencias en el tramo de batalla -> integrar y medir FPS de batalla antes/despues.
+  Si diverge -> revertir (OFF guardado) y documentar donde.
+
+### Lecciones de medicion (importantes)
+
+- El pipe de stderr bajo Start-Process de PowerShell bloquea ~ms por fprintf: cualquier log
+  por-frame a stderr ralentiza ~4x o congela (f4). Usar SIEMPRE SNESRECOMP_VFF_LOG_FILE
+  (fopen "a" + fflush cada 256 lineas) para logs de medicion.
+- SNESRECOMP_MC_LOG=1 infla el draw medido de ~5ms a ~16.5ms (el fprintf cae en la ventana
+  de medicion t_emu1..t_draw1 de main.c). No medir draw con MC_LOG activo.
+- SNESRECOMP_PHASE_MS=1 imprime el volcado de top-PCs cada 120 frames al pipe -> bajones
+  periodicos 60->48 cada ~2s visibles en pantalla. Es instrumentacion, no el juego.
+
+
+
+### ACTUALIZACION A/B (misma sesion): EL FF vIRQ-SAFE DIVERGE — REVERTIDO
+
+Protocolo completo ejecutado (replay_3_peleas.txt + SNESRECOMP_MC_LOG=1, ambos desde boot):
+- ON (10a63b9d, con FF vIRQ-safe): ab_on.err, 23599 frames.
+- OFF (1cf74835, sin el FF): ab_off2.err, 23153 frames.
+- Comparacion [mc] frame master en f20460-f22250 con build-cosim/ab_battle_mc.py:
+  **1727 de 1791 frames DIVERGEN** (jitter pequeno: diffs de -40 a +40 ciclos, alternantes,
+  primer frame divergente f20460 con -34). El FF vIRQ-safe NO es bit-exacto.
+
+Causa probable del residuo: el aterrizaje en la linea trigger (vTimer*1364, h=0) desplaza la
+fase del beam unos pocos ciclos respecto al LLE cuando el handler del vIRQ empieza (el LLE
+cruza la linea en un h que depende de la cadencia real de 42 ciclos del spin desde su entrada;
+el FF fuerza h=0). El residuo pequeno se propaga como jitter de +-40.
+
+**DECISION: REVERTIDO** (metodologia del proyecto: sin bit-exactitud no se integra). El guard
+vuelve al codigo validado (2.Beta 5377f2a4, funcionalmente = 1cf74835; difiere el md5 solo por
+timestamp PE). La v2.Beta queda con las batallas a ~43 FPS (spin LLE v77..216, ~22% del frame).
+
+Refinamientos posibles para un futuro intento (cada intento cuesta ~40 min de A/B):
+1. Aterrizar UN PASO antes de la linea trigger (irq_edge - step) en vez de exactamente en h=0,
+   dejando que el LLE cruce la linea con su cadencia real (conservador, mas cercano al LLE).
+2. Alinear el aterrizaje a la cadencia del spin: target = irq_edge - step + (intra % step).
+3. Aceptar que el spin de batalla con vIRQ no es FF-able de forma segura y atacar el cuello
+   por otra via (AOT de la rutina C084A3-B7 / del handler de vIRQ de batalla — trabajo real,
+   no espera pura).
+
+Estado final de 2.Beta: exe 5377f2a4 (guard validado, sin FF vIRQ-safe; mantiene el log dev
+VFF_LOG_FILE inerte). 1.Release intacta. OFF reference guardado en build-cosim/StarOcean_vffOFF_1cf74835.exe.
+
+## ACTUALIZACION A/B — guard VFF del spin WRAM $00D9 (combate) — REVERTIDO (20260831)
+
+**Contexto:** PHASE_MS confirmó el cuello de combate a nivel de instrucción: `$C084B2`
+(`LDA dp $00D9`) + `$C084B4` (`BEQ -4`) son ~45-55% c/u del LLE en las 3 batallas
+(marcador objetivo: vIRQ vt=216 en `$4200` → C1 f17513-18123, C2 f18436-19039,
+C3 f20198-21543); emu sube a 19-21ms vs 7-10ms en campo.
+
+**Hipótesis:** el spin espera a que el handler del vIRQ (vTimer=216) escriba $00D9,
+→ wait de beam expresado sobre variable WRAM, FF-able con la rama vIRQ-safe
+(refinamiento 1, validada 22639 frames bit-exacto) cambiando el paso a 19.
+
+**Medición del paso (2.Beta/vff_measure.log):** paso real del spin = **19 ciclos/iteración**
+(entradas consecutivas 1-de-16 → delta intra +304 = 16×19; 1111/1112 muestras exactas).
+
+**Cambio emitido (solo 2.Beta):** rama `is_d9` en el guard VFF (interp_bridge.c) detectando
+`A5 D9` en $C084B2, ramp vIRQ-safe con step=19. NO se integró nunca en 1.Release.
+
+**Veredicto A/B (31 min/run, ON=2a711fd9 vs OFF=b629e782, replay_3_peleas.txt, [mc]):**
+**DIVERGE.** 3162 divergencias en f1-f21000; primer frame f17524 (−12 ciclos, arranque
+combate 1); saltos de hasta −57.000 ciclos (f17528/17530/17532). En pantalla, el
+personaje quedó parado en la posición del fin del combate 1 (no siguió la caminata) —
+**confirmado por el usuario en vivo.** El FF del spin de flag WRAM **no es bit-exacto**:
+a diferencia del $4212 (registro de beam), $00D9 lo cambia un handler cuyo coste/lecturas
+intermedios no se preservan saltando el master.
+
+**Acción: REVERTIDO limpio** (rama is_d9 eliminada, PCs C084B0/B2/B4 quitados de la lista,
+recompilado). 2.Beta = e5a86e3a (guard de vblank validado previo). 1.Release intacta
+(6402619e). Sin procesos StarOcean activos.
+
+**Consta como hallazgo importante para el futuro:** el wait `$C084B2/B4` sobre $00D9
+es espera REAL del motor de batalla (no spin de beam puro) — no es candidato a VFF.
+Para mejorar el FPS de combate habría que atacar el trabajo del vIRQ de batalla o el
+cuerpo del motor (AOT por-función), no el fast-forward de este spin.
+
+## ACTUALIZACION A/B — yield del spin WRAM $00D9 (combate) — REVERTIDO (20260831, 3er intento)
+
+**Contexto:** tras dos intentos VFF sobre el mismo wait ($C084B2 `LDA dp $00D9` / $C084B4
+`BEQ -4`, vIRQ vt=216), se probó la vía del **yield cooperativo** (opción 2): relajar el
+chequeo de `continuous_read_epoch` del detector auto-quiescent SOLO para las PCs
+C084AE/B0/B2/B4 (`battle_d9_spin`), confiando en la igualdad de registros (A carga el valor
+leído de $00D9 → si el flag cambiara, A diferiría y el yield no dispararía). Idea: dejar que
+el scheduler avance el beam a la línea del vIRQ, ejecute el handler real que escribe $00D9
+y reanude — sin saltar el master (a diferencia del VFF).
+
+**Builds:** ON=6ebb37e8 (yield, 2.Beta/StarOcean.exe) vs OFF=e5a86e3a (build limpio previo,
+2.Beta/StarOceanYieldOff.exe). Replay: replay_3_peleas.txt, SNESRECOMP_MC_LOG=1, ambos
+desde boot. OFF recorrió hasta f41986 sin anomalías; ON se cortó en f27730.
+
+**Veredicto A/B (comparación [mc] frame a frame, build-cosim/ab_battle_mc.py no — directa
+frame/master):** **DIVERGE. Primer frame divergente f17524 (arranque del combate 1, el mismo
+frame que los dos intentos VFF).** El ON pierde ~714.740 master cycles (~2 frames) durante la
+transición de batalla: frames con delta de 43k/81k/290k ciclos (imposibles en render normal,
+~357.366/frame) frente al OFF con longitud de frame correcta en todo el rango. En pantalla,
+el último combate terminó con resultado distinto al de la partida del usuario y la
+reproducción se volvió a bloquear (congelamiento puntual que se recuperó) — **confirmado por
+el usuario en vivo.**
+
+**Conclusión:** el yield del wait $00D9 tampoco es bit-exacto. No es un problema del
+mecanismo de yield genérico (el resto del juego lo usa validado), sino del wait en sí: la
+transición de batalla (f17524) manipula $00D9 con un patrón de coste/lecturas intermedias
+que no se preserva ni saltando el master (VFF) ni cediendo el scheduler (yield). El wait
+$C084B2/B4 es espera REAL del motor de batalla.
+
+**Acción: REVERTIDO limpio.** Eliminada la relajación `battle_d9_spin` + su comentario en
+interp_bridge.c; condición estricta `continuous_read_epoch` restaurada. Recompilado
+(verificado, exe nuevo d772ad5e). **2.Beta/StarOcean.exe restaurado = e5a86e3a exacto**
+(md5 idéntico a StarOceanYieldOff.exe). Eliminado StarOceanOnyield.exe (ON divergente).
+1.Release intacta. Sin procesos StarOcean activos.
+
+**Lección consolidada (3 intentos):** para mejorar el FPS de combate NO tocar el wait
+$00D9 — ni VFF (2 intentos) ni yield. Vías válidas futuras: AOT por-función del cuerpo del
+motor de batalla / handler vIRQ de batalla (trabajo real), o aceptar ~43 FPS en combate.
+
+
+**Segunda validacion (mismo dia):** nuevo save9.sav (fcnt=4105, master=1502019248, lpc=C62DA9,
+PB=C6) — consistente con yoff (delta 1532 ciclos, patron intra-frame). F10 a f~240 via
+f10_at_200.ps1: salto a f4105 confirmado por titulo (f4544+ al verificar) y **el usuario
+confirmo: sin fallos de sonido ni video.** Workflow F9/F10 validado dos veces.
+
+## Verificacion savestate COMPLETA (20260831) — save + load validados (F9/F10 slot 9)
+
+**Save-side (verificado contra ground truth):** el usuario hizo un F9 nuevo durante el replay
+de replay_3_peleas.txt. Parse del CpuSnapshot de 2.Beta/saves/save9.sav (off=305600, tam=48,
+chunk APU 78 bytes cierra el archivo exacto): fcnt=2204, master=823020076, lpc=C38F99, S=01EC.
+**Coincide con el run determinista (yoff.err) en f2204 con delta de solo 1548 ciclos** (< medio
+frame) — el save capturo el estado exacto del instante del F9. El save anterior (14:25, fcnt=4481
+con master de f4462) era el anomalo: par fcnt/master inexistente en el run determinista (sesion o
+build distinta). El nuevo es consistente.
+
+**Load-side (verificado por [mc] + visual):** F10 inyectado via SendInput (script
+2.Beta/f10_at_200.ps1) durante un run del replay. El [mc] salto de f1729 (master 653M) a
+**f2205 con master 823020088** (el del savestate +12 ciclos). La continuacion post-carga,
+alineada por master contra yoff, se mantiene en un jitter acotado de +-35 ciclos durante +3000
+frames **sin drift** — el estado cargado continua deterministicamente (el jitter es el desfase
+intra-frame del punto de guardado, no divergencia). El usuario confirmo en vivo el salto visual
+al punto guardado (frame 2204) sin errores de sonido ni graficos.
+
+**Herramienta nueva:** `2.Beta/f10_at_200.ps1` — lanza StarOcean.exe con el replay y pulsa F10
+cuando el titulo llega a f>=200 (SendInput + SetForegroundWindow). Reutilizable para cargar
+savestates a un frame dado en el flujo de analisis de batallas.
+
+**Pendiente conocido:** el comando TCP `loadstate <slot>`/`savestate <slot>` no esta cableado en
+main.c (solo F9/F10 por teclado disparan debug_server_load_state_file). El load-A/B completo
+por TCP (cargar a frame exacto via script) requeriria cablearlo o seguir usando SendInput.
+
+---
+
+## 13. SESIÓN 2026-09-01 — D9FF: el wait $00D9 de batalla a 60 FPS (INTEGRADO en 2.Beta)
+
+**Síntoma resuelto:** los combates corrían a 34-40 FPS (emu 20-23ms/frame) por el wait real del
+motor de batalla `$C0:84B2/B4: LDA $00D9; BEQ -4` (~27% del tiempo de emulación). El flag $00D9 lo
+escribe el handler vIRQ (vTimer=216). 3 intentos previos de SALTARLO (VFF vIRQ-safe, VFF is_d9,
+yield del scheduler) divergieron en f17524: reducir master o ceder el scheduler pierde el coste/lecturas
+del handler. **Lección: el wait NO se salta; se EJECUTA más rápido.**
+
+**Diseño (interp_bridge.c, bloque `D9FF`):** ejecuta la semántica exacta del bucle — LDA dp = 3 ciclos,
+BEQ tomado = 3, master = ciclos*6, re-lectura de `cpu->ram[0x00D9]` por iteración (sin el bookkeeping
+de `bridge_bus_read`: epochs/dynamic-cache, que era el coste) — con el MISMO contrato per-instrucción
+que el main loop: sincronización de beam (`snes_sync_master_clock`) + muestreo de `g_snes->inIrq` y de
+`s_lle_master_deadline` tras cada paso, resume al PC sin ejecutar. El handler vIRQ corre en su master
+natural y la escritura de $00D9 se observa con el timing exacto LLE. MASTER IDÉNTICO por construcción.
+
+**Gate del disparo:** auto_quiescent && !in.i && !bus_timing && mf=1 && e=0 && dp=0 && K=$C0 &&
+(pc=$84B2|$84B4) && **vIrqEnabled && vTimer==216** (solo contexto de batalla). El mismo wait aparece
+en campo/intro; allí termina por la ruta NMI/vblank DENTRO del core interp816 (no replicable desde
+el puente) — el campo queda LLE (ya va a 70-80 FPS, no pierde nada). Desactivar con
+`SNESRECOMP_NO_D9FF=1`.
+
+**Cuelgues intermedios corregidos (lección):** (1) sin sync de beam por paso, el bucle no ve inIrq y
+gira infinito en la entrada de batalla (f17523); (2) sin el gate vTimer=216, la versión campo del wait
+se especializaba y colgaba en f2645 (introducción) porque su terminación es por NMI.
+
+**Resultado FPS (título, run frío, vsync, sin MC_LOG):**
+| Zona | Control (NO_D9FF=1) | D9FF |
+|---|---|---|
+| Batalla 1 (f~17600) | 39 FPS | 58 FPS |
+| Batalla 3 (f~20700) | 40 FPS | 59 FPS |
+| Campo | 60 | 60 |
+Ganancia ~+45% (emu de batalla ~21ms -> ~10ms). La caminata completa avanza sin cuelgues ni glitches
+(3 batallas verificadas visualmente + reproducción completa hasta f35599+).
+
+**A/B [mc] (frío, f1..35599 vs yoff.err):** f1..f17524 = **0 divergencias** (caminata entera).
+Desde f17525: **divergencia ACOTADA** — wobble ±12k centrado en -1 frame (~-357k), pico +6.9M en la
+entrada del combate 3, banda estable [-369680,-345044] durante 13500 frames post-batalla, **sin drift**.
+⚠️ **NO es 0-divergencias estrictas.** DECISIÓN DEL USUARIO (2026-09-01): se integra igual, con nota —
+si en el futuro da problemas, revertir a `StarOcean_OFF_e5a86e3a.exe` o `SNESRECOMP_NO_D9FF=1`.
+
+**Estado final:** `2.Beta/StarOcean.exe` = a0485444 (D9FF). Backup OFF validado =
+`2.Beta/StarOcean_OFF_e5a86e3a.exe` (md5 e5a86e3a). `build-beta/Release/StarOcean.exe` = a0485444.
+1.Release intacto (3f026ac1). El AOT por-función del resto del motor de batalla sigue como trabajo
+futuro si se quiere cerrar el hueco 58->60 y el "parón" previo a la batalla (f16700-17500, 52 FPS).
+
+**Nota Fase B (pantalla negra):** cerrada — las batallas se ven correctamente desde el fix MMC/S-DD1
+del puente; el A/B del D9FF confirma además que la transición f17513-f17524 es bit-idéntica.
+
+---
+
+## Test byte-exactitud post-loadstate (2026-09-01) — ANALISIS de datos
+
+**Infraestructura nueva (Fase F completada):** TCP debug server ACTIVADO por fin. `debug_server.c` solo se
+compila con `-DSNESRECOMP_ENABLE_TRACE=ON` (runner.cmake); el header provee stubs no-op cuando OFF, por eso
+el puerto 13308 nunca escuchaba antes. Build: `build-trace/` (Ninja/Release, TRACE=ON, SDL3 vendored via
+`-DSDL3_DIR=deps\SDL3-3.2.4\cmake`), compilado con `build_trace.bat` → instalado como `2.Beta/StarOcean_TCP.exe`
+(SIN tocar el exe de producción). Cableado en main.c: consumo de `loadstate/savestate` por TCP en el frame
+loop + `wait_if_paused` (los consumos ya estaban definidos en debug_server.c pero no se consumían).
+
+**Silenciado de trazas (3 FPS -> 60 FPS en el build trace):** `dma_write` hacía `fprintf(stderr)` POR escritura
+de registro DMA (`[dma] write $43xx`) y `[sdd1]` por sesión, gateado en SNESRECOMP_TRACE; stderr sin buffer a
+archivo = un WriteFile por print. Ahora env-gateados: `SNESRECOMP_DMA_REG_TRACE` / `SNESRECOMP_SDD1_TRACE`
+(patrón idéntico a SNESRECOMP_SPC_PORT_TRACE/ROM_PTR_TRACE). Severo gotcha: `re.sub` interpreta escapes en el
+reemplazo → el `\n` C se convertía en newline REAL (2 compilaciones fallidas); usar lambda repl.
+
+**Protocolo de dumps exactos:** `run_to_frame T` pausa con el ESTADO de fin-del-frame T y el contador ya en T+1
+(el `frame` cmd reporta T+1). El `savestate S` pendiente se consume al despertar el loop hacia el siguiente
+target → captura fin-T exacto. NUNCA usar `continue` (ignora args y corre suelto). Poll con `frame` == T+1.
+
+**RESULTADO (dumps L3SN completos, 305730 B, mismo frame exacto en ambos runs):**
+- Run A (frío boot) vs Run B (loadstate save1 f17285 + mismo recorrido), frames fin-17499 / fin-17854 / fin-22059.
+- Contadores/relojes (CpuSnapshot cycles/master + APU pacing): difieren SIEMPRE (desfase master del load, esperado).
+- **WRAM (128 KB): NO byte-exacta.** 122 / 2550 / 7688 bytes distintos (fin-17499 / fin-17854 / fin-22059),
+  concentrados en $0000-$042C (zona timers/vars del battle engine), valores tipo 8f vs 9d (decalajes pequeños).
+  El resto de WRAM y el flujo de gameplay quedan intactos (frame counter idéntico, pc del snapshot en el wait
+  $C084AE correcto en ambos). La divergencia CRECE con la densidad de gameplay tras el load.
+- **Conclusión práctica:** los savestates como PUNTO DE ENTRADA de análisis (cargar + replay) son válidos y
+  deterministas EN ESA SESIÓN (el camino de los 3 combates se reproduce), pero el estado post-load NO es
+  byte-idéntico al run natural en los mismos frames — los datos del motor divergen ligeramente y se amplifican.
+  Causa probable: desfase de fase master del load (el "offset -1 frame" ya conocido por el A/B de master).
+  El gameplay visual y los combates no se ven afectados (verificado jugando). Para análisis bit-exactos de
+  batallas seguir usando run frío + replay (o cargar y comparar DENTRO de la misma sesión cargada).
+- Dumps guardados: `2.Beta/saves/tcp_cold_v3_slot{4,5,6}.sav` (frío) y `tcp_load_slot{4,5,6}.sav` (cargado).
+- Estado final: juego cerrado, save9 restaurado (b7c8de63), sin procesos; build-trace + StarOcean_TCP.exe
+  conservados como infraestructura para análisis (no es el exe de producción).
+
+**Pendiente futuro:** los bajones en la zona de COFRES (~f14000, apertura = ráfaga VRAM/DMA S-DD1) son
+otro foco de perfilado (anotado por el usuario 2026-09-01) junto al parón f16700-17500 y el hueco 58->60.
+
+## Zona de cofres (~f13800-14700) — perfil por-frame (2026-09-01)
+
+**Medición (TCP, step por frame):** mediana 48ms/frame (incluye overhead de protocolo) con 6 "spikes" de
+~1.55s (f14300/14366/14424/14428/14488/14660). **CORRECCIÓN: los spikes de 1.5s son ARTEFACTO del
+stepping por TCP** (pausa/resume cada frame + auto-quiescent del campo). El run libre con
+SNESRECOMP_PHASE_MS=1 sobre la misma zona lo demuestra: emu=13-14.5ms/frame + draw=~4ms → ~18ms
+(~55 FPS). Es decir, la zona de cofres es REALMENTE más pesada que el campo normal (9-10ms, ~75-85 FPS)
+— unos +4-5ms de emulación por frame (probablemente las cargas VRAM/S-DD1 de la apertura de cofres),
+pero NADA de parones de segundos. Lección: el stepping frame-a-frame por TCP solo vale para datos
+estáticos (savestates); para tiempos usar runs libres con SNESRECOMP_PHASE_MS=1.

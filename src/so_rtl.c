@@ -114,6 +114,16 @@ void RunOneFrameOfGame(void) {
   if (!resume)
     resume = 0x00FEC1;
 
+  { static int s_fdbg = -1;
+    if (s_fdbg < 0) s_fdbg = getenv("SNESRECOMP_FRAMEDBG") ? 1 : 0;
+    if (s_fdbg && snes_frame_counter >= 4470 && snes_frame_counter <= 4800) {
+      extern int snes_frame_counter;
+      fprintf(stderr, "[fdbg] IN f=%d master=%llu resume=%06X nmiEn=%d vPos=%u hPos=%u inVblank=%d hIrq=%d vIrq=%d\n",
+              snes_frame_counter, (unsigned long long)g_cpu.master_cycles,
+              (unsigned)resume, g_snes->nmiEnabled, g_snes->vPos, g_snes->hPos,
+              g_snes->inVblank, g_snes->hIrqEnabled, g_snes->vIrqEnabled);
+    } }
+
   /* Battle $D9 handshake (see HANDOFF §12.8): the frame task waits on the
    * WRAM latch $D9 ($80 = forced blank at V:216, 0 = restored at V:258) at
    * $C084AE/B2/B4 (LDA $D9 / BNE / LDA $D9 / BEQ). The wait is a pure WRAM
@@ -167,4 +177,12 @@ void RunOneFrameOfGame(void) {
               g_ppu ? (int)g_ppu->inidisp : -1);
     }
   }
+  { static int s_fdbg = -1;
+    if (s_fdbg < 0) s_fdbg = getenv("SNESRECOMP_FRAMEDBG") ? 1 : 0;
+    if (s_fdbg && snes_frame_counter >= 4470 && snes_frame_counter <= 4800) {
+      extern int snes_frame_counter;
+      fprintf(stderr, "[fdbg] OUT f=%d master=%llu resume=%06X\n",
+              snes_frame_counter, (unsigned long long)g_cpu.master_cycles,
+              (unsigned)interp_bridge_lle_resume_pc());
+    } }
 }

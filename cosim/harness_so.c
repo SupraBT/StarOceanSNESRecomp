@@ -47,7 +47,7 @@ typedef struct InputEvent {
     uint16_t mask;
 } InputEvent;
 
-static InputEvent s_input_events[256];
+static InputEvent s_input_events[2048];
 static uint32_t s_input_event_count;
 
 static bool add_input_event(const char *text) {
@@ -55,7 +55,7 @@ static bool add_input_event(const char *text) {
     unsigned long long duration = 0;
     unsigned mask = 0;
     char trailing = '\0';
-    if (s_input_event_count >= 256 ||
+    if (s_input_event_count >= 2048 ||
         sscanf(text, "%llu:%llu:%x%c",
                &start, &duration, &mask, &trailing) != 3 ||
         !duration || mask > 0xffffu)

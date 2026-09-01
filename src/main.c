@@ -23,6 +23,8 @@
 #include "util.h"
 #include "widescreen.h"
 #include "so_spc_player.h"
+int debug_server_save_state_file(const char *path);
+int debug_server_load_state_file(const char *path);
 
 #define WINDOW_TITLE "Star Ocean (S-DD1 Test)"
 #define SO_DEBUG_PORT 13308
@@ -579,10 +581,28 @@ static void HandleCommand(uint32 j, bool pressed) {
 
   if (!pressed)
     return;
-  if (j <= kKeys_Load_Last) {
-    RtlSaveLoad(kSaveLoad_Load, j - kKeys_Load);
+  /* F9 saves, F10 loads the SAME slot (slot 9) so a quick save/load round-trips.
+   * F1-F8 load slots 0-7; Shift+F1-F8 save slots 0-7 (extra states). */
+  if (j == kKeys_Load + 8) {           /* F9 -> quick save slot 9 */
+    char name[128];
+    RtlEnsureSaveDir();
+    RtlSaveSlotPath(9, name, sizeof(name));
+    debug_server_save_state_file(name);
+  } else if (j == kKeys_Load + 9) {    /* F10 -> quick load slot 9 */
+    char name[128];
+    RtlEnsureSaveDir();
+    RtlSaveSlotPath(9, name, sizeof(name));
+    debug_server_load_state_file(name);
+  } else if (j <= kKeys_Load_Last) {
+    char name[128];
+    RtlEnsureSaveDir();
+    RtlSaveSlotPath(j - kKeys_Load, name, sizeof(name));
+    debug_server_load_state_file(name);
   } else if (j <= kKeys_Save_Last) {
-    RtlSaveLoad(kSaveLoad_Save, j - kKeys_Save);
+    char name[128];
+    RtlEnsureSaveDir();
+    RtlSaveSlotPath(j - kKeys_Save, name, sizeof(name));
+    debug_server_save_state_file(name);
   } else {
     switch (j) {
     case kKeys_Fullscreen:
@@ -1353,6 +1373,29 @@ error_reading:;
             continue;
         }
 
+        /* Fase F: savestate/loadstate por TCP (debug_server_consume_*).
+         * Consumido ANTES de RtlRunFrame para que la foto corresponda al fin
+         * del frame anterior (estado exacto al que vio 'get_frame' el cliente).
+         * Inerte si no hay comando TCP pendiente ('savestate 4' / 'loadstate 9'). */
+        {
+            extern int debug_server_consume_loadstate(void);
+            extern int debug_server_consume_savestate(void);
+            int _ls = debug_server_consume_loadstate();
+            if (_ls >= 0) {
+                char name[128];
+                RtlEnsureSaveDir();
+                RtlSaveSlotPath(_ls, name, sizeof name);
+                debug_server_load_state_file(name);
+            }
+            int _ss = debug_server_consume_savestate();
+            if (_ss >= 0) {
+                char name[128];
+                RtlEnsureSaveDir();
+                RtlSaveSlotPath(_ss, name, sizeof name);
+                debug_server_save_state_file(name);
+            }
+        }
+
         // Clear gamepad axis inputs when keyboard directions are pressed
         if (g_input_state & 0xf0)
             g_gamepad[0].axis_buttons = 0;
@@ -1397,6 +1440,8 @@ error_reading:;
                     debug_server_get_controller_inputs() |
                     debug_server_get_controller_active_mask());
         uint64 t_emu1 = SDL_GetPerformanceCounter();
+        { extern void debug_server_wait_if_paused(void);
+          debug_server_wait_if_paused(); }
         /* Per-frame guest master_cycles (dev): SNESRECOMP_MC_LOG=1 logs
          * "frame master" to stderr — used to A/B the VFF guards (VFF ON vs
          * SNESRECOMP_NO_VBLANK_FF=1 must yield identical masters if every
