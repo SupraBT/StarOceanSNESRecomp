@@ -48,7 +48,7 @@ StarOceanTest2/
 │   ├── debug_server.c        # TCP 13308 — comandos de diagnóstico/control
 │   ├── common_rtl.c/.h       # RtlSaveLoad, APU lock, IndirWriteByte/Word
 │   └── common_cpu_infra.c    # g_last_recomp_func, abandonos LLE
-├── snesrecomp-tool/          # Herramienta recompiladora (generador AOT, cfg_loader...)
+├── snesrecomp/               # Submodule: runner + herramienta recompiladora
 ├── cosim/                    # Scripts Python de diagnóstico/cosimulación (ver §8)
 ├── src/                      # so_rtl.c etc. (código recompilado/rtl del juego)
 ├── docs/                     # ARCHITECTURE.md, ENCYCLOPEDIA.md, PERF_REPORT.md, HANDOFF.md
@@ -1336,12 +1336,12 @@ para la corrección).
 **FASE 1 AOT BANCO C3 — RESULTADO (2026-08-29):** se emitió la funcion de estrellas del titulo como AOT y se midio. DETALLES:
 - (a) **Mapeo real corregido**: el trace de bsnes se grabo con la ROM TRADUCIDA al castellano (parche al-vuelo, E:\...Traducida Castellano.sfc), que inserta bytes en el prologo y desplaza la rutina **+3 bytes**. El hotzone del trace ($C3:8F61+) corresponde en la ROM original a **$C3:8F50-$C3:910D** (prologo M16 $C3:8F50 LDA #$0001/STA $32; bucle $C3:8F5E LDA $0000,Y; loop-back JMP $8F5E en 9083/908C; salida JMP $8D93; RTL en $C3:910D; tabla lookup 910E+). Sin accesos $21xx; escribe $004800 (S-DD1, determinista). PARA FUTUROS TRACES traducidos: PCs calientes = +3 respecto a la original.
 - (b) **A/B ON-vs-OFF: 3050 frames IDENTICAL (0 divergencias)** — incluye boot+logos+titulo (f-700-3050). El AOT del C3 es BU-EXACTO. Baseline OFF = so_cosim_clean.exe, ON = so_cosim_c3_on.exe.
-- (c) **Instrumental gap**: la ruta `--banks` de v2_regen NO emitia `g_ram_routine_guards[]` (el runner lo exige; link LNK2001). FIX en snesrecomp-tool/tools/v2_regen.py:_emit_dispatch_table: ahora emite sentinel-only (sin ram_routines en los cfg). so_cosim y build-beta linkean.
+- (c) **Instrumental gap**: la ruta `--banks` de v2_regen NO emitia `g_ram_routine_guards[]` (el runner lo exige; link LNK2001). FIX en snesrecomp/tools/v2_regen.py:_emit_dispatch_table: ahora emite sentinel-only (sin ram_routines en los cfg). so_cosim y build-beta linkean.
 - (d) **Integracion 2.Beta**: cmake -S . -B build-beta (re-glob generated/*.c, estaba sin bankc3_v2.c -> LNK1120) + build-beta-rebuild.bat. 2.Beta/StarOcean.exe md5 8f717052 -> **47a44e7a**, contiene simbolo StarField (grep -c=1). 1.Release INTACTO (3f026ac1).
 - (e) **MEDIDA FPS TITULO (veredicto): SIN GANANCIA.** 2.Beta windowed: 30-35 FPS con C3 (f1133-f3194, muestreo 5x) vs 31-37 FPS sin C3 (f5197-f6703, medicion previa). Dentro del ruido -> **el animador de estrellas NO es el cuello de botella real del titulo**. Mi perfil por conteo de instrucciones del trace de bsnes sobre-atribuyo % de ciclos-hardware a host-time del recomp. CONCLUSION: el limite del titulo esta en el trabajo LLE de vblank/vuelco/DMA/per-frame, no en la rutina de estrellas. La via correcta es un perfil de HOST-TIME del recomp (Release so_cosim headless con reloj, NO mas traces de bsnes).
 - (f) **Mantener el C3 emitido**: es BU-EXACTO y no cuesta nada (solo se ejecuta cuando el dispatch lo alcanza). Se conserva; no aporta al titulo pero puede ayudar donde esa rutina SI domine host-time. si en el futuro se confirma con host-time-profile, se revisa.
 - (g) **CONFIRMACION VISUAL DEL USUARIO (2026-08-29):** con la 2.Beta (C3 integrado) ve en el titulo **25-31 FPS**, y al pulsar A para mostrar New Game/Continue/Sound **baja a 23 estables**. Coincide con la medida windowed (30-35). El bajon a 23 al renderizar las opciones del menu apunta a un coste de transicion especifico (render opciones + marco), no al fondo de estrellas ni al spin. Refuerza: el cuello real es vblank/vuelco/DMA per-frame, y hay una componente extra al pintar el menu.
-- Archivos: config/bankC3.cfg, generated/bankc3_v2.c + dispatch_v2.c (regenerados), snesrecomp-tool/tools/v2_regen.py (fix guards), build-cosim/bench_c3.py + ab_c3.py + ab_diff.py. HERAMIENTA clave restante: perfil de host-time del recomp (Release cosim) — esa es la prioridad para el titulo Y el campo.
+- Archivos: config/bankC3.cfg, generated/bankc3_v2.c + dispatch_v2.c (regenerados), snesrecomp/tools/v2_regen.py (fix guards), build-cosim/bench_c3.py + ab_c3.py + ab_diff.py. HERAMIENTA clave restante: perfil de host-time del recomp (Release cosim) — esa es la prioridad para el titulo Y el campo.
 
 **CONFIRMACION DEL USUARIO (2026-08-29, jugando la 2.Beta con C3):** boot ~8s; logos 60 con bajones; menu titulo 38/39; New Game/Continue 24/29; menu nombre 29/33 (antes 11); intro 60 con rascadas en logos de empresas; puente 25/30 (antes 11); CAMPO (casa de Ronx) 10/11 (antes 7-8). -> **EL C3 MEJORA EL CAMPO y el puente**: el auto-promote del banco C3 incluyo 12 funciones mas (multiplicaciones/calculo $ADAC/$AD6E/$917C) que el campo y la cinematica usan para posicion/logica. Primer AOT con ganancia medida en juego.
 
@@ -1793,7 +1793,7 @@ todo lo demás idéntico) cuya causa NO está cerrada.** No integrar todavía.
 
 **Cambios en disco (todos en el emisor + runtime AOT; 1.Release 3f026ac1 y
 2.Beta 81a1ef66 INTACTAS, no reconstruidas):**
-1. `snesrecomp-tool/recompiler/snes_cycles.py`: nuevo `_WRITE_INDEXED_OPS`
+1. `snesrecomp/recompiler/snes_cycles.py`: nuevo `_WRITE_INDEXED_OPS`
    {0x91,0x99,0x9D,0x9E,0x1E,0x3E,0x5E,0x7E,0xDE,0xFE} (stores+RMW en
    abs,X/abs,Y/(dp),Y). `xwrite_add()` = +1 estático cuando x=0 (el LLE cobra
    `!xf || page-cross` en escrituras; con índice de 16 bits es incondicional).
@@ -1801,7 +1801,7 @@ todo lo demás idéntico) cuya causa NO está cerrada.** No integrar todavía.
    page-cross runtime con x=1); las LECTURAS ya no cobran page-cross (el LLE
    `interp816_adrAbx/adrAby(write=false)` NUNCA lo cobra — verificado contra la
    tabla `cyclesPerOpcode` y el log CYC_WATCH).
-2. `snesrecomp-tool/recompiler/v2/emit_function.py`: `_dynamic_charge_lines`
+2. `snesrecomp/recompiler/v2/emit_function.py`: `_dynamic_charge_lines`
    emite el page-cross solo para write-indexed con x_flag==1; con x=0 va
    plegado al const del bloque. Comentarios actualizados.
 3. `snesrecomp/runner/src/snes/snes_cycles.h` regenerado (misma autoridad;

@@ -23,7 +23,7 @@ generated/
 # ── Dependencies / third-party vendor folders ──────────────────────────
 deps/
 third_party/
-snesrecomp-tool/recompiler-rs/target/
+snesrecomp/recompiler-rs/target/
 
 # ── Binaries / object files ─────────────────────────────────────────────
 *.exe
@@ -104,11 +104,6 @@ Thumbs.db
 
 # ── Freebuff workspace ──────────────────────────────────────────────────
 .freebuff/
-# Nested repo metadata (upstream snesrecomp-tool moved .git backup)
-snesrecomp-tool/.git_upstream_backup/
-snesrecomp-tool/.gitmodules
-
-
 # Diagnostic capture dirs (not source)
 cosim/milestones_run2/
 cosim/shipref/

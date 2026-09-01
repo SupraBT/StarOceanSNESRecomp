@@ -17,6 +17,7 @@ endif()
 
 # SNESRecomp framework root
 set(SNESRECOMP_ROOT "${CMAKE_SOURCE_DIR}/snesrecomp" CACHE PATH "Path to SNESRecomp")
+set(SNESRECOMP_SDL_BACKEND SDL2 CACHE STRING "Desktop SDL backend")
 include(${SNESRECOMP_ROOT}/runner/runner.cmake)
 
 # Enable launcher (built-in console launcher)
@@ -82,7 +83,6 @@ endif()
 snesrecomp_target_post_mortem(StarOcean TIER2)
 
 # SDL integration
-set(SNESRECOMP_SDL_BACKEND SDL2)
 snesrecomp_target_sdl(StarOcean)
 
 # Link libraries

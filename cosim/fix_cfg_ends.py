@@ -18,8 +18,8 @@ import sys, os, re, glob
 from collections import defaultdict
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, os.path.join(BASE, "snesrecomp-tool"))
-sys.path.insert(0, os.path.join(BASE, "snesrecomp-tool", "recompiler"))
+sys.path.insert(0, os.path.join(BASE, "snesrecomp"))
+sys.path.insert(0, os.path.join(BASE, "snesrecomp", "recompiler"))
 
 from snes65816 import load_rom, decode_insn  # noqa: E402
 

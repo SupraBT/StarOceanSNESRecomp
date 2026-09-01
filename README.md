@@ -2,6 +2,18 @@
 
 Generated locally from your ROM by snesrecomp.
 
+Clone with submodules:
+
+```powershell
+git clone --recurse-submodules https://github.com/SupraBT/StarOceanSNESRecomp.git
+```
+
+For an existing checkout, run:
+
+```powershell
+git submodule update --init --recursive
+```
+
 ## Build the generated source
 
 Install CMake, Ninja, and a C compiler. On Windows, run:
@@ -25,3 +37,15 @@ source, and integrate the library with the runner under `snesrecomp/runner`.
 
 `generated/` is derived from copyrighted ROM data. Do not redistribute it
 unless you have permission.
+
+## Regenerate AOT Headlessly
+
+After placing your local ROM at `Star Ocean (Japan).sfc`, run:
+
+```powershell
+.\tools\regenerate_aot.ps1
+```
+
+The default output is `out\aot-static`, so it does not replace a known-good
+`generated\` tree. Add `-InPlace` only after the regenerated output has been
+validated.
