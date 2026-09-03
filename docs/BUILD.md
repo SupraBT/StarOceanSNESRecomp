@@ -49,6 +49,25 @@ Estado validado (2026-09-03):
   193→~61ms) y la zona de cofres.
 - Exe limpio de referencia (`SNESRECOMP_CLEAN_BUILD=ON`, SDL3): md5
   `b205015e52fd9b186decd56ee60df571` (2.Beta local).
-- `generated/` es derivado del ROM: el árbol publicado (config + tool) puede
-  regenerarlo; tras regenerar, validar con A/B byte-exacto (ver
-  `Datos Importantes de Consulta.md`).
+
+## ⚠️ Reproducibilidad de `generated/` (verificado 2026-09-03)
+
+El exe validado b205015e se construyó con el `generated/` local (snapshot del
+2026-09-02 16:33, bancos 00/C0/C1/C3). **Regenerar hoy desde `config/` +
+`snesrecomp-tool/` NO reproduce ese snapshot**:
+
+- el emitter actual (tool v2, con cambios de codegen/decoder posteriores al
+  snapshot) añade guards LLE (`interp_bridge_lle_master_deadline_reached`,
+  `WatchdogCheck`, etc.) a los bancos emitidos, y
+- `config/bankC2.cfg` + `config/bankC9.cfg` (perfiles experimentales: blit de
+  menú / seeds estáticos sin validar byte-exacto) activan 2 bancos AOT
+  (bankc2/bankc9) ausentes del snapshot validado.
+
+A/B real (exe dev regenerado vs línea base validada `afull.log`, replay de la
+caminata f1→23700): **21628/23700 frames difieren desde f1033; delta final
+−369.682 masters (~0.004 %)** → el estado regenerado NO es byte-exacto.
+
+**Acción pendiente antes de afirmar reproducibilidad desde clon limpio:**
+revalidar el estado regenerado (A/B byte-exacto vs LLE) o restaurar el
+estado pre-deriva del tool/config que produjo el snapshot validado. El
+exe 2.Beta (b205015e) sigue siendo el artefacto validado de referencia.
