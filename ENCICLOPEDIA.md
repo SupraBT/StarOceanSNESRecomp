@@ -25,8 +25,8 @@
 
 > ⚠️ **HAY DOS COPIAS DEL RUNNER** (descubierto 2026-08-24):
 > `$PROJECT_ROOT\Snesrecomp\` (raíz) y
-> `StarOceanTest2\snesrecomp\` (**la que compila el build** según CMakeLists).
-> Editar SIEMPRE con rutas desde StarOceanTest2; las rutas relativas pueden caer en
+> `StarOceanSNESRecomp\snesrecomp\` (**la que compila el build** según CMakeLists).
+> Editar SIEMPRE con rutas desde StarOceanSNESRecomp; las rutas relativas pueden caer en
 > la copia raíz y el cambio no llega al exe. Verificar con `grep` en la copia correcta
 > después de editar. Las ediciones históricas (gating, hack SDD1_MODE0) están en la
 > copia correcta.
@@ -147,7 +147,7 @@ Comandos verificados:
 - `debug_server_on_reg_write` se dispara desde `snes_write` para adr en $2100-$43FF y
   desde `WriteReg` (common_rtl.c:743) para el resto. $2105 SÍ se captura vía WriteReg.
 
-## 9. Probes / herramientas de validación (en StarOceanTest2/)
+## 9. Probes / herramientas de validación (en StarOceanSNESRecomp/)
 
 - `probe_replay.py` — reproduce el log en build-trace, detecta el menú poblado (BG1
   tilemap ≥400 entradas), vuelca VRAM/CGRAM/screenshot y **mata el juego al terminar**
@@ -381,7 +381,7 @@ validar frame-a-frame.
 ### Utilización
 ```powershell
 # bsnes oracle
-cd "$PROJECT_ROOT\StarOceanTest2"
+cd "$PROJECT_ROOT\StarOceanSNESRecomp"
 set SNESREF_STATE_OUT=%CD%\build-cosim\trackb_bsnes.bin
 tools\snesref\drive_bsnes.exe "E:\...\bsnes\bsnes\out\bsnes_libretro.dll" "build\Release\Star Ocean (Japan).sfc" --frames 240
 

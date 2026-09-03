@@ -37,7 +37,7 @@ git submodule update --init --recursive
 ```powershell
 cmake -S . -B build-raid -G "Visual Studio 17 2022" `
       -DSNESRECOMP_CLEAN_BUILD=ON -DSNESRECOMP_SDL_BACKEND=SDL3 `
-      -DSDL3_DIR="F:\...\deps\SDL3-3.2.4\cmake"
+      -DSDL3_DIR="<ruta-local>\SDL3-3.2.4\cmake"
 cmake --build build-raid --config Release
 ```
 

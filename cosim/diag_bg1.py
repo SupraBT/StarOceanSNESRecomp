@@ -4,7 +4,7 @@ import sys, os, subprocess, time, json
 from semantic_cosim import DebugClient, kill_process, wait_client
 
 ROOT = os.path.dirname(os.path.abspath(__file__))  # cosim/
-PROJECT = os.path.dirname(ROOT)  # StarOceanTest2/
+PROJECT = os.path.dirname(ROOT)  # StarOceanSNESRecomp/
 EXE = os.path.join(PROJECT, 'build', 'Release', 'StarOcean.exe')
 EVENTS = os.path.join(ROOT, 'intro_101648_inputs.txt')
 OUT = os.path.join(PROJECT, 'build-cosim', 'diag-run')

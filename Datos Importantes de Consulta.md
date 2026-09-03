@@ -183,7 +183,7 @@ Fuente: `..Webs de interés.txt`. Todas se revisaron (2026-09-03).
 - **Documentación como producto**: DKC1Recomp y ar-recomp muestran que llevar
   un `docs/` con bitácora, hashes y gates de release es lo que hace un repo
   público creíble (relevante para nuestra limpieza final en
-  `F:\StarOceanRecompRAID`).
+  `StarOceanRecompRAID`).
 - **Licencias**: ares/Mesen son GPL — solo referencia. Snaggletooth es MIT
   (usable). El código de snesrecomp que ya usamos mantiene su propia licencia.
 - **Donde buscar en la ROM**: código en C0-CC; texto/eventos LZ en E4-E8
@@ -199,6 +199,6 @@ Fuente: `..Webs de interés.txt`. Todas se revisaron (2026-09-03).
 - `..Webs de interés.txt` — lista de URLs (sección 4).
 - `docs/HANDOFF.md` — bitácora técnica del proyecto (bugs, fixes, validaciones).
 - `docs/PLAN_20260901.md`, `docs/SUBMODULE_SETUP.md` — plan y setup.
-- Fork de referencia: `F:\forkStarOcean` (PR1, pristino) — estructura y docs
+- Fork de referencia: `forkStarOcean` (PR1, pristino) — estructura y docs
   (`ENCICLOPEDIA.md`, `SNAGGLETOOTH_FINDINGS.md`, `BUILD_INFO.md`).
-- Destino de la versión limpia para GitHub: `F:\StarOceanRecompRAID`.
+- Destino de la versión limpia para GitHub: `StarOceanRecompRAID`.
