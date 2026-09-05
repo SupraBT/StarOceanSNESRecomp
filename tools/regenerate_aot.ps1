@@ -13,10 +13,10 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
 $Root = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot "..")).Path
-# El toolchain v2 (recompiler python + analizador nativo) vive en snesrecomp-tool/
-# (vendorizado en este repo); el runner (submodulo snesrecomp/) solo necesita el
-# generated/ resultante para compilar.
-$AnalyzerProject = Join-Path $Root "snesrecomp-tool\recompiler-rs"
+# El toolchain v2 (recompiler python + analizador nativo) vive en el submodulo
+# snesrecomp/ (fork SupraBT/snesrecomp). El build del exe solo necesita el
+# generated/ resultante.
+$AnalyzerProject = Join-Path $Root "snesrecomp\recompiler-rs"
 $Analyzer = Join-Path $AnalyzerProject "target\release\snesrecomp-analyze.exe"
 $Rom = if ([System.IO.Path]::IsPathRooted($RomPath)) {
     $RomPath
@@ -96,7 +96,7 @@ Invoke-Checked "cargo" @("build", "--release", "--manifest-path", (Join-Path $An
 
 $env:SNESRECOMP_NATIVE_ANALYZER = $Analyzer
 $EmitArgs = @(
-    (Join-Path $Root "snesrecomp-tool\tools\v2_emit.py"),
+    (Join-Path $Root "snesrecomp\tools\v2_emit.py"),
     "--rom", $Rom,
     "--cfg-dir", (Join-Path $Root "config"),
     "--out-dir", $Output,

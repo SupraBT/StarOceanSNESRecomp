@@ -31,21 +31,20 @@ Known gaps and the development roadmap are tracked in
 ## How it works
 
 ```
-config/  (bank profiles + funcs.h)          snesrecomp-tool/  (AOT generator)
-        \                                        /
-         +-- ROM (not in repo) --> generated/*.c (AOT banks)
-                                          |
-                          CMakeLists.txt + snesrecomp/runner (submodule)
-                                          |
-                                       StarOcean.exe
+config/  (bank profiles + funcs.h)          snesrecomp/  (framework submodule)
+         \                                        /
+          +-- ROM (not in repo) --> generated/*.c (AOT banks)
+                                           |
+                           CMakeLists.txt + snesrecomp/runner
+                                           |
+                                        StarOcean.exe
 ```
 
-- `snesrecomp/` — the runner framework, pinned as a git submodule to
+- `snesrecomp/` — the full framework (runner + AOT generator + native analyzer),
+  pinned as a git submodule to
   [SupraBT/snesrecomp](https://github.com/SupraBT/snesrecomp) (a customized
   fork of [mstan/snesrecomp](https://github.com/mstan/snesrecomp)) at the
   commit carrying the Star Ocean spin fast-paths and the clean-build gating.
-- `snesrecomp-tool/` — the AOT generator (v2 emitter + native analyzer),
-  vendored so the published recipe is self-contained.
 - `generated/` — **not committed**. It is produced from your ROM by the
   regeneration script (see below) and contains translated code only.
 
@@ -55,8 +54,7 @@ config/  (bank profiles + funcs.h)          snesrecomp-tool/  (AOT generator)
 CMakeLists.txt            Executable build (SNESRECOMP_CLEAN_BUILD for release)
 config/                   AOT profiles (bank*.cfg) + funcs.h  → generator input
 src/                      Game host (main, so_rtl, SPC player, state file, …)
-snesrecomp/               Runner framework (submodule, pinned commit)
-snesrecomp-tool/          AOT generator (vendored upstream)
+snesrecomp/               Framework submodule (runner + toolchain + analyzer)
 tools/regenerate_aot.ps1  Regenerates generated/ from your ROM
 docs/                     Submodule notes + build/reproducibility notes
 ```

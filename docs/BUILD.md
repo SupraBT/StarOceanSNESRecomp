@@ -1,8 +1,8 @@
 # StarOceanRecompRAID — build reproducible
 
-Repo publicado del proyecto Star Ocean (Japan) recompilado. Layout tipo
-`forkStarOcean` + toolchain v2 vendorizado (este proyecto usa el runner como
-submodulo y el recompilador como carpeta propia, no dentro del submodulo).
+Repo publicado del proyecto Star Ocean (Japan) recompilado. El framework
+completo (runner + toolchain v2) vive en el submódulo `snesrecomp/` (fork
+`SupraBT/snesrecomp`). No hay copias vendorizadas separadas.
 
 ## Estructura
 
@@ -10,8 +10,8 @@ submodulo y el recompilador como carpeta propia, no dentro del submodulo).
 CMakeLists.txt          build del exe (opcion SNESRECOMP_CLEAN_BUILD para exe limpio)
 config/                 perfiles AOT (bank*.cfg) + funcs.h  -> entrada del generador
 src/                    codigo host del juego (main, so_rtl, spc player, state_file...)
-snesrecomp/             SUBMODULO: runner del framework @ SupraBT/snesrecomp (commit con SPCFF/CCFF/PUMPFF + gating clean-build)
-snesrecomp-tool/        toolchain v2 vendorizado (v2_emit.py + recompiler + analizador nativo recompiler-rs)
+snesrecomp/             SUBMODULO: framework completo (runner + toolchain v2 + recompiler-rs)
+                        @ SupraBT/snesrecomp (commit con SPCFF/CCFF/PUMPFF + gating clean-build)
 generated/              SALIDA del generador (NO se commitea; se regenera con tools/regenerate_aot.ps1 + ROM)
 docs/                   notas de submódulo y de esta build
 ```
@@ -20,7 +20,7 @@ docs/                   notas de submódulo y de esta build
 
 - Windows + Visual Studio 2022 (MSVC) + CMake.
 - Python 3 y Rust/cargo (solo para regenerar `generated/`; el analizador nativo
-  `snesrecomp-tool/recompiler-rs` se compila con cargo).
+  `snesrecomp/recompiler-rs` se compila con cargo).
 - ROM original Star Ocean (Japan) — sha1 `A616EE3466256482BC0ADC11F1FDA7C30E66EF8D`
   (no se commitea; el exe la necesita en runtime via `rom.cfg`).
 - SDL3 dev (en este repo de trabajo: `deps/SDL3-3.2.4`; pasar `-DSDL3_DIR=...`).
@@ -54,7 +54,7 @@ Estado validado (2026-09-03):
 
 El exe validado b205015e se construyó con el `generated/` local (snapshot del
 2026-09-02 16:33, bancos 00/C0/C1/C3). **Regenerar hoy desde `config/` +
-`snesrecomp-tool/` NO reproduce ese snapshot**:
+`snesrecomp/` NO reproduce ese snapshot**:
 
 - el emitter actual (tool v2, con cambios de codegen/decoder posteriores al
   snapshot) añade guards LLE (`interp_bridge_lle_master_deadline_reached`,
