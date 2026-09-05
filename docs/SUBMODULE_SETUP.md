@@ -8,7 +8,7 @@ Star Ocean) ya está convertido en **submódulo de git** en este repo. Estado ve
   (TCP savestate/loadstate), gateo de trazas DMA/S-DD1, y la atribución de origen actualizada.
 - El repo principal lo referencia como gitlink (`160000 c759806b...`) + `.gitmodules` apuntando a
   `https://github.com/SupraBT/snesrecomp.git` (el fork de mstan).
-- Solo código fuente en el submódulo (134 archivos .c/.h/.md/.cmake — sin binarios ni logs).
+- Solo código fuente en el submódulo (runner + toolchain v2 + recompiler-rs — sin binarios ni logs).
 
 ## Pasos (recomendado: fork de mstan/snesrecomp)
 
@@ -60,4 +60,5 @@ git submodule update --init   # en un clon nuevo
 - **Origen**: el framework se descargó de `mstan/snesrecomp` (comunidad R.A.I.D.); la atribución
   está documentada en `snesrecomp/THIRD_PARTY_ATTRIBUTION.md`. Otras piezas citadas ahí:
   recompiler-rs de `perplexes/snesrecomp`, ares (Cx4), libretro (headers), SDL2.
-- `snesrecomp-tool/` sigue siendo carpeta vendored del repo principal (fuera de esta conversión).
+- El toolchain v2 (v2_emit.py, recompiler-rs, analyzer) ahora vive dentro del submódulo
+  en lugar de en una carpeta vendorizada separada.

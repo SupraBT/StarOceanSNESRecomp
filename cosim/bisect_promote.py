@@ -15,7 +15,7 @@ sys.stdout.reconfigure(encoding="utf-8")
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CFG_DIR = os.path.join(ROOT, "config")
 DIRECTIVES = os.path.join(ROOT, "cosim", "promoted_directives.txt")
-ANALYZER = os.path.join(ROOT, "snesrecomp-tool", "recompiler-rs", "target",
+ANALYZER = os.path.join(ROOT, "snesrecomp", "recompiler-rs", "target",
                         "release", "snesrecomp-analyze.exe")
 ROM = os.path.join(ROOT, "Star Ocean (Japan).sfc")
 
@@ -54,7 +54,7 @@ def regen():
     env = os.environ.copy()
     env["SNESRECOMP_NATIVE_ANALYZER"] = ANALYZER
     r = subprocess.run(
-        [sys.executable, os.path.join(ROOT, "snesrecomp-tool", "tools",
+        [sys.executable, os.path.join(ROOT, "snesrecomp", "tools",
                                       "v2_emit.py"),
          "--rom", ROM, "--cfg-dir", CFG_DIR,
          "--out-dir", os.path.join(ROOT, "generated"), "--cfg-roots"],
