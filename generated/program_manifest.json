@@ -1,0 +1,2936 @@
+{
+  "exit_mode_sets": {
+    "00BDE8:M1X1": []
+  },
+  "exit_modes": {
+    "0083B3:M1X1": {
+      "m": 1,
+      "x": 1
+    },
+    "008568:M1X1": {
+      "m": 1,
+      "x": 1
+    },
+    "00856A:M1X1": {
+      "m": 1,
+      "x": 1
+    },
+    "008D7B:M1X1": {
+      "m": 1,
+      "x": 1
+    },
+    "008E9F:M1X1": {
+      "m": 1,
+      "x": 1
+    },
+    "008F7B:M1X1": {
+      "m": 1,
+      "x": 1
+    },
+    "009043:M1X1": {
+      "m": 1,
+      "x": 1
+    },
+    "0095AD:M1X1": {
+      "m": 1,
+      "x": 1
+    },
+    "0098A5:M1X1": {
+      "m": 1,
+      "x": 1
+    },
+    "0098CF:M1X1": {
+      "m": 1,
+      "x": 1
+    },
+    "0099E6:M1X1": {
+      "m": 1,
+      "x": 1
+    },
+    "009A11:M1X1": {
+      "m": 1,
+      "x": 1
+    },
+    "009AAD:M1X1": {
+      "m": 1,
+      "x": 1
+    },
+    "009C73:M1X1": {
+      "m": 1,
+      "x": 1
+    },
+    "009CA5:M1X1": {
+      "m": 1,
+      "x": 1
+    },
+    "009CA7:M1X1": {
+      "m": 1,
+      "x": 1
+    },
+    "009D8B:M1X1": {
+      "m": 1,
+      "x": 1
+    },
+    "009F2C:M1X1": {
+      "m": 1,
+      "x": 1
+    },
+    "009FAD:M1X1": {
+      "m": 1,
+      "x": 1
+    },
+    "009FB7:M1X1": {
+      "m": 1,
+      "x": 1
+    },
+    "00AB48:M1X1": {
+      "m": 1,
+      "x": 1
+    },
+    "00AB8C:M1X1": {
+      "m": 1,
+      "x": 1
+    },
+    "00B022:M1X1": {
+      "m": 1,
+      "x": 1
+    },
+    "00B03E:M1X1": {
+      "m": 1,
+      "x": 1
+    },
+    "00B99B:M1X1": {
+      "m": 1,
+      "x": 1
+    },
+    "00B9A8:M1X1": {
+      "m": 1,
+      "x": 1
+    },
+    "00FEB9:M1X1": {
+      "m": 1,
+      "x": 1
+    },
+    "C00000:M1X1": {
+      "m": 1,
+      "x": 1
+    },
+    "C00400:M1X1": {
+      "m": 1,
+      "x": 1
+    },
+    "C00600:M1X1": {
+      "m": 1,
+      "x": 1
+    },
+    "C00800:M1X1": {
+      "m": 1,
+      "x": 1
+    },
+    "C00C00:M1X1": {
+      "m": 1,
+      "x": 1
+    },
+    "C00E00:M1X1": {
+      "m": 1,
+      "x": 1
+    },
+    "C01000:M1X1": {
+      "m": 1,
+      "x": 1
+    },
+    "C01200:M1X1": {
+      "m": 1,
+      "x": 1
+    },
+    "C01400:M1X1": {
+      "m": 1,
+      "x": 1
+    },
+    "C01800:M1X1": {
+      "m": 1,
+      "x": 1
+    },
+    "C01C00:M1X1": {
+      "m": 1,
+      "x": 1
+    },
+    "C01E00:M1X1": {
+      "m": 1,
+      "x": 1
+    },
+    "C2FC43:M1X0": {
+      "m": 1,
+      "x": 0
+    },
+    "C2FDF0:M1X0": {
+      "m": 0,
+      "x": 0
+    },
+    "C2FEE5:M0X0": {
+      "m": 0,
+      "x": 0
+    },
+    "C3AD6E:M0X0": {
+      "m": 0,
+      "x": 0
+    },
+    "C3ADAC:M0X0": {
+      "m": 0,
+      "x": 0
+    },
+    "C9D9EF:M1X1": {
+      "m": 1,
+      "x": 1
+    },
+    "C9E4DC:M1X1": {
+      "m": 1,
+      "x": 1
+    },
+    "C9E57B:M1X1": {
+      "m": 1,
+      "x": 1
+    }
+  },
+  "format_version": 3,
+  "nodes": {
+    "008079:M1X1": {
+      "demands": [],
+      "digest": "native",
+      "disposition": "lle_only",
+      "instruction_count": 168,
+      "key": {
+        "m": 1,
+        "pc24": 32889,
+        "x": 1
+      },
+      "max_pc24": 33312,
+      "min_pc24": 32889,
+      "reasons": [
+        "cop_at_00809D",
+        "cop_at_0080A2",
+        "structural_poison"
+      ]
+    },
+    "0080E8:M1X1": {
+      "demands": [
+        {
+          "detail": "",
+          "kind": "direct_tail_call",
+          "resolution": "lle_exact",
+          "site_pc24": 33010,
+          "target": {
+            "m": 1,
+            "pc24": 2168462,
+            "x": 1
+          }
+        }
+      ],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 6,
+      "key": {
+        "m": 1,
+        "pc24": 33000,
+        "x": 1
+      },
+      "max_pc24": 33010,
+      "min_pc24": 33000,
+      "reasons": []
+    },
+    "0080F7:M1X1": {
+      "demands": [],
+      "digest": "native",
+      "disposition": "lle_only",
+      "instruction_count": 102,
+      "key": {
+        "m": 1,
+        "pc24": 33015,
+        "x": 1
+      },
+      "max_pc24": 33312,
+      "min_pc24": 33015,
+      "reasons": [
+        "cop_at_0080F7",
+        "structural_poison"
+      ]
+    },
+    "008319:M1X1": {
+      "demands": [
+        {
+          "detail": "declared_boundary",
+          "kind": "direct_tail_call",
+          "resolution": "aot_exact",
+          "site_pc24": 33579,
+          "target": {
+            "m": 1,
+            "pc24": 33581,
+            "x": 1
+          }
+        }
+      ],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 7,
+      "key": {
+        "m": 1,
+        "pc24": 33561,
+        "x": 1
+      },
+      "max_pc24": 33579,
+      "min_pc24": 33561,
+      "reasons": []
+    },
+    "00832D:M1X1": {
+      "demands": [
+        {
+          "detail": "",
+          "kind": "direct_call",
+          "resolution": "lle_exact",
+          "site_pc24": 33695,
+          "target": {
+            "m": 1,
+            "pc24": 948,
+            "x": 1
+          }
+        },
+        {
+          "detail": "",
+          "kind": "direct_call",
+          "resolution": "lle_exact",
+          "site_pc24": 33704,
+          "target": {
+            "m": 1,
+            "pc24": 1509,
+            "x": 1
+          }
+        }
+      ],
+      "digest": "native",
+      "disposition": "lle_only",
+      "instruction_count": 60,
+      "key": {
+        "m": 1,
+        "pc24": 33581,
+        "x": 1
+      },
+      "max_pc24": 33715,
+      "min_pc24": 33581,
+      "reasons": [
+        "truncated_call_continuation",
+        "unproven_call_at_00839F_to_0003B4_m1x1",
+        "unproven_call_at_0083A8_to_0005E5_m1x1",
+        "unproven_callee_exit"
+      ]
+    },
+    "008364:M1X1": {
+      "demands": [
+        {
+          "detail": "",
+          "kind": "direct_call",
+          "resolution": "lle_exact",
+          "site_pc24": 33695,
+          "target": {
+            "m": 1,
+            "pc24": 948,
+            "x": 1
+          }
+        },
+        {
+          "detail": "",
+          "kind": "direct_call",
+          "resolution": "lle_exact",
+          "site_pc24": 33704,
+          "target": {
+            "m": 1,
+            "pc24": 1509,
+            "x": 1
+          }
+        },
+        {
+          "detail": "declared_boundary",
+          "kind": "direct_tail_call",
+          "resolution": "aot_exact",
+          "site_pc24": 33712,
+          "target": {
+            "m": 1,
+            "pc24": 33715,
+            "x": 1
+          }
+        }
+      ],
+      "digest": "native",
+      "disposition": "lle_only",
+      "instruction_count": 39,
+      "key": {
+        "m": 1,
+        "pc24": 33636,
+        "x": 1
+      },
+      "max_pc24": 33712,
+      "min_pc24": 33631,
+      "reasons": [
+        "truncated_call_continuation",
+        "unproven_call_at_00839F_to_0003B4_m1x1",
+        "unproven_call_at_0083A8_to_0005E5_m1x1",
+        "unproven_callee_exit"
+      ]
+    },
+    "0083B3:M1X1": {
+      "demands": [],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 1,
+      "key": {
+        "m": 1,
+        "pc24": 33715,
+        "x": 1
+      },
+      "max_pc24": 33715,
+      "min_pc24": 33715,
+      "reasons": []
+    },
+    "008419:M1X1": {
+      "demands": [
+        {
+          "detail": "",
+          "kind": "direct_tail_call",
+          "resolution": "lle_exact",
+          "site_pc24": 33819,
+          "target": {
+            "m": 1,
+            "pc24": 7288,
+            "x": 1
+          }
+        }
+      ],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 2,
+      "key": {
+        "m": 1,
+        "pc24": 33817,
+        "x": 1
+      },
+      "max_pc24": 33819,
+      "min_pc24": 33817,
+      "reasons": []
+    },
+    "00843B:M1X1": {
+      "demands": [
+        {
+          "detail": "",
+          "kind": "direct_call",
+          "resolution": "lle_exact",
+          "site_pc24": 34015,
+          "target": {
+            "m": 1,
+            "pc24": 3954,
+            "x": 1
+          }
+        },
+        {
+          "detail": "",
+          "kind": "direct_call",
+          "resolution": "lle_exact",
+          "site_pc24": 34020,
+          "target": {
+            "m": 1,
+            "pc24": 3744,
+            "x": 1
+          }
+        },
+        {
+          "detail": "",
+          "kind": "direct_call",
+          "resolution": "lle_exact",
+          "site_pc24": 34031,
+          "target": {
+            "m": 1,
+            "pc24": 3382,
+            "x": 1
+          }
+        },
+        {
+          "detail": "",
+          "kind": "direct_call",
+          "resolution": "lle_exact",
+          "site_pc24": 34036,
+          "target": {
+            "m": 1,
+            "pc24": 3020,
+            "x": 1
+          }
+        },
+        {
+          "detail": "",
+          "kind": "direct_call",
+          "resolution": "lle_exact",
+          "site_pc24": 34047,
+          "target": {
+            "m": 1,
+            "pc24": 6352,
+            "x": 1
+          }
+        },
+        {
+          "detail": "",
+          "kind": "direct_call",
+          "resolution": "lle_exact",
+          "site_pc24": 34052,
+          "target": {
+            "m": 1,
+            "pc24": 5420,
+            "x": 1
+          }
+        },
+        {
+          "detail": "",
+          "kind": "direct_call",
+          "resolution": "lle_exact",
+          "site_pc24": 34063,
+          "target": {
+            "m": 1,
+            "pc24": 2544,
+            "x": 1
+          }
+        },
+        {
+          "detail": "",
+          "kind": "direct_call",
+          "resolution": "lle_exact",
+          "site_pc24": 34068,
+          "target": {
+            "m": 1,
+            "pc24": 2068,
+            "x": 1
+          }
+        },
+        {
+          "detail": "",
+          "kind": "direct_call",
+          "resolution": "lle_exact",
+          "site_pc24": 34079,
+          "target": {
+            "m": 1,
+            "pc24": 4792,
+            "x": 1
+          }
+        },
+        {
+          "detail": "",
+          "kind": "direct_call",
+          "resolution": "lle_exact",
+          "site_pc24": 34084,
+          "target": {
+            "m": 1,
+            "pc24": 4164,
+            "x": 1
+          }
+        }
+      ],
+      "digest": "native",
+      "disposition": "lle_only",
+      "instruction_count": 59,
+      "key": {
+        "m": 1,
+        "pc24": 33851,
+        "x": 1
+      },
+      "max_pc24": 34084,
+      "min_pc24": 33851,
+      "reasons": [
+        "truncated_call_continuation",
+        "unproven_call_at_0084DF_to_000F72_m1x1",
+        "unproven_call_at_0084E4_to_000EA0_m1x1",
+        "unproven_call_at_0084EF_to_000D36_m1x1",
+        "unproven_call_at_0084F4_to_000BCC_m1x1",
+        "unproven_call_at_0084FF_to_0018D0_m1x1",
+        "unproven_call_at_008504_to_00152C_m1x1",
+        "unproven_call_at_00850F_to_0009F0_m1x1",
+        "unproven_call_at_008514_to_000814_m1x1",
+        "unproven_call_at_00851F_to_0012B8_m1x1",
+        "unproven_call_at_008524_to_001044_m1x1",
+        "unproven_callee_exit"
+      ]
+    },
+    "008449:M1X1": {
+      "demands": [],
+      "digest": "native",
+      "disposition": "lle_only",
+      "instruction_count": 3,
+      "key": {
+        "m": 1,
+        "pc24": 33865,
+        "x": 1
+      },
+      "max_pc24": 33869,
+      "min_pc24": 33865,
+      "reasons": [
+        "brk_at_00844D",
+        "structural_poison"
+      ]
+    },
+    "008500:M1X1": {
+      "demands": [],
+      "digest": "native",
+      "disposition": "lle_only",
+      "instruction_count": 45,
+      "key": {
+        "m": 1,
+        "pc24": 34048,
+        "x": 1
+      },
+      "max_pc24": 34161,
+      "min_pc24": 34048,
+      "reasons": [
+        "brk_at_00851B",
+        "structural_poison"
+      ]
+    },
+    "008568:M1X1": {
+      "demands": [
+        {
+          "detail": "declared_boundary",
+          "kind": "direct_tail_call",
+          "resolution": "aot_exact",
+          "site_pc24": 34152,
+          "target": {
+            "m": 1,
+            "pc24": 34154,
+            "x": 1
+          }
+        }
+      ],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 1,
+      "key": {
+        "m": 1,
+        "pc24": 34152,
+        "x": 1
+      },
+      "max_pc24": 34152,
+      "min_pc24": 34152,
+      "reasons": []
+    },
+    "00856A:M1X1": {
+      "demands": [],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 1,
+      "key": {
+        "m": 1,
+        "pc24": 34154,
+        "x": 1
+      },
+      "max_pc24": 34154,
+      "min_pc24": 34154,
+      "reasons": []
+    },
+    "008A00:M1X1": {
+      "demands": [],
+      "digest": "native",
+      "disposition": "lle_only",
+      "instruction_count": 1,
+      "key": {
+        "m": 1,
+        "pc24": 35328,
+        "x": 1
+      },
+      "max_pc24": 35328,
+      "min_pc24": 35328,
+      "reasons": [
+        "brk_at_008A00",
+        "structural_poison"
+      ]
+    },
+    "008CAD:M1X1": {
+      "demands": [],
+      "digest": "native",
+      "disposition": "lle_only",
+      "instruction_count": 1,
+      "key": {
+        "m": 1,
+        "pc24": 36013,
+        "x": 1
+      },
+      "max_pc24": 36013,
+      "min_pc24": 36013,
+      "reasons": [
+        "brk_at_008CAD",
+        "structural_poison"
+      ]
+    },
+    "008D7B:M1X1": {
+      "demands": [
+        {
+          "detail": "declared_boundary",
+          "kind": "direct_tail_call",
+          "resolution": "aot_exact",
+          "site_pc24": 36509,
+          "target": {
+            "m": 1,
+            "pc24": 36511,
+            "x": 1
+          }
+        }
+      ],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 123,
+      "key": {
+        "m": 1,
+        "pc24": 36219,
+        "x": 1
+      },
+      "max_pc24": 36509,
+      "min_pc24": 36219,
+      "reasons": []
+    },
+    "008E9F:M1X1": {
+      "demands": [],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 1,
+      "key": {
+        "m": 1,
+        "pc24": 36511,
+        "x": 1
+      },
+      "max_pc24": 36511,
+      "min_pc24": 36511,
+      "reasons": []
+    },
+    "008F7B:M1X1": {
+      "demands": [
+        {
+          "detail": "declared_boundary",
+          "kind": "direct_tail_call",
+          "resolution": "aot_exact",
+          "site_pc24": 36929,
+          "target": {
+            "m": 1,
+            "pc24": 36931,
+            "x": 1
+          }
+        }
+      ],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 84,
+      "key": {
+        "m": 1,
+        "pc24": 36731,
+        "x": 1
+      },
+      "max_pc24": 36929,
+      "min_pc24": 36731,
+      "reasons": []
+    },
+    "009043:M1X1": {
+      "demands": [],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 1,
+      "key": {
+        "m": 1,
+        "pc24": 36931,
+        "x": 1
+      },
+      "max_pc24": 36931,
+      "min_pc24": 36931,
+      "reasons": []
+    },
+    "0095AD:M1X1": {
+      "demands": [],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 3,
+      "key": {
+        "m": 1,
+        "pc24": 38317,
+        "x": 1
+      },
+      "max_pc24": 38322,
+      "min_pc24": 38317,
+      "reasons": []
+    },
+    "00985A:M1X1": {
+      "demands": [],
+      "digest": "native",
+      "disposition": "lle_only",
+      "instruction_count": 1,
+      "key": {
+        "m": 1,
+        "pc24": 39002,
+        "x": 1
+      },
+      "max_pc24": 39002,
+      "min_pc24": 39002,
+      "reasons": [
+        "brk_at_00985A",
+        "structural_poison"
+      ]
+    },
+    "0098A5:M1X1": {
+      "demands": [
+        {
+          "detail": "declared_boundary",
+          "kind": "direct_tail_call",
+          "resolution": "aot_exact",
+          "site_pc24": 39117,
+          "target": {
+            "m": 1,
+            "pc24": 39119,
+            "x": 1
+          }
+        }
+      ],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 18,
+      "key": {
+        "m": 1,
+        "pc24": 39077,
+        "x": 1
+      },
+      "max_pc24": 39117,
+      "min_pc24": 39077,
+      "reasons": []
+    },
+    "0098CF:M1X1": {
+      "demands": [],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 1,
+      "key": {
+        "m": 1,
+        "pc24": 39119,
+        "x": 1
+      },
+      "max_pc24": 39119,
+      "min_pc24": 39119,
+      "reasons": []
+    },
+    "009900:M1X1": {
+      "demands": [],
+      "digest": "native",
+      "disposition": "lle_only",
+      "instruction_count": 2,
+      "key": {
+        "m": 1,
+        "pc24": 39168,
+        "x": 1
+      },
+      "max_pc24": 39169,
+      "min_pc24": 39168,
+      "reasons": [
+        "brk_at_009901",
+        "structural_poison"
+      ]
+    },
+    "0099E6:M1X1": {
+      "demands": [
+        {
+          "detail": "declared_boundary",
+          "kind": "direct_tail_call",
+          "resolution": "aot_exact",
+          "site_pc24": 39438,
+          "target": {
+            "m": 1,
+            "pc24": 39441,
+            "x": 1
+          }
+        }
+      ],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 18,
+      "key": {
+        "m": 1,
+        "pc24": 39398,
+        "x": 1
+      },
+      "max_pc24": 39438,
+      "min_pc24": 39398,
+      "reasons": []
+    },
+    "009A11:M1X1": {
+      "demands": [],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 258,
+      "key": {
+        "m": 1,
+        "pc24": 39441,
+        "x": 1
+      },
+      "max_pc24": 40051,
+      "min_pc24": 39441,
+      "reasons": []
+    },
+    "009AAD:M1X1": {
+      "demands": [
+        {
+          "detail": "declared_boundary",
+          "kind": "direct_tail_call",
+          "resolution": "aot_exact",
+          "site_pc24": 40049,
+          "target": {
+            "m": 1,
+            "pc24": 40051,
+            "x": 1
+          }
+        }
+      ],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 192,
+      "key": {
+        "m": 1,
+        "pc24": 39597,
+        "x": 1
+      },
+      "max_pc24": 40049,
+      "min_pc24": 39595,
+      "reasons": []
+    },
+    "009C73:M1X1": {
+      "demands": [],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 1,
+      "key": {
+        "m": 1,
+        "pc24": 40051,
+        "x": 1
+      },
+      "max_pc24": 40051,
+      "min_pc24": 40051,
+      "reasons": []
+    },
+    "009CA5:M1X1": {
+      "demands": [
+        {
+          "detail": "declared_boundary",
+          "kind": "direct_tail_call",
+          "resolution": "aot_exact",
+          "site_pc24": 40101,
+          "target": {
+            "m": 1,
+            "pc24": 40103,
+            "x": 1
+          }
+        }
+      ],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 1,
+      "key": {
+        "m": 1,
+        "pc24": 40101,
+        "x": 1
+      },
+      "max_pc24": 40101,
+      "min_pc24": 40101,
+      "reasons": []
+    },
+    "009CA7:M1X1": {
+      "demands": [],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 1,
+      "key": {
+        "m": 1,
+        "pc24": 40103,
+        "x": 1
+      },
+      "max_pc24": 40103,
+      "min_pc24": 40103,
+      "reasons": []
+    },
+    "009D00:M1X1": {
+      "demands": [],
+      "digest": "native",
+      "disposition": "lle_only",
+      "instruction_count": 2,
+      "key": {
+        "m": 1,
+        "pc24": 40192,
+        "x": 1
+      },
+      "max_pc24": 40195,
+      "min_pc24": 40192,
+      "reasons": [
+        "brk_at_009D03",
+        "structural_poison"
+      ]
+    },
+    "009D7B:M1X1": {
+      "demands": [
+        {
+          "detail": "declared_boundary",
+          "kind": "direct_tail_call",
+          "resolution": "aot_exact",
+          "site_pc24": 40330,
+          "target": {
+            "m": 1,
+            "pc24": 40331,
+            "x": 1
+          }
+        },
+        {
+          "detail": "",
+          "kind": "direct_tail_call",
+          "resolution": "lle_exact",
+          "site_pc24": 40389,
+          "target": {
+            "m": 1,
+            "pc24": 7542,
+            "x": 1
+          }
+        },
+        {
+          "detail": "",
+          "kind": "direct_tail_call",
+          "resolution": "lle_exact",
+          "site_pc24": 40405,
+          "target": {
+            "m": 1,
+            "pc24": 7542,
+            "x": 1
+          }
+        },
+        {
+          "detail": "",
+          "kind": "direct_tail_call",
+          "resolution": "lle_exact",
+          "site_pc24": 40418,
+          "target": {
+            "m": 1,
+            "pc24": 7542,
+            "x": 1
+          }
+        },
+        {
+          "detail": "",
+          "kind": "direct_tail_call",
+          "resolution": "lle_exact",
+          "site_pc24": 40452,
+          "target": {
+            "m": 1,
+            "pc24": 7542,
+            "x": 1
+          }
+        }
+      ],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 119,
+      "key": {
+        "m": 1,
+        "pc24": 40315,
+        "x": 1
+      },
+      "max_pc24": 40547,
+      "min_pc24": 40315,
+      "reasons": []
+    },
+    "009D8B:M1X1": {
+      "demands": [],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 1,
+      "key": {
+        "m": 1,
+        "pc24": 40331,
+        "x": 1
+      },
+      "max_pc24": 40331,
+      "min_pc24": 40331,
+      "reasons": []
+    },
+    "009EA0:M1X1": {
+      "demands": [
+        {
+          "detail": "",
+          "kind": "direct_call",
+          "resolution": "aot_exact",
+          "site_pc24": 40616,
+          "target": {
+            "m": 1,
+            "pc24": 40877,
+            "x": 1
+          }
+        },
+        {
+          "detail": "declared_boundary",
+          "kind": "direct_tail_call",
+          "resolution": "aot_exact",
+          "site_pc24": 40746,
+          "target": {
+            "m": 1,
+            "pc24": 40748,
+            "x": 1
+          }
+        },
+        {
+          "detail": "table_base=1F49",
+          "kind": "dynamic_dispatch",
+          "resolution": "lle_dynamic",
+          "site_pc24": 40764,
+          "target": null
+        }
+      ],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 78,
+      "key": {
+        "m": 1,
+        "pc24": 40608,
+        "x": 1
+      },
+      "max_pc24": 40776,
+      "min_pc24": 40608,
+      "reasons": []
+    },
+    "009F2C:M1X1": {
+      "demands": [],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 1,
+      "key": {
+        "m": 1,
+        "pc24": 40748,
+        "x": 1
+      },
+      "max_pc24": 40748,
+      "min_pc24": 40748,
+      "reasons": []
+    },
+    "009FAD:M1X1": {
+      "demands": [
+        {
+          "detail": "declared_boundary",
+          "kind": "direct_tail_call",
+          "resolution": "aot_exact",
+          "site_pc24": 40886,
+          "target": {
+            "m": 1,
+            "pc24": 40887,
+            "x": 1
+          }
+        }
+      ],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 5,
+      "key": {
+        "m": 1,
+        "pc24": 40877,
+        "x": 1
+      },
+      "max_pc24": 40886,
+      "min_pc24": 40877,
+      "reasons": []
+    },
+    "009FB7:M1X1": {
+      "demands": [],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 1,
+      "key": {
+        "m": 1,
+        "pc24": 40887,
+        "x": 1
+      },
+      "max_pc24": 40887,
+      "min_pc24": 40887,
+      "reasons": []
+    },
+    "00A1A5:M1X1": {
+      "demands": [],
+      "digest": "native",
+      "disposition": "lle_only",
+      "instruction_count": 2,
+      "key": {
+        "m": 1,
+        "pc24": 41381,
+        "x": 1
+      },
+      "max_pc24": 41384,
+      "min_pc24": 41381,
+      "reasons": [
+        "brk_at_00A1A8",
+        "structural_poison"
+      ]
+    },
+    "00A28B:M1X1": {
+      "demands": [
+        {
+          "detail": "declared_boundary",
+          "kind": "direct_tail_call",
+          "resolution": "aot_exact",
+          "site_pc24": 41716,
+          "target": {
+            "m": 1,
+            "pc24": 41718,
+            "x": 1
+          }
+        }
+      ],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 37,
+      "key": {
+        "m": 1,
+        "pc24": 41611,
+        "x": 1
+      },
+      "max_pc24": 41716,
+      "min_pc24": 41611,
+      "reasons": []
+    },
+    "00A2F6:M1X1": {
+      "demands": [],
+      "digest": "native",
+      "disposition": "lle_only",
+      "instruction_count": 68,
+      "key": {
+        "m": 1,
+        "pc24": 41718,
+        "x": 1
+      },
+      "max_pc24": 41901,
+      "min_pc24": 41718,
+      "reasons": [
+        "brk_at_00A3AD",
+        "cop_at_00A39F",
+        "structural_poison"
+      ]
+    },
+    "00A500:M1X1": {
+      "demands": [
+        {
+          "detail": "",
+          "kind": "direct_call",
+          "resolution": "lle_exact",
+          "site_pc24": 42284,
+          "target": {
+            "m": 0,
+            "pc24": 12600148,
+            "x": 1
+          }
+        }
+      ],
+      "digest": "native",
+      "disposition": "lle_only",
+      "instruction_count": 18,
+      "key": {
+        "m": 1,
+        "pc24": 42240,
+        "x": 1
+      },
+      "max_pc24": 42284,
+      "min_pc24": 42240,
+      "reasons": [
+        "truncated_call_continuation",
+        "unproven_call_at_00A52C_to_C04354_m0x1",
+        "unproven_callee_exit"
+      ]
+    },
+    "00A58B:M1X1": {
+      "demands": [],
+      "digest": "native",
+      "disposition": "lle_only",
+      "instruction_count": 1,
+      "key": {
+        "m": 1,
+        "pc24": 42379,
+        "x": 1
+      },
+      "max_pc24": 42379,
+      "min_pc24": 42379,
+      "reasons": [
+        "brk_at_00A58B",
+        "structural_poison"
+      ]
+    },
+    "00A98B:M1X1": {
+      "demands": [],
+      "digest": "native",
+      "disposition": "lle_only",
+      "instruction_count": 2,
+      "key": {
+        "m": 1,
+        "pc24": 43403,
+        "x": 1
+      },
+      "max_pc24": 43405,
+      "min_pc24": 43403,
+      "reasons": [
+        "brk_at_00A98D",
+        "structural_poison"
+      ]
+    },
+    "00AA00:M1X1": {
+      "demands": [],
+      "digest": "native",
+      "disposition": "lle_only",
+      "instruction_count": 33,
+      "key": {
+        "m": 1,
+        "pc24": 43520,
+        "x": 1
+      },
+      "max_pc24": 43579,
+      "min_pc24": 43509,
+      "reasons": [
+        "brk_at_00A9FA",
+        "brk_at_00AA3B",
+        "structural_poison"
+      ]
+    },
+    "00AB48:M1X1": {
+      "demands": [
+        {
+          "detail": "declared_boundary",
+          "kind": "direct_tail_call",
+          "resolution": "aot_exact",
+          "site_pc24": 43915,
+          "target": {
+            "m": 1,
+            "pc24": 43916,
+            "x": 1
+          }
+        }
+      ],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 64,
+      "key": {
+        "m": 1,
+        "pc24": 43848,
+        "x": 1
+      },
+      "max_pc24": 43915,
+      "min_pc24": 43848,
+      "reasons": []
+    },
+    "00AB8C:M1X1": {
+      "demands": [],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 1,
+      "key": {
+        "m": 1,
+        "pc24": 43916,
+        "x": 1
+      },
+      "max_pc24": 43916,
+      "min_pc24": 43916,
+      "reasons": []
+    },
+    "00B022:M1X1": {
+      "demands": [
+        {
+          "detail": "declared_boundary",
+          "kind": "direct_tail_call",
+          "resolution": "aot_exact",
+          "site_pc24": 45115,
+          "target": {
+            "m": 1,
+            "pc24": 45118,
+            "x": 1
+          }
+        }
+      ],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 10,
+      "key": {
+        "m": 1,
+        "pc24": 45090,
+        "x": 1
+      },
+      "max_pc24": 45115,
+      "min_pc24": 45090,
+      "reasons": []
+    },
+    "00B03E:M1X1": {
+      "demands": [],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 1,
+      "key": {
+        "m": 1,
+        "pc24": 45118,
+        "x": 1
+      },
+      "max_pc24": 45118,
+      "min_pc24": 45118,
+      "reasons": []
+    },
+    "00B164:M1X1": {
+      "demands": [],
+      "digest": "native",
+      "disposition": "lle_only",
+      "instruction_count": 3,
+      "key": {
+        "m": 1,
+        "pc24": 45412,
+        "x": 1
+      },
+      "max_pc24": 45416,
+      "min_pc24": 45412,
+      "reasons": [
+        "brk_at_00B168",
+        "structural_poison"
+      ]
+    },
+    "00B2A0:M1X1": {
+      "demands": [],
+      "digest": "native",
+      "disposition": "lle_only",
+      "instruction_count": 3,
+      "key": {
+        "m": 1,
+        "pc24": 45728,
+        "x": 1
+      },
+      "max_pc24": 45733,
+      "min_pc24": 45728,
+      "reasons": [
+        "brk_at_00B2A5",
+        "structural_poison"
+      ]
+    },
+    "00B983:M1X1": {
+      "demands": [],
+      "digest": "native",
+      "disposition": "lle_only",
+      "instruction_count": 2,
+      "key": {
+        "m": 1,
+        "pc24": 47491,
+        "x": 1
+      },
+      "max_pc24": 47494,
+      "min_pc24": 47491,
+      "reasons": [
+        "brk_at_00B986",
+        "structural_poison"
+      ]
+    },
+    "00B99B:M1X1": {
+      "demands": [
+        {
+          "detail": "declared_boundary",
+          "kind": "direct_tail_call",
+          "resolution": "aot_exact",
+          "site_pc24": 47525,
+          "target": {
+            "m": 1,
+            "pc24": 47528,
+            "x": 1
+          }
+        }
+      ],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 5,
+      "key": {
+        "m": 1,
+        "pc24": 47515,
+        "x": 1
+      },
+      "max_pc24": 47525,
+      "min_pc24": 47515,
+      "reasons": []
+    },
+    "00B9A8:M1X1": {
+      "demands": [],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 1,
+      "key": {
+        "m": 1,
+        "pc24": 47528,
+        "x": 1
+      },
+      "max_pc24": 47528,
+      "min_pc24": 47528,
+      "reasons": []
+    },
+    "00BC5A:M1X1": {
+      "demands": [],
+      "digest": "native",
+      "disposition": "lle_only",
+      "instruction_count": 8,
+      "key": {
+        "m": 1,
+        "pc24": 48218,
+        "x": 1
+      },
+      "max_pc24": 48230,
+      "min_pc24": 48139,
+      "reasons": [
+        "brk_at_00BC0B",
+        "structural_poison"
+      ]
+    },
+    "00BDE8:M1X1": {
+      "demands": [],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 2,
+      "key": {
+        "m": 1,
+        "pc24": 48616,
+        "x": 1
+      },
+      "max_pc24": 48620,
+      "min_pc24": 48616,
+      "reasons": []
+    },
+    "00BEA5:M1X1": {
+      "demands": [],
+      "digest": "native",
+      "disposition": "lle_only",
+      "instruction_count": 19,
+      "key": {
+        "m": 1,
+        "pc24": 48805,
+        "x": 1
+      },
+      "max_pc24": 48831,
+      "min_pc24": 43966,
+      "reasons": [
+        "brk_at_00BE5E",
+        "structural_poison"
+      ]
+    },
+    "00FEB9:M0X0": {
+      "demands": [
+        {
+          "detail": "",
+          "kind": "direct_tail_call",
+          "resolution": "lle_exact",
+          "site_pc24": 65209,
+          "target": {
+            "m": 0,
+            "pc24": 12582912,
+            "x": 0
+          }
+        }
+      ],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 1,
+      "key": {
+        "m": 0,
+        "pc24": 65209,
+        "x": 0
+      },
+      "max_pc24": 65209,
+      "min_pc24": 65209,
+      "reasons": []
+    },
+    "00FEB9:M0X1": {
+      "demands": [
+        {
+          "detail": "",
+          "kind": "direct_tail_call",
+          "resolution": "lle_exact",
+          "site_pc24": 65209,
+          "target": {
+            "m": 0,
+            "pc24": 12582912,
+            "x": 1
+          }
+        }
+      ],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 1,
+      "key": {
+        "m": 0,
+        "pc24": 65209,
+        "x": 1
+      },
+      "max_pc24": 65209,
+      "min_pc24": 65209,
+      "reasons": []
+    },
+    "00FEB9:M1X0": {
+      "demands": [
+        {
+          "detail": "",
+          "kind": "direct_tail_call",
+          "resolution": "lle_exact",
+          "site_pc24": 65209,
+          "target": {
+            "m": 1,
+            "pc24": 12582912,
+            "x": 0
+          }
+        }
+      ],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 1,
+      "key": {
+        "m": 1,
+        "pc24": 65209,
+        "x": 0
+      },
+      "max_pc24": 65209,
+      "min_pc24": 65209,
+      "reasons": []
+    },
+    "00FEB9:M1X1": {
+      "demands": [
+        {
+          "detail": "",
+          "kind": "direct_tail_call",
+          "resolution": "lle_exact",
+          "site_pc24": 65209,
+          "target": {
+            "m": 1,
+            "pc24": 12582912,
+            "x": 1
+          }
+        }
+      ],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 1,
+      "key": {
+        "m": 1,
+        "pc24": 65209,
+        "x": 1
+      },
+      "max_pc24": 65209,
+      "min_pc24": 65209,
+      "reasons": []
+    },
+    "00FEBD:M0X0": {
+      "demands": [
+        {
+          "detail": "",
+          "kind": "direct_tail_call",
+          "resolution": "lle_exact",
+          "site_pc24": 65213,
+          "target": {
+            "m": 0,
+            "pc24": 12583457,
+            "x": 0
+          }
+        }
+      ],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 1,
+      "key": {
+        "m": 0,
+        "pc24": 65213,
+        "x": 0
+      },
+      "max_pc24": 65213,
+      "min_pc24": 65213,
+      "reasons": []
+    },
+    "00FEBD:M0X1": {
+      "demands": [
+        {
+          "detail": "",
+          "kind": "direct_tail_call",
+          "resolution": "lle_exact",
+          "site_pc24": 65213,
+          "target": {
+            "m": 0,
+            "pc24": 12583457,
+            "x": 1
+          }
+        }
+      ],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 1,
+      "key": {
+        "m": 0,
+        "pc24": 65213,
+        "x": 1
+      },
+      "max_pc24": 65213,
+      "min_pc24": 65213,
+      "reasons": []
+    },
+    "00FEBD:M1X0": {
+      "demands": [
+        {
+          "detail": "",
+          "kind": "direct_tail_call",
+          "resolution": "lle_exact",
+          "site_pc24": 65213,
+          "target": {
+            "m": 1,
+            "pc24": 12583457,
+            "x": 0
+          }
+        }
+      ],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 1,
+      "key": {
+        "m": 1,
+        "pc24": 65213,
+        "x": 0
+      },
+      "max_pc24": 65213,
+      "min_pc24": 65213,
+      "reasons": []
+    },
+    "00FEBD:M1X1": {
+      "demands": [
+        {
+          "detail": "",
+          "kind": "direct_tail_call",
+          "resolution": "lle_exact",
+          "site_pc24": 65213,
+          "target": {
+            "m": 1,
+            "pc24": 12583457,
+            "x": 1
+          }
+        }
+      ],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 1,
+      "key": {
+        "m": 1,
+        "pc24": 65213,
+        "x": 1
+      },
+      "max_pc24": 65213,
+      "min_pc24": 65213,
+      "reasons": []
+    },
+    "00FEC1:M1X1": {
+      "demands": [
+        {
+          "detail": "declared_boundary",
+          "kind": "direct_tail_call",
+          "resolution": "aot_exact",
+          "site_pc24": 65427,
+          "target": {
+            "m": 0,
+            "pc24": 65430,
+            "x": 0
+          }
+        }
+      ],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 106,
+      "key": {
+        "m": 1,
+        "pc24": 65217,
+        "x": 1
+      },
+      "max_pc24": 65427,
+      "min_pc24": 65217,
+      "reasons": []
+    },
+    "00FF96:M0X0": {
+      "demands": [
+        {
+          "detail": "",
+          "kind": "direct_tail_call",
+          "resolution": "lle_exact",
+          "site_pc24": 65430,
+          "target": {
+            "m": 0,
+            "pc24": 12615681,
+            "x": 0
+          }
+        }
+      ],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 1,
+      "key": {
+        "m": 0,
+        "pc24": 65430,
+        "x": 0
+      },
+      "max_pc24": 65430,
+      "min_pc24": 65430,
+      "reasons": []
+    },
+    "00FF96:M1X1": {
+      "demands": [
+        {
+          "detail": "",
+          "kind": "direct_tail_call",
+          "resolution": "lle_exact",
+          "site_pc24": 65430,
+          "target": {
+            "m": 1,
+            "pc24": 12615681,
+            "x": 1
+          }
+        }
+      ],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 1,
+      "key": {
+        "m": 1,
+        "pc24": 65430,
+        "x": 1
+      },
+      "max_pc24": 65430,
+      "min_pc24": 65430,
+      "reasons": []
+    },
+    "C00000:M1X1": {
+      "demands": [],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 1,
+      "key": {
+        "m": 1,
+        "pc24": 12582912,
+        "x": 1
+      },
+      "max_pc24": 12582912,
+      "min_pc24": 12582912,
+      "reasons": []
+    },
+    "C00221:M1X1": {
+      "demands": [
+        {
+          "detail": "",
+          "kind": "direct_call",
+          "resolution": "lle_exact",
+          "site_pc24": 12583502,
+          "target": {
+            "m": 1,
+            "pc24": 12583670,
+            "x": 0
+          }
+        },
+        {
+          "detail": "",
+          "kind": "direct_call",
+          "resolution": "lle_exact",
+          "site_pc24": 12583586,
+          "target": {
+            "m": 1,
+            "pc24": 12583725,
+            "x": 0
+          }
+        },
+        {
+          "detail": "",
+          "kind": "direct_call",
+          "resolution": "lle_exact",
+          "site_pc24": 12583621,
+          "target": {
+            "m": 1,
+            "pc24": 12583670,
+            "x": 0
+          }
+        }
+      ],
+      "digest": "native",
+      "disposition": "lle_only",
+      "instruction_count": 280,
+      "key": {
+        "m": 1,
+        "pc24": 12583457,
+        "x": 1
+      },
+      "max_pc24": 12583667,
+      "min_pc24": 12582928,
+      "reasons": [
+        "truncated_call_continuation",
+        "unproven_call_at_C0024E_to_C002F6_m1x0",
+        "unproven_call_at_C002A2_to_C0032D_m1x0",
+        "unproven_call_at_C002C5_to_C002F6_m1x0",
+        "unproven_callee_exit"
+      ]
+    },
+    "C00400:M1X1": {
+      "demands": [],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 160,
+      "key": {
+        "m": 1,
+        "pc24": 12583936,
+        "x": 1
+      },
+      "max_pc24": 12590442,
+      "min_pc24": 12583923,
+      "reasons": []
+    },
+    "C00600:M1X1": {
+      "demands": [],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 3,
+      "key": {
+        "m": 1,
+        "pc24": 12584448,
+        "x": 1
+      },
+      "max_pc24": 12584453,
+      "min_pc24": 12584448,
+      "reasons": []
+    },
+    "C00800:M1X1": {
+      "demands": [],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 9,
+      "key": {
+        "m": 1,
+        "pc24": 12584960,
+        "x": 1
+      },
+      "max_pc24": 12584979,
+      "min_pc24": 12584960,
+      "reasons": []
+    },
+    "C00A00:M1X1": {
+      "demands": [],
+      "digest": "native",
+      "disposition": "lle_only",
+      "instruction_count": 1,
+      "key": {
+        "m": 1,
+        "pc24": 12585472,
+        "x": 1
+      },
+      "max_pc24": 12585472,
+      "min_pc24": 12585472,
+      "reasons": [
+        "brk_at_C00A00",
+        "structural_poison"
+      ]
+    },
+    "C00C00:M1X1": {
+      "demands": [],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 131,
+      "key": {
+        "m": 1,
+        "pc24": 12585984,
+        "x": 1
+      },
+      "max_pc24": 12586293,
+      "min_pc24": 12585984,
+      "reasons": []
+    },
+    "C00E00:M1X1": {
+      "demands": [],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 68,
+      "key": {
+        "m": 1,
+        "pc24": 12586496,
+        "x": 1
+      },
+      "max_pc24": 12586655,
+      "min_pc24": 12586496,
+      "reasons": []
+    },
+    "C01000:M1X1": {
+      "demands": [],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 29,
+      "key": {
+        "m": 1,
+        "pc24": 12587008,
+        "x": 1
+      },
+      "max_pc24": 12587075,
+      "min_pc24": 12587008,
+      "reasons": []
+    },
+    "C01200:M1X1": {
+      "demands": [],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 78,
+      "key": {
+        "m": 1,
+        "pc24": 12587520,
+        "x": 1
+      },
+      "max_pc24": 12587703,
+      "min_pc24": 12587520,
+      "reasons": []
+    },
+    "C01400:M1X1": {
+      "demands": [],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 126,
+      "key": {
+        "m": 1,
+        "pc24": 12588032,
+        "x": 1
+      },
+      "max_pc24": 12588331,
+      "min_pc24": 12588032,
+      "reasons": []
+    },
+    "C01600:M1X1": {
+      "demands": [
+        {
+          "detail": "table_base=71BD",
+          "kind": "suppressed_indirect_call",
+          "resolution": "lle_dynamic",
+          "site_pc24": 12588544,
+          "target": null
+        }
+      ],
+      "digest": "native",
+      "disposition": "lle_only",
+      "instruction_count": 1,
+      "key": {
+        "m": 1,
+        "pc24": 12588544,
+        "x": 1
+      },
+      "max_pc24": 12588544,
+      "min_pc24": 12588544,
+      "reasons": [
+        "has_lle_suppressed_call_edge",
+        "truncated_call_continuation"
+      ]
+    },
+    "C01800:M1X1": {
+      "demands": [],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 89,
+      "key": {
+        "m": 1,
+        "pc24": 12589056,
+        "x": 1
+      },
+      "max_pc24": 12589263,
+      "min_pc24": 12589054,
+      "reasons": []
+    },
+    "C01A00:M1X1": {
+      "demands": [
+        {
+          "detail": "declared_boundary",
+          "kind": "direct_tail_call",
+          "resolution": "lle_exact",
+          "site_pc24": 12590079,
+          "target": {
+            "m": 1,
+            "pc24": 12590081,
+            "x": 1
+          }
+        }
+      ],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 216,
+      "key": {
+        "m": 1,
+        "pc24": 12589568,
+        "x": 1
+      },
+      "max_pc24": 12590079,
+      "min_pc24": 12589568,
+      "reasons": []
+    },
+    "C01C00:M1X1": {
+      "demands": [],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 2,
+      "key": {
+        "m": 1,
+        "pc24": 12590080,
+        "x": 1
+      },
+      "max_pc24": 12590082,
+      "min_pc24": 12590080,
+      "reasons": []
+    },
+    "C01E00:M1X1": {
+      "demands": [],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 122,
+      "key": {
+        "m": 1,
+        "pc24": 12590592,
+        "x": 1
+      },
+      "max_pc24": 12590691,
+      "min_pc24": 12590454,
+      "reasons": []
+    },
+    "C02000:M1X1": {
+      "demands": [],
+      "digest": "native",
+      "disposition": "lle_only",
+      "instruction_count": 1,
+      "key": {
+        "m": 1,
+        "pc24": 12591104,
+        "x": 1
+      },
+      "max_pc24": 12591104,
+      "min_pc24": 12591104,
+      "reasons": [
+        "brk_at_C02000",
+        "structural_poison"
+      ]
+    },
+    "C02200:M1X1": {
+      "demands": [
+        {
+          "detail": "",
+          "kind": "direct_call",
+          "resolution": "lle_exact",
+          "site_pc24": 12591622,
+          "target": {
+            "m": 1,
+            "pc24": 12617214,
+            "x": 1
+          }
+        }
+      ],
+      "digest": "native",
+      "disposition": "lle_only",
+      "instruction_count": 4,
+      "key": {
+        "m": 1,
+        "pc24": 12591616,
+        "x": 1
+      },
+      "max_pc24": 12591622,
+      "min_pc24": 12591616,
+      "reasons": [
+        "truncated_call_continuation",
+        "unproven_call_at_C02206_to_C085FE_m1x1",
+        "unproven_callee_exit"
+      ]
+    },
+    "C02400:M1X1": {
+      "demands": [],
+      "digest": "native",
+      "disposition": "lle_only",
+      "instruction_count": 23,
+      "key": {
+        "m": 1,
+        "pc24": 12592128,
+        "x": 1
+      },
+      "max_pc24": 12592180,
+      "min_pc24": 12592128,
+      "reasons": [
+        "brk_at_C02434",
+        "structural_poison"
+      ]
+    },
+    "C02600:M1X1": {
+      "demands": [
+        {
+          "detail": "",
+          "kind": "direct_call",
+          "resolution": "lle_exact",
+          "site_pc24": 12592648,
+          "target": {
+            "m": 1,
+            "pc24": 12599158,
+            "x": 1
+          }
+        }
+      ],
+      "digest": "native",
+      "disposition": "lle_only",
+      "instruction_count": 4,
+      "key": {
+        "m": 1,
+        "pc24": 12592640,
+        "x": 1
+      },
+      "max_pc24": 12592648,
+      "min_pc24": 12592640,
+      "reasons": [
+        "truncated_call_continuation",
+        "unproven_call_at_C02608_to_C03F76_m1x1",
+        "unproven_callee_exit"
+      ]
+    },
+    "C2FC43:M1X0": {
+      "demands": [
+        {
+          "detail": "",
+          "kind": "direct_call",
+          "resolution": "aot_exact",
+          "site_pc24": 12778579,
+          "target": {
+            "m": 0,
+            "pc24": 12779237,
+            "x": 0
+          }
+        },
+        {
+          "detail": "",
+          "kind": "direct_call",
+          "resolution": "aot_exact",
+          "site_pc24": 12778809,
+          "target": {
+            "m": 1,
+            "pc24": 12778992,
+            "x": 0
+          }
+        }
+      ],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 213,
+      "key": {
+        "m": 1,
+        "pc24": 12778563,
+        "x": 0
+      },
+      "max_pc24": 12778991,
+      "min_pc24": 12778563,
+      "reasons": []
+    },
+    "C2FDF0:M1X0": {
+      "demands": [],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 126,
+      "key": {
+        "m": 1,
+        "pc24": 12778992,
+        "x": 0
+      },
+      "max_pc24": 12779236,
+      "min_pc24": 12778992,
+      "reasons": []
+    },
+    "C2FEE5:M0X0": {
+      "demands": [],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 13,
+      "key": {
+        "m": 0,
+        "pc24": 12779237,
+        "x": 0
+      },
+      "max_pc24": 12779262,
+      "min_pc24": 12779237,
+      "reasons": []
+    },
+    "C38F50:M0X0": {
+      "demands": [
+        {
+          "detail": "",
+          "kind": "direct_call",
+          "resolution": "aot_exact",
+          "site_pc24": 12816126,
+          "target": {
+            "m": 0,
+            "pc24": 12823980,
+            "x": 0
+          }
+        },
+        {
+          "detail": "",
+          "kind": "direct_call",
+          "resolution": "aot_exact",
+          "site_pc24": 12816182,
+          "target": {
+            "m": 0,
+            "pc24": 12823918,
+            "x": 0
+          }
+        },
+        {
+          "detail": "",
+          "kind": "direct_call",
+          "resolution": "aot_exact",
+          "site_pc24": 12816243,
+          "target": {
+            "m": 0,
+            "pc24": 12823980,
+            "x": 0
+          }
+        },
+        {
+          "detail": "",
+          "kind": "direct_call",
+          "resolution": "aot_exact",
+          "site_pc24": 12816320,
+          "target": {
+            "m": 0,
+            "pc24": 12823918,
+            "x": 0
+          }
+        },
+        {
+          "detail": "",
+          "kind": "direct_call",
+          "resolution": "aot_exact",
+          "site_pc24": 12816453,
+          "target": {
+            "m": 0,
+            "pc24": 12816764,
+            "x": 0
+          }
+        }
+      ],
+      "digest": "native",
+      "disposition": "lle_only",
+      "instruction_count": 442,
+      "key": {
+        "m": 0,
+        "pc24": 12816208,
+        "x": 0
+      },
+      "max_pc24": 12816652,
+      "min_pc24": 12815763,
+      "reasons": [
+        "truncated_call_continuation",
+        "unproven_call_at_C39045_to_C3917C_m0x0",
+        "unproven_callee_exit"
+      ]
+    },
+    "C3917C:M0X0": {
+      "demands": [
+        {
+          "detail": "JMP:mode=14:operand=000026",
+          "kind": "unresolved_indirect",
+          "resolution": "lle_dynamic",
+          "site_pc24": 12818089,
+          "target": null
+        },
+        {
+          "detail": "JMP:mode=14:operand=000026",
+          "kind": "unresolved_indirect",
+          "resolution": "lle_dynamic",
+          "site_pc24": 12818379,
+          "target": null
+        },
+        {
+          "detail": "",
+          "kind": "direct_call",
+          "resolution": "aot_exact",
+          "site_pc24": 12819420,
+          "target": {
+            "m": 1,
+            "pc24": 12819270,
+            "x": 0
+          }
+        },
+        {
+          "detail": "",
+          "kind": "direct_call",
+          "resolution": "aot_exact",
+          "site_pc24": 12820010,
+          "target": {
+            "m": 1,
+            "pc24": 12819780,
+            "x": 0
+          }
+        },
+        {
+          "detail": "JMP:mode=14:operand=000026",
+          "kind": "unresolved_indirect",
+          "resolution": "lle_dynamic",
+          "site_pc24": 12821110,
+          "target": null
+        },
+        {
+          "detail": "JMP:mode=14:operand=000026",
+          "kind": "unresolved_indirect",
+          "resolution": "lle_dynamic",
+          "site_pc24": 12821764,
+          "target": null
+        }
+      ],
+      "digest": "native",
+      "disposition": "lle_only",
+      "instruction_count": 1305,
+      "key": {
+        "m": 0,
+        "pc24": 12816764,
+        "x": 0
+      },
+      "max_pc24": 12821764,
+      "min_pc24": 12816764,
+      "reasons": [
+        "has_lle_indirect_edge",
+        "truncated_call_continuation",
+        "unproven_call_at_C39BDC_to_C39B46_m1x0",
+        "unproven_call_at_C39E2A_to_C39D44_m1x0",
+        "unproven_callee_exit"
+      ]
+    },
+    "C39B46:M1X0": {
+      "demands": [
+        {
+          "detail": "JMP:mode=14:operand=000026",
+          "kind": "unresolved_indirect",
+          "resolution": "lle_dynamic",
+          "site_pc24": 12819284,
+          "target": null
+        }
+      ],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 7,
+      "key": {
+        "m": 1,
+        "pc24": 12819270,
+        "x": 0
+      },
+      "max_pc24": 12819284,
+      "min_pc24": 12819270,
+      "reasons": [
+        "has_lle_indirect_edge"
+      ]
+    },
+    "C39D44:M1X0": {
+      "demands": [
+        {
+          "detail": "JMP:mode=14:operand=000026",
+          "kind": "unresolved_indirect",
+          "resolution": "lle_dynamic",
+          "site_pc24": 12819795,
+          "target": null
+        }
+      ],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 7,
+      "key": {
+        "m": 1,
+        "pc24": 12819780,
+        "x": 0
+      },
+      "max_pc24": 12819795,
+      "min_pc24": 12819780,
+      "reasons": [
+        "has_lle_indirect_edge"
+      ]
+    },
+    "C3AD6E:M0X0": {
+      "demands": [],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 36,
+      "key": {
+        "m": 0,
+        "pc24": 12823918,
+        "x": 0
+      },
+      "max_pc24": 12823979,
+      "min_pc24": 12823918,
+      "reasons": []
+    },
+    "C3ADAC:M0X0": {
+      "demands": [],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 53,
+      "key": {
+        "m": 0,
+        "pc24": 12823980,
+        "x": 0
+      },
+      "max_pc24": 12824080,
+      "min_pc24": 12823980,
+      "reasons": []
+    },
+    "C9D9EF:M1X1": {
+      "demands": [],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 71,
+      "key": {
+        "m": 1,
+        "pc24": 13228527,
+        "x": 1
+      },
+      "max_pc24": 13228682,
+      "min_pc24": 13228527,
+      "reasons": []
+    },
+    "C9E4DC:M1X1": {
+      "demands": [
+        {
+          "detail": "",
+          "kind": "direct_call",
+          "resolution": "aot_exact",
+          "site_pc24": 13231329,
+          "target": {
+            "m": 1,
+            "pc24": 13228527,
+            "x": 1
+          }
+        },
+        {
+          "detail": "",
+          "kind": "direct_call",
+          "resolution": "aot_exact",
+          "site_pc24": 13231350,
+          "target": {
+            "m": 1,
+            "pc24": 13228527,
+            "x": 1
+          }
+        }
+      ],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 56,
+      "key": {
+        "m": 1,
+        "pc24": 13231324,
+        "x": 1
+      },
+      "max_pc24": 13231423,
+      "min_pc24": 13231319,
+      "reasons": []
+    },
+    "C9E57B:M1X1": {
+      "demands": [
+        {
+          "detail": "",
+          "kind": "direct_call",
+          "resolution": "aot_exact",
+          "site_pc24": 13231488,
+          "target": {
+            "m": 1,
+            "pc24": 13228527,
+            "x": 1
+          }
+        },
+        {
+          "detail": "",
+          "kind": "direct_call",
+          "resolution": "aot_exact",
+          "site_pc24": 13231509,
+          "target": {
+            "m": 1,
+            "pc24": 13228527,
+            "x": 1
+          }
+        }
+      ],
+      "digest": "native",
+      "disposition": "aot_eligible",
+      "instruction_count": 56,
+      "key": {
+        "m": 1,
+        "pc24": 13231483,
+        "x": 1
+      },
+      "max_pc24": 13231582,
+      "min_pc24": 13231478,
+      "reasons": []
+    }
+  },
+  "roots": [
+    {
+      "m": 1,
+      "pc24": 32889,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 33000,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 33015,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 33561,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 33636,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 33817,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 33851,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 33865,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 34048,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 34152,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 35328,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 36013,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 36219,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 36731,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 36931,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 38317,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 39002,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 39077,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 39168,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 39398,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 39597,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 40101,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 40192,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 40315,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 40608,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 40877,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 41381,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 41611,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 42240,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 42379,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 43403,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 43520,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 43848,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 45090,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 45412,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 45728,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 47491,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 47515,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 48218,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 48616,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 48805,
+      "x": 1
+    },
+    {
+      "m": 0,
+      "pc24": 65209,
+      "x": 0
+    },
+    {
+      "m": 0,
+      "pc24": 65209,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 65209,
+      "x": 0
+    },
+    {
+      "m": 1,
+      "pc24": 65209,
+      "x": 1
+    },
+    {
+      "m": 0,
+      "pc24": 65213,
+      "x": 0
+    },
+    {
+      "m": 0,
+      "pc24": 65213,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 65213,
+      "x": 0
+    },
+    {
+      "m": 1,
+      "pc24": 65213,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 65217,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 65430,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 12582912,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 12583457,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 12583936,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 12584448,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 12584960,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 12585472,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 12585984,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 12586496,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 12587008,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 12587520,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 12588032,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 12588544,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 12589056,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 12589568,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 12590080,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 12590592,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 12591104,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 12591616,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 12592128,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 12592640,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 12778563,
+      "x": 0
+    },
+    {
+      "m": 0,
+      "pc24": 12816208,
+      "x": 0
+    },
+    {
+      "m": 1,
+      "pc24": 13231324,
+      "x": 1
+    },
+    {
+      "m": 1,
+      "pc24": 13231483,
+      "x": 1
+    }
+  ]
+}

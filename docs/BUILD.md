@@ -12,7 +12,8 @@ config/                 perfiles AOT (bank*.cfg) + funcs.h  -> entrada del gener
 src/                    codigo host del juego (main, so_rtl, spc player, state_file...)
 snesrecomp/             SUBMODULO: framework completo (runner + toolchain v2 + recompiler-rs)
                         @ SupraBT/snesrecomp (commit con SPCFF/CCFF/PUMPFF + gating clean-build)
-generated/              SALIDA del generador (NO se commitea; se regenera con tools/regenerate_aot.ps1 + ROM)
+generated/              SALIDA del generador (COMMITEADA: un clon nuevo compila sin regenerar;
+                        regenerar con tools/regenerate_aot.ps1 + ROM solo si cambias config/)
 docs/                   notas de submódulo y de esta build
 ```
 
@@ -25,7 +26,7 @@ docs/                   notas de submódulo y de esta build
   (no se commitea; el exe la necesita en runtime via `rom.cfg`).
 - SDL3 dev (en este repo de trabajo: `deps/SDL3-3.2.4`; pasar `-DSDL3_DIR=...`).
 
-## Regenerar AOT (solo si no existe `generated/` o cambiaste `config/`)
+## Regenerar AOT (opcional: `generated/` viene commiteado; solo si cambiaste `config/`)
 
 ```powershell
 git submodule update --init --recursive

@@ -45,8 +45,9 @@ config/  (bank profiles + funcs.h)          snesrecomp/  (framework submodule)
   [SupraBT/snesrecomp](https://github.com/SupraBT/snesrecomp) (a customized
   fork of [mstan/snesrecomp](https://github.com/mstan/snesrecomp)) at the
   commit carrying the Star Ocean spin fast-paths and the clean-build gating.
-- `generated/` — **not committed**. It is produced from your ROM by the
-  regeneration script (see below) and contains translated code only.
+- `generated/` — the committed AOT sources (machine-translated code only;
+  no ROM data or assets). A fresh clone builds without regenerating them;
+  rerun `tools/regenerate_aot.ps1` only when `config/` changes.
 
 ## Repository layout
 
@@ -67,7 +68,7 @@ docs/                     Submodule notes + build/reproducibility notes
 | CMake | building |
 | SDL3 development files | building (pass `-DSDL3_DIR=…`) |
 | Python 3 + Rust/cargo | only if you need to **regenerate** `generated/` |
-| Original *Star Ocean (Japan)* ROM | regeneration **and** running |
+| Original *Star Ocean (Japan)* ROM | running (regeneration only if `config/` changes) |
 
 ## Build (quick start)
 
@@ -90,9 +91,10 @@ cmake --build build --config Release
 markers, trace hooks) for a production executable. Omit it if you want the
 instrumented development build.
 
-### First-time setup of `generated/` (requires your ROM)
+### Regenerating `generated/` (optional; needs Python 3 + Rust + your ROM)
 
-`generated/` is empty after a fresh clone. Put your original *Star Ocean
+`generated/` is committed, so a fresh clone builds as-is. Regenerate it only
+when the AOT profiles in `config/` change. Put your original *Star Ocean
 (Japan)* ROM in the repository root and run:
 
 ```powershell
@@ -130,11 +132,11 @@ taken). Revalidation of the regeneration recipe is the next open item.
 
 Star Ocean is a registered trademark of its respective owners (tri-Ace /
 Enix). This project is an unofficial, non-commercial reimplementation created
-for study and preservation. It contains no copyrighted game assets: no ROM,
-no graphics, audio, or text extracted from the cartridge — only original code
-and documentation. To build or run it you must provide your own legally
-obtained dump of the original game. If you redistribute builds, do not
-include the ROM.
+for study and preservation. It ships no ROM and no extracted game assets: no
+graphics, audio, or text from the cartridge. The committed `generated/`
+directory holds machine-translated 65816→C code produced from a user-supplied
+ROM; you must still provide your own legally obtained dump of the original
+game to run it. If you redistribute builds, do not include the ROM.
 
 The repository itself carries no license yet; reach out if you intend to reuse
 the code.
