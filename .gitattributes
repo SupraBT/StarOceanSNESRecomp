@@ -1,0 +1,4 @@
+# Los scripts de hook tienen que quedarse en LF: un `\r` al final de la linea del
+# interprete rompe `sh` en Git for Windows ("/bin/sh^M: bad interpreter") y el
+# hook fallaria justo cuando tiene que proteger un push.
+tools/hooks/* text eol=lf

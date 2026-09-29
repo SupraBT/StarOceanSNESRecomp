@@ -1,4 +1,9 @@
 # ── Build outputs ───────────────────────────────────────────────────────
+# Any per-worktree build directory (build-dev, build-clean-test, build-prof,
+# build-audit, ...). Nothing that lives under one is source: every build can be
+# recreated with cmake from the tracked tree, so keeping them untracked is what
+# makes `git status` readable while several builds coexist.
+build-*/
 build/
 build-trace/
 build-beta/
@@ -11,6 +16,13 @@ build-cosim-release/
 build-cosim-release2/
 cmake-build-*/
 out/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+logs_cfg_*.txt
+run_dev_forense.bat
+run_clean_ab.bat
+*_build.log
 
 # ── Prebuilt release/beta bundles (executables + windowed captures) ─────
 1.Release/

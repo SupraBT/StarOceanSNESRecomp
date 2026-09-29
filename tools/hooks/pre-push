@@ -1,0 +1,45 @@
+#!/bin/sh
+# Puerta de publicacion (ver PROTOCOLO.md y docs/WORKFLOW.md).
+#
+# Ningun cambio llega a GitHub sin pasar por aqui. La puerta comprueba lo que
+# de verdad importa y no lo que es comodo de medir:
+#
+#   audio        el juego SUENA (PCM real entregado al dispositivo)
+#   A/B          [fstate] byte-exacto contra el baseline guardado
+#   determinismo dos corridas identicas dan el mismo estado
+#   turbo        acelerar el host no mueve al invitado
+#
+# La prueba `fps` NO entra a proposito: es la unica sensible a la carga de la
+# maquina (la misma build da 57,7 o 60,2 fps de mediana segun el sistema este
+# ocupado) y un hook que falla al azar se acaba ignorando. Se mira a mano con
+# `python tools/verificar.py --only fps`.
+#
+# Trabajo en curso que aun no debe pasar la puerta:
+#   SNESRECOMP_SKIP_GATE=1 git push
+if [ -n "$SNESRECOMP_SKIP_GATE" ]; then
+  echo "[hook] puerta OMITIDA por SNESRECOMP_SKIP_GATE=1 (no lo hagas en main)"
+  exit 0
+fi
+
+root=$(git rev-parse --show-toplevel) || exit 1
+cd "$root" || exit 1
+
+if [ ! -f build-dev/Release/StarOcean.exe ]; then
+  echo "[hook] no hay build-dev; configura el build instrumentado con:" >&2
+  echo "  cmake -S . -B build-dev -G \"Visual Studio 17 2022\" \\" >&2
+  echo "        -DSNESRECOMP_SDL_BACKEND=SDL3 -DSDL3_DIR=<ruta>/SDL3/cmake" >&2
+  exit 1
+fi
+
+echo "[hook] recompilando build-dev (incremental)..."
+cmake --build build-dev --config Release >/dev/null 2>&1 || {
+  echo "[hook] LA COMPILACION HA FALLADO: no se publica" >&2
+  cmake --build build-dev --config Release 2>&1 | tail -20 >&2
+  exit 1
+}
+
+echo "[hook] puerta: audio + A/B byte-exacto + determinismo + turbo"
+python tools/verificar.py --only audio,ab,det,turbo || {
+  echo "[hook] LA PUERTA HA FALLADO: no se publica (PROTOCOLO.md)" >&2
+  exit 1
+}
