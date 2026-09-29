@@ -39,32 +39,65 @@ int g_benchmark_audio;
 static FILE *g_input_log = NULL;
 static uint32 g_last_logged_input = 0;
 /* Input replay (dev, SNESRECOMP_REPLAY_FILE=<path>): replays a recording in
- * the SNESRECOMP_INPUT_LOG format ("<frame> <hexmask>" per line, with explicit
- * press/release events). The mask active at frame F is the last event at or
- * before F, so press/release pairs reproduce exactly. After each Up-press
+ * the SNESRECOMP_INPUT_LOG format ("<key> <hexmask>" per line, with explicit
+ * press/release events). The mask active at key K is the last event at or
+ * before K, so press/release pairs reproduce exactly. After each Up-press
  * (mask bit 0x10) the host pauses briefly (SNESRECOMP_REPLAY_UP_PAUSE_MS,
- * default 1500 ms) so scene changes are visible. Off by default. */
+ * default 1500 ms) so scene changes are visible. Off by default.
+ *
+ * The key is the host frame index by default. A host frame is NOT one guest
+ * frame: a single RunOneFrameOfGame can cover many guest frames (the boot
+ * spans ~410 guest frames inside a handful of host frames), so a recording
+ * timed by host frames lands at the wrong guest instant. SNESRECOMP_REPLAY_CLOCK
+ * selects a GUEST clock as the key instead, which is what an on-hardware
+ * recording is naturally stamped with (Mesen's per-frame cpuCyc):
+ *   cpu    -> guest CPU cycles (g_cpu.cycles; same quantity as cpuCyc)
+ *   master -> guest master clocks (g_cpu.master_cycles)
+ * The key is sampled once per host frame, so an event fires at the first host
+ * frame whose key has passed it (<= 1 host frame of latency, and the exact
+ * landing point is logged with SNESRECOMP_REPLAY_LOG=1). */
 #define kReplayMaxEvents 4096
+#define kReplayClockFrame  0
 typedef struct { long long frame; uint16_t mask; } ReplayEvent;
 static ReplayEvent s_replay_events[kReplayMaxEvents];
 static int s_replay_count = 0;
 static int s_replay_loaded = 0;
 static int s_replay_up_pause_ms = 1500;
+static int s_replay_clock_mode = kReplayClockFrame;
 
-static uint16_t replay_mask_for_frame(long long frame) {
+static uint16_t replay_mask_for_key(long long key) {
     if (!s_replay_count) return 0;
     int lo = 0, hi = s_replay_count - 1, best = -1;
     while (lo <= hi) {
         int mid = (lo + hi) >> 1;
-        if (s_replay_events[mid].frame <= frame) { best = mid; lo = mid + 1; }
+        if (s_replay_events[mid].frame <= key) { best = mid; lo = mid + 1; }
         else hi = mid - 1;
     }
     return best >= 0 ? s_replay_events[best].mask : 0;
 }
 
+/* Guest-clock key for the current frame boundary. Only meaningful with
+ * SNESRECOMP_REPLAY_CLOCK set; host frames otherwise. */
+static long long replay_key_now(void) {
+    switch (s_replay_clock_mode) {
+    case 1:  return (long long)g_cpu.cycles;
+    case 2:  return (long long)g_cpu.master_cycles;
+    default: return (long long)snes_frame_counter;
+    }
+}
+
 static void replay_load(const char *path) {
     FILE *f = fopen(path, "rb");
     if (!f) { fprintf(stderr, "[replay] cannot open '%s'\n", path); return; }
+    {
+        const char *cm = getenv("SNESRECOMP_REPLAY_CLOCK");
+        if (cm && *cm) {
+            if (!strcmp(cm, "cpu"))         s_replay_clock_mode = 1;
+            else if (!strcmp(cm, "master")) s_replay_clock_mode = 2;
+            else fprintf(stderr, "[replay] unknown SNESRECOMP_REPLAY_CLOCK='%s' "
+                                 "(cpu|master); using host frames\n", cm);
+        }
+    }
     char line[64];
     int up_pauses = 0;
     while (s_replay_count < kReplayMaxEvents && fgets(line, sizeof line, f)) {
@@ -85,8 +118,10 @@ static void replay_load(const char *path) {
     s_replay_loaded = 1;
     const char *pms = getenv("SNESRECOMP_REPLAY_UP_PAUSE_MS");
     if (pms && *pms) { int v = atoi(pms); if (v >= 0) s_replay_up_pause_ms = v; }
-    fprintf(stderr, "[replay] loaded %d input entries from %s, %d UP pause frames\n",
-            s_replay_count, path, up_pauses);
+    fprintf(stderr, "[replay] loaded %d input entries from %s, %d UP pause frames, key=%s\n",
+            s_replay_count, path, up_pauses,
+            s_replay_clock_mode == 1 ? "guest-cpu-cycles"
+          : s_replay_clock_mode == 2 ? "guest-master-clocks" : "host-frame");
 }
 static uint8 g_current_window_scale;
 static uint32 g_input_state;
@@ -214,7 +249,12 @@ static SDL_HitTestResult HitTestCallback(SDL_Window *win, const SDL_Point *pt, v
     return SDL_HITTEST_NORMAL;
 }
 
-static void DrawPpuFrameWithPerf(void) {
+/* present=0 is the turbo path: the guest-visible part of the frame (the
+ * per-line HDMA and the raster/vblank vIRQ that SoDrawPpuFrame delivers) still
+ * runs, only the texture lock/copy and the vsync-bound SDL_RenderPresent are
+ * elided. Nothing the guest can observe lives in the elided part, which is why
+ * turbo can skip 15 frames out of 16 without changing emulated state. */
+static void DrawPpuFrameWithPerf(int present) {
     int drawable_width = 0, drawable_height = 0;
     if (g_renderer_funcs.GetOutputSize)
         g_renderer_funcs.GetOutputSize(&drawable_width, &drawable_height);
@@ -243,6 +283,9 @@ static void DrawPpuFrameWithPerf(void) {
     PpuBeginDrawing(g_ppu, g_my_pixels, (size_t)width * 4, render_flags);
     PpuSetExtraSpace(g_ppu, (uint8)g_ws_extra);
     g_rtl_game_info->draw_ppu_frame();
+
+    if (!present)
+        return;
 
     /* Lock the SDL texture, copy the rendered frame into it, and present. */
     uint8 *tex_pixels = NULL;
@@ -294,6 +337,21 @@ static void FillAudioBuffer(Uint8 *stream, int len) {
             g_audiobuffer_end = g_audiobuffer + g_frames_per_block * g_audio_channels * sizeof(int16);
         }
         int n = IntMin(len, g_audiobuffer_end - g_audiobuffer_cur);
+        /* Sonda de salida REAL del dispositivo (dev, SNESRECOMP_PCM_DUMP=<path>):
+         * vuelca los bytes exactos que se entregan al dispositivo, para poder
+         * separar "el motor entrega silencio" de "el motor entrega audio y no
+         * se oye". S16LE entrelazado al ritmo del dispositivo. Inerte sin la
+         * variable. */
+        {
+            static FILE *s_pcm_dump = NULL;
+            static int s_pcm_dump_init = 0;
+            if (!s_pcm_dump_init) {
+                s_pcm_dump_init = 1;
+                const char *p = getenv("SNESRECOMP_PCM_DUMP");
+                if (p && *p) s_pcm_dump = fopen(p, "wb");
+            }
+            if (s_pcm_dump) { fwrite(g_audiobuffer_cur, 1, (size_t)n, s_pcm_dump); fflush(s_pcm_dump); }
+        }
         if (g_sdl_audio_mixer_volume == SNESRECOMP_SDL_MIX_MAXVOLUME) {
             memcpy(stream, g_audiobuffer_cur, n);
         } else {
@@ -1217,6 +1275,38 @@ error_reading:;
         g_audio_stream_buffer = (uint8 *)malloc(g_audio_stream_buffer_size);
         g_frames_per_block = (534 * spec.freq + 32040 / 2) / 32040;
         RtlSetAudioOutputRate(spec.freq);
+        /* Cushion inicial del dispositivo (2026-09-29).
+         *
+         * El productor de audio del motor es el RELOJ DE FRAMES DE INVITADO:
+         * apu_runToGuestCycle() entrega exactamente 534 natives por frame
+         * emulado (17088 ciclos SPC / 32), o sea 32040 por segundo a 60 fps
+         * exactos. El consumidor (este dispositivo) drena a su propio cristal.
+         * Con el reloj honesto de 1,0 frames de invitado por frame de host no
+         * hay excedente con el que formar colchon, asi que el anillo del DSP
+         * empezaba vacio y el callback pedia 534 natives y no habia ninguno:
+         * medido con SNESRECOMP_AUDIO_STATS, output_underflows subia
+         * exactamente 60/s (una por callback) durante toda la intro, que es
+         * SILENCIO aunque el SPC este produciendo. El modelo antiguo sonaba
+         * solo porque corria 1,101 frames de invitado por frame de host: el
+         * 10% de mas llenaba el anillo. Eso es el defecto de §22, no merito
+         * del audio.
+         *
+         * Aqui se pre-encolan 4 bloques (~67 ms, el mismo colchon objetivo que
+         * el servo del propio motor: RTL_AUDIO_TARGET_NATIVES = 2136 = 4x534)
+         * de silencio. El dispositivo tarda 67 ms en pedir el primer bloque y
+         * el invitado produce 4 frames en ese tiempo: el anillo arranca lleno
+         * sin tocar ni un ciclo del invitado (nada de esto es visible para la
+         * emulacion: es cola del lado del host). Es determinista y no cambia
+         * ningun estado emulado, asi que no afecta al A/B byte-exacto. */
+        {
+            const size_t lead_frames = (size_t)g_frames_per_block * 4u;
+            const size_t lead_bytes = lead_frames * g_audio_channels * sizeof(int16);
+            uint8 *lead_silence = (uint8 *)calloc(1, lead_bytes);
+            if (lead_silence) {
+                SDL_PutAudioStreamData(g_audio_stream, lead_silence, (int)lead_bytes);
+                free(lead_silence);
+            }
+        }
 #else
         SDL_AudioSpec want = {0}, have;
         want.freq = g_config.audio_freq;
@@ -1463,8 +1553,33 @@ error_reading:;
             g_gamepad[0].axis_buttons | g_gamepad[1].axis_buttons << 12;
 #endif
         if (s_replay_loaded) {
-            uint16_t rmask = replay_mask_for_frame(snes_frame_counter);
-            uint16_t rprev = replay_mask_for_frame(snes_frame_counter - 1);
+            /* Key the replay on the guest clock when configured: a host frame
+             * may cover many guest frames, so host-frame keys land at the
+             * wrong guest instant. */
+            static long long s_replay_prev_key = 0;
+            static int s_replay_have_key = 0;
+            static uint16_t s_replay_last_mask = 0;
+            static int s_replay_log = -1;
+            if (s_replay_log < 0) {
+                const char *_e = getenv("SNESRECOMP_REPLAY_LOG");
+                s_replay_log = (_e && _e[0] && _e[0] != '0') ? 1 : 0;
+            }
+            long long rkey = replay_key_now();
+            uint16_t rmask = replay_mask_for_key(rkey);
+            uint16_t rprev = s_replay_have_key ? replay_mask_for_key(s_replay_prev_key) : 0;
+            if (s_replay_log && rmask != s_replay_last_mask) {
+                fprintf(stderr,
+                        "[replay] hostf=%d key=%lld cpuCyc=%llu master=%llu "
+                        "inidisp=%02X mask=%04X\n",
+                        snes_frame_counter, rkey,
+                        (unsigned long long)g_cpu.cycles,
+                        (unsigned long long)g_cpu.master_cycles,
+                        g_ppu ? (unsigned)g_ppu->inidisp : 0xFFFFFFFFu,
+                        (unsigned)rmask);
+            }
+            s_replay_prev_key = rkey;
+            s_replay_have_key = 1;
+            s_replay_last_mask = rmask;
             inputs |= rmask;
             /* Pause once per Up-press transition so the scene change is
              * visible; SDL_Delay only sleeps the host, guest timing is
@@ -1476,6 +1591,65 @@ error_reading:;
             fprintf(g_input_log, "%d %08x\n", snes_frame_counter, inputs);
             fflush(g_input_log);
             g_last_logged_input = inputs;
+        }
+
+        /* ---- Turbo (quick fast-forward) ------------------------------------
+         * Interactive: hold Turbo (Tab by default, config.ini [KeyMap]).
+         * Automated/headless (inert unless set):
+         *   SNESRECOMP_FORCE_TURBO=1      turbo every frame
+         *   SNESRECOMP_TURBO_BURST=a,n    turbo only for guest frames [a, a+n)
+         * The burst window is keyed on the GUEST frame counter, the same clock
+         * the replay file and the [fstate]/[fps] logs use, so a reviewed prefix
+         * of a run can be skipped at speed and the frames of interest watched at
+         * normal tempo in a single run.
+         *
+         * Turbo changes HOST pacing only (frame delay, present) plus the audio
+         * fast-forward hint; the guest still executes exactly one frame per
+         * iteration, so it cannot alter emulated state and frame numbering keeps
+         * its meaning for every probe and for the A/B gate. */
+        int turbo_present = 1;
+        {
+            static int s_ft = -1, s_burst_start = -2, s_burst_end = -2;
+            extern int snes_frame_counter;
+            if (s_ft < 0) {
+                const char *_e = getenv("SNESRECOMP_FORCE_TURBO");
+                s_ft = (_e && _e[0] && _e[0] != '0') ? 1 : 0;
+            }
+            if (s_burst_start == -2) {
+                const char *_e = getenv("SNESRECOMP_TURBO_BURST");
+                int start = -1, count = 0;
+                if (_e && sscanf(_e, "%d,%d", &start, &count) == 2 &&
+                    start >= 0 && count > 0) {
+                    s_burst_start = start;
+                    s_burst_end = start + count;
+                } else {
+                    s_burst_start = s_burst_end = -1;
+                }
+            }
+            if (s_ft)
+                g_turbo = 1;
+            if (s_burst_start >= 0) {
+                if (snes_frame_counter >= s_burst_start &&
+                    snes_frame_counter < s_burst_end)
+                    g_turbo = 1;
+                else if (snes_frame_counter == s_burst_end)
+                    g_turbo = 0;
+            }
+            RtlAudioSetFastForward(g_turbo != 0);
+            /* Present one turbo frame in N (default 16): enough to see where the
+             * run is, cheap enough not to give the vsync back. 0 = never
+             * present (a headless soak pays the vsync on no frame at all). */
+            static int s_present_every = -2;
+            if (s_present_every == -2) {
+                const char *_e = getenv("SNESRECOMP_TURBO_PRESENT_EVERY");
+                s_present_every = (_e && _e[0]) ? atoi(_e) : 16;
+                if (s_present_every < 0)
+                    s_present_every = 0;
+            }
+            if (g_turbo && s_present_every > 0)
+                turbo_present = (snes_frame_counter % s_present_every) == 0;
+            else if (g_turbo)
+                turbo_present = 0;
         }
 #ifndef SNESRECOMP_CLEAN_BUILD
         uint64 t_emu0 = 0, t_emu1 = 0, t_draw1 = 0;
@@ -1515,7 +1689,7 @@ error_reading:;
 #endif
 
         g_snes->disableRender = 0;
-        DrawPpuFrameWithPerf();
+        DrawPpuFrameWithPerf(turbo_present);
 #ifdef SNESRECOMP_INTERP_PROFILE
         /* Per-function AOT attribution (SNESRECOMP_AOT_PROF, common_cpu_infra.c):
          * frame-end sample so dev windows show which generated function eats
@@ -1677,7 +1851,10 @@ error_reading:;
         }
 
         if (g_turbo) {
-            SDL_Delay(1);
+            /* Turbo paces nothing: it exists to run as fast as the host allows.
+             * The audio device drains on its own thread, and the input/event
+             * pump is polled at the top of every iteration, so skipping the
+             * pacing here starves neither (verified by tools/verificar.py). */
         } else if (!g_config.disable_frame_delay) {
             uint64 frame_end = SDL_GetPerformanceCounter();
             double frame_ms = (double)(frame_end - frame_start) * 1000.0 / SDL_GetPerformanceFrequency();

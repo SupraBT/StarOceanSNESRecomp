@@ -1,0 +1,29 @@
+# GRABACION DE PULSACIONES (la buena, no un guion inventado).
+#
+# Copiada de build-dev/Release/rep_bueno.txt: es la secuencia que recorre
+# intro -> menu (New Game/Continue/Sound Player) -> seleccion de nombre ->
+# comienzo de cinematica, y coincide paso a paso con la narrativa de
+# StarOceanRecompDocumentacion/Secuencia pulsaciones trace.txt.
+#
+# Cinco pulsaciones de A (mascara 0x0100) con suelta 10-14 frames despues. La
+# clave es el indice de FRAME DE HOST (por defecto). Aterrizajes comprobados con
+# SNESRECOMP_REPLAY_LOG=1:
+#   f66  -> resume=C8F428 inidisp=0F  (fin del fundido de la intro)
+#   f147 -> resume=C38FA8 inidisp=0A  (fundido de entrada al menu)
+#   f209 -> resume=C39069 inidisp=0F
+#   f270 -> resume=C38FAD inidisp=0F
+#   f413 -> resume=C2FCF8 inidisp=80  (comienzo de cinematica)
+#
+# Formato: "<clave> <mascara hex>"; B=01 Y=02 Select=04 Start=08 Up=10 Down=20
+# Left=40 Right=80 A=100 X=200 L=400 R=800.
+#
+66 0100
+76 0000
+147 0100
+158 0000
+209 0100
+223 0000
+270 0100
+283 0000
+413 0100
+425 0000

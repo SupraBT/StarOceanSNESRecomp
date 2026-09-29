@@ -6,6 +6,11 @@
 #include "cpu_state.h"
 #include "funcs.h"
 #include "snes/interp_bridge.h"
+
+/* Handler-entry counters (interp_bridge.c): dev instrumentation for the
+ * per-frame IRQ/NMI delivery rate. */
+extern uint64_t g_interp_irq_entries;
+extern uint64_t g_interp_nmi_entries;
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -24,6 +29,14 @@
 #include <time.h>
 uint64_t ppu_prof_calls = 0;
 double ppu_prof_ms = 0.0;
+/* Stubs TEMPORALES (solo con SNESRECOMP_INTERP_PROFILE, que no usa build-dev):
+ * main.c declara los contadores del runtime AOT v2 pero ese runtime no forma
+ * parte de este ejecutable, asi que el enlace falla sin ellos. Medir un
+ * presupuesto de frame no necesita esos numeros; si algun dia se integra el
+ * runtime AOT en esta build, borrar este bloque. */
+uint64_t aotq_prof_calls = 0;
+uint64_t aotq_prof_cycles = 0;
+double aotq_prof_ms = 0.0;
 #endif
 void SoDrawPpuFrame(void) {
 #ifdef SNESRECOMP_INTERP_PROFILE
@@ -118,6 +131,76 @@ void RunOneFrameOfGame(void) {
   if (!resume)
     resume = 0x00FEC1;
 
+  /* Deadline de frame de invitado: un frame de host = 1 frame de invitado
+   * (357368 ciclos master).  Ver ENCICLOPEDIA §22.
+   *
+   * El mecanismo ya existia -interp_bridge_set_master_deadline() y lo consultan
+   * tanto el puente como el codigo AOT generado- pero NADIE lo fijaba, asi que
+   * el invitado corria "hasta quiescencia" sin mas tope.  En los tramos no
+   * quiescentes (los bucles de handshake sobre $40/$2140) eso dejaba que UN
+   * frame de host consumiera 4, 7 o hasta 66 frames de invitado de un tiron, y
+   * el invitado se adelantaba en tiempo real (medido 2026-09-29): el primer
+   * fundido caia en el frame de host 712 sin deadline y en el 791 con deadline
+   * 1 (hardware: 841), mientras su posicion en reloj de invitado no cambiaba
+   * (~790 gf).  Con la deadline el invitado consume exactamente 357368 ciclos
+   * master por frame de host en todos los frames menos los 3 de arranque, y el
+   * guion de $2100 coincide hueco a hueco con la traza de hardware.
+   *
+   * Env SNESRECOMP_FRAME_DEADLINE=<n> (frames de master; ausente = 1.0, 0 =
+   * comportamiento historico ilimitado). */
+  static double s_frame_deadline = -2.0;
+  if (s_frame_deadline < -1.0) {
+    const char *e = getenv("SNESRECOMP_FRAME_DEADLINE");
+    /* DEFAULT 0 (audio) desde 2026-09-29, ver ENCICLOPEDIA §22.13.
+     *
+     * Con la deadline activa el invitado cede el frame por DEADLINE en vez de
+     * por QUIESCENCIA, y el tick del driver de sonido del juego vive en el
+     * handler de V-IRQ por frame (C0:032D, ver §19). Medido con volcado del PCM
+     * que se entrega al dispositivo (`SNESRECOMP_PCM_DUMP`): con cualquier
+     * deadline > 0 el DSP no toca NADA en toda la intro (pico 0 en 0-13 s y
+     * pico 2 despues del unico chasquido de f790), mientras que con 0 toca
+     * musica continua desde el segundo 7 (picos 2000-4500). No es efecto de
+     * "cuanto tiempo" -0,25 frames ya silencia todo- sino de POR DONDE sale el
+     * frame. Los arreglos de audio (tasa del consumidor, colchon inicial,
+     * recorte de exceso, §22.12) son independientes y siguen activos.
+     *
+     * La fidelidad del modelo de tiempo queda disponible con
+     * SNESRECOMP_FRAME_DEADLINE=1 (y el A/B byte-exacto de §22 la valida), pero
+     * NO se activa por defecto hasta que el camino de deadline entregue tambien
+     * el NMI/IRQ del frame como hace el camino de quiescencia. */
+    s_frame_deadline = (e && e[0]) ? atof(e) : 0.0;
+    if (s_frame_deadline < 0.0) s_frame_deadline = 0.0;
+  }
+  /* Absoluta para todo el frame de host: la deadline es una propiedad del
+   * frame, no de cada vuelta del guard.  Recalcularla por vuelta permitiria
+   * que el camino del handshake de batalla ($C084B2/B4) consuma hasta 8 frames
+   * de invitado en un solo frame de host. */
+  const uint64_t frame_deadline_master =
+      g_cpu.master_cycles + (uint64_t)(s_frame_deadline * 357368.0);
+
+  /* Sonda de presupuesto de frame (SNESRECOMP_FRAME_BUDGET=1, dev): una linea
+   * por frame de host con cuantos frames de invitado (dgf) y cuanto reloj
+   * master (dmaster) acaba de consumir, mas el PC de reanudacion antes/despues.
+   * dgf != 1 es exactamente el defecto que la deadline corrige. */
+  {
+    extern unsigned long long snes_guest_frame_count(void);
+    static unsigned long long prev_gf, prev_m;
+    static uint32_t prev_res;
+    static int initialized;
+    static int fb = -1;
+    if (fb < 0) { const char *e = getenv("SNESRECOMP_FRAME_BUDGET");
+                  fb = (e && e[0] && e[0] != '0') ? 1 : 0; }
+    const unsigned long long gf_now = snes_guest_frame_count();
+    const unsigned long long m_now  = g_cpu.master_cycles;
+    if (fb && initialized && s_frame_deadline > 0.0) {
+      fprintf(stderr, "[fbudget] f=%d dgf=%llu dmaster=%llu res0=%06X res1=%06X\n",
+              counter_global_frames - 1, gf_now - prev_gf, m_now - prev_m,
+              (unsigned)prev_res, (unsigned)interp_bridge_lle_resume_pc());
+    }
+    prev_gf = gf_now; prev_m = m_now;
+    prev_res = interp_bridge_lle_resume_pc(); initialized = 1;
+  }
+
   /* Battle $D9 handshake (see HANDOFF §12.8): the frame task waits on the
    * WRAM latch $D9 ($80 = forced blank at V:216, 0 = restored at V:258) at
    * $C084AE/B2/B4 (LDA $D9 / BNE / LDA $D9 / BEQ). The wait is a pure WRAM
@@ -130,7 +213,11 @@ void RunOneFrameOfGame(void) {
    * the brightness restore. Field/intro never reach this spin (no vIRQ
    * cycle), so the validated A/B path is untouched. */
   for (int guard = 0; guard < 8; guard++) {
+    if (s_frame_deadline > 0.0)
+      interp_bridge_set_master_deadline(frame_deadline_master);
     interp_bridge_run_until_quiescent(&g_cpu, resume);
+    if (s_frame_deadline > 0.0)
+      interp_bridge_set_master_deadline(0);
 
     uint32_t pc = interp_bridge_lle_resume_pc();
     if ((pc == 0xC084B2u || pc == 0xC084B4u) && g_snes->vIrqEnabled) {
@@ -165,10 +252,42 @@ void RunOneFrameOfGame(void) {
                   const char *fr = getenv("SNESRECOMP_FRAME_STATE_FROM");
                   if (fr && fr[0]) fs_from = atol(fr); }
     if (fs && counter_global_frames >= fs_from) {
-      fprintf(stderr, "[fstate] f=%d nmiEn=%d resume=%06X inidisp=%02X\n",
+      /* Guest-clock + observable state per frame, so a recording made on
+       * hardware can be aligned on the guest clock instead of the host frame
+       * index (a host frame may cover many guest frames). Fields appended
+       * after inidisp keep prefix parsers working. pad/r4200 mirror the
+       * oracle columns: the pad word the guest reads this frame and the
+       * reconstructed $4200 byte (NMI/hIRQ/vIRQ/auto-joypad). */
+      fprintf(stderr, "[fstate] f=%d nmiEn=%d resume=%06X inidisp=%02X "
+                      "cpu=%llu master=%llu pad=%04X r4200=%02X hIrq=%d vIrq=%d "
+                      "irq=%llu nmi=%llu vTimer=%u E4=%04X DA=%02X AFB=%02X "
+                      "AFD=%04X D01=%02X DB=%02X PB=%02X DP=%04X S=%04X\n",
               counter_global_frames, g_snes->nmiEnabled,
               (unsigned)interp_bridge_lle_resume_pc(),
-              g_ppu ? (int)g_ppu->inidisp : -1);
+              g_ppu ? (int)g_ppu->inidisp : -1,
+              (unsigned long long)g_cpu.cycles,
+              (unsigned long long)g_cpu.master_cycles,
+              (unsigned)g_snes->input1_currentState,
+              (unsigned)((g_snes->nmiEnabled   ? 0x80u : 0u) |
+                         (g_snes->vIrqEnabled  ? 0x20u : 0u) |
+                         (g_snes->hIrqEnabled  ? 0x10u : 0u) |
+                         (g_snes->autoJoyRead  ? 0x01u : 0u)),
+              (int)g_snes->hIrqEnabled, (int)g_snes->vIrqEnabled,
+              (unsigned long long)g_interp_irq_entries,
+              (unsigned long long)g_interp_nmi_entries,
+              (unsigned)g_snes->vTimer,
+              (unsigned)cpu_read16(&g_cpu, 0x00, 0x00E4),
+              (unsigned)cpu_read8(&g_cpu, 0x00, 0x00DA),
+              (unsigned)cpu_read8(&g_cpu, 0x00, 0x0AFB),
+              (unsigned)cpu_read16(&g_cpu, 0x00, 0x0AFD),
+              (unsigned)cpu_read8(&g_cpu, 0x00, 0x0D01),
+              /* DB (banco de datos) decide a que espacio van los accesos
+               * absolutos del invitado: `LDA $4806` (registro S-DD1) sale por
+               * I/O con DB=$00 y cae en WRAM con DB=$7E/$7F.  Hardware
+               * sostiene DB=$00 en los 2000 frames de la traza, asi que
+               * cualquier DB != 0 aqui es divergencia de banco, no de flujo. */
+              (unsigned)g_cpu.DB, (unsigned)g_cpu.PB,
+              (unsigned)g_cpu.D, (unsigned)g_cpu.S);
     }
   }
 }

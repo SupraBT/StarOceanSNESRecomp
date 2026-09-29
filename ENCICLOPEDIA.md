@@ -392,3 +392,1968 @@ build-cosim\so_cosim.exe "build\Release\Star Ocean (Japan).sfc" --frames 240 --s
 # comparar
 python tools\cosim_trackb.py --a build-cosim\trackb_so.bin --b build-cosim\trackb_bsnes.bin --stats
 ```
+
+## 15. Intro: quién gobierna los fundidos y qué le falta al recomp (2026-09-28)
+
+Investigación del 2º fundido de la intro (que en hardware avanza 1 nivel cada 4
+frames) contra el oráculo de Mesen (`StarOceanRecompDocumentacion/mesen_oracle.tsv`).
+Todo lo de aquí está **medido**, con los artefactos en `build-dev/Release/`.
+
+### 15.1 El contador del invitado que gobierna las cadencias
+
+En el ROM (HiROM; desensamblado con `tools/dis_range.py`):
+
+* **`$E4` es el contador de frames del invitado**: `INC $E4` una vez por vblank en
+  `CC:08B4`, `CC:1526`, `CC:19F8`, `CC:1CCA`, `CC:20C8`, `CC:2829` — es decir, un
+  `INC` por cada uno de los ~6 bucles de escena del motor de cutscenes (banco
+  `$CC`), cada uno terminando en `LDA $DA / STA $2100` + `INC $E4` + `JMP`.
+* **La cadencia es `$E4 & N`**: hay 79 sitios `LDA $E4 / AND #$0003 / BNE`
+  (y 17 con `&1`, 9 con `&7`). Ejemplos: `CC:0C53` (rampa de `$0D01` de BG1 VOFS
+  cada 4 frames), `CC:1033` (modo 8 de fundido, CGRAM cada 4 frames),
+  `CC:2766`. Es el mismo idioma que produce los ritmos 1/2/4/8 del oráculo.
+* **Máquina de fundidos del motor**: `CC:0924` despacha `$0AFB` con la tabla de
+  `CC:0953` → modo 6 = `CC:0B44` (`INC $DA`, 1 frame/nivel), modo 7 = `CC:0B57`
+  (`DEC $DA`, 1 frame/nivel), modo 8 = `CC:1033` (`$E4&3` + fundido de CGRAM de
+   32 pasos = 128 frames), modo 4 = `CC:0C0B` (fundido de CGRAM inverso).  El
+  script alternativo `$0AF9` (tabla `CC:096D`) arranca esos modos (op 6/7 →
+  modos 1 frame/nivel; op 8 → `CC:1026` = `$0AFD=#$20`, `$0AFB=8`).
+* **`$DA` = sombra de inidisp**, aplicada por `LDA $DA / STA $2100` en 10 sitios
+  (`C0:018F`, `C0:02BE`, `C0:213A`, `C1:0206`, `CC:088D`, `CC:151D`, `CC:19F5`,
+  `CC:1CC7`, `CC:20C5`, `CC:280E`).
+* **La biblioteca `C8:F4xx` es SIEMPRE 1 nivel por vblank**: `F497` (fade-in,
+  `STA $2100` en `F4A3`), `F4AB` (blank N), `F4B7` (fade-out, `F4C5`+`F4CC`),
+  `F4D0` (fade-in con pad, `F4DE`), `F4E9` (blank N con pad), `F4FA` (fade-out
+  con pad, `F50A`).  Lo mismo en banco `$C0` (`C0:2126`, `C0:C4E9`, `C0:C48E`) y
+  en banco `$CC` (`CC:0FAC`, `CC:0FCE`, `CC:0FE7`, `CC:1013`), todos con
+  `JSL $C08496` = espera vblank de 1 frame (`C0:8496`).
+
+Conclusión: **el fundido a 4 frames/nivel no puede salir de `C8:F4xx`**; sale de
+un bucle del motor con puerta `$E4 & 3` sobre un valor que termina aplicándose a
+`$2100` (o de un CGRAM fade del modo 8 con la misma máscara).
+
+### 15.2 Lo que hace el recomp (medido)
+
+Corrida `SNESRECOMP_FRAME_STATE=1 SNESRECOMP_INIDISP_TRACE=1` (400 frames):
+
+* `E4=0000`, `AFB=00`, `AFD=0000` en **400/400** frames; `DA=80` constante.
+* Watch de `$00E4`: **cero escrituras en banco 00** (solo aparecen 8 escrituras a
+  `7F:00E4`, que es otra dirección de WRAM y de otro subsistema, `IPC=C04D6x`).
+* Las 55 escrituras a `$2100` salen de `IPC=C8F4DE` (×30, las dos subidas) y
+  `IPC=C8F4C5` (×15, la bajada) → **biblioteca `C8:F4xx`, 1 nivel/vblank**.
+* El invitado nunca entra en el motor `$CC`: `$0D01` (que `CC:0C53` rampa cada 4
+  frames) se queda en `FF`.
+
+### 15.3 Overlay cuantitativo contra el oráculo
+
+Los `master` de ambas corridas se alinean en `357368` ciclos/frame, así que la
+comparación es en frames de invitado:
+
+| evento                     | recomp (frame de invitado) | hardware (oráculo) |
+|----------------------------|---------------------------|--------------------|
+| fade-in 1 (01..0F)         | 132 → 146 (15)            | 416 → 430 (15)     |
+| fade-out (0E..00+80)       | 277 → 291 (15)            | 703 → 717 (15)     |
+| hueco (blank)              | 292 → 293 (**3**)          | 718 → 841 (**124**)|
+| fade-in 2 (01..0F)         | 294 → 308 (15, 1/frame)   | 842 → 898 (**56**, 4/frame) |
+
+* Fade-in 1 y fade-out: **idénticos** (1 frame/nivel en ambos).
+* Fade-in 2: 15 frames vs 56 → **el recomp hace 4× demasiado rápido**.
+* Distancia fade-in-1 → fade-out: recomp **145** frames, hardware **287**
+  (= 100+32+140, las tres esperas del paso de la intro).
+* Hueco: recomp **3** frames, hardware **124**.
+
+Es decir: no es solo la cadencia; **la secuencia de esperas del invitado está
+comprimida** (el invitado llega antes a cada estado).
+
+### 15.4 Hipótesis refutadas (no volver a probarlas)
+
+* **VFF (fast-forward de vblank)**: `SNESRECOMP_NO_VBLANK_FF=1` da resultados
+  **byte-idénticos** (mismo `master` y mismos eventos) → el VFF no altera el
+  tiempo del invitado.
+* **Entrega de V-IRQ**: exactamente **1 IRQ por frame** de invitado en todo el
+  tramo (`irq=` avanza de 1 en 1, `vTimer=0`), y el handshake `$D9` de batalla no
+  se toca en la intro.
+* **Gate `snes_frame_counter > 10` del VFF**: ya se había refutado (byte-idéntico).
+* **NMI**: el oráculo nunca activa el bit 7 de `$4200`; `nmiEn=0` es correcto.
+
+### 15.5 La anomalía grande: el canal APU está muerto tras el boot
+
+Con la traza nueva `SNESRECOMP_APU_PORT_RW` (puertos `$2140-$2143`, con valor y
+`master`) en 200 host frames (~300 frames de invitado):
+
+* **290.662 accesos, TODOS en el host frame 3** (270.384 lecturas + 20.278
+  escrituras; la última a `master=24.831.376` ≈ frame de invitado 70) → la subida
+  del driver SPC del boot.
+* **Cero accesos en los 197 host frames siguientes.**
+
+Oráculo (cobertura fr411-11701, ver §15.8): **319.713 escrituras y 3.662.900
+lecturas** a `$2140-$2143` (media ~28 escrituras y ~324 lecturas por frame); en
+el arranque del fade-in-1 (fr411-415) ~**890 escrituras y ~8.270 lecturas por
+frame**, y en el tramo del hueco/2º fundido ~230-440 escrituras y ~5.600
+lecturas por frame (pico fr1709: 901/8.261).
+
+⇒ En hardware el juego alimenta y sondea el motor de sonido **cada frame**
+durante la intro; en el recomp, después del boot, **nunca más**.  Cualquier espera
+del invitado que dependa del handshake con el SPC ("banca cargada", "driver
+listo") se satisface al instante en el recomp: candidato principal a explicar la
+compresión de §15.3 (incluido el hueco de 124 frames).
+
+### 15.6 Herramientas nuevas (todas dev, coste cero si no se define la variable)
+
+> Las tres primeras se añadieron en esta sesión; el resto ya existían.
+
+```bash
+# 1) Traza de PC por frame de INVITADO (snes.c): una línea por frontera de frame
+SNESRECOMP_PC_LOG=pc_frame.log ./StarOcean.exe
+#    gf=<frame invitado> hostf=<frame host> pc=<PC intérprete> resume=<PC puente> fn=<función AOT>
+
+# 2) Traza de puertos APU $2140-$2143 (cpu_state.c, cpu_read8/16 + cpu_hw_log)
+SNESRECOMP_APU_PORT_RW=apu_rw.log ./StarOcean.exe
+#    f<hostf> R|W $21xx=VV master=<clk> <función AOT>
+
+# 3) Escrituras a un rango de memoria con estado de CPU (ya existía)
+SNESRECOMP_WLOG_ADDR="0083:0084:ram83.log" SNESRECOMP_WLOG_STATE=1 ./StarOcean.exe
+
+# 4) Escrituras a $2100 con el PC que las hace (ya existía)
+SNESRECOMP_INIDISP_TRACE=1 SNESRECOMP_FRAME_STATE=1 ./StarOcean.exe 2> err.log
+```
+
+### 15.7 Sonda de Mesen (`tools/mesen_intro_probe.lua`)
+
+Pendiente de ejecutar por el usuario (no se puede lanzar Mesen desde el agente).
+
+Responde en hardware lo que el recomp no puede contestarse solo:
+
+* **exec callbacks** en las rutinas candidatas: `C8:F407/F41D/F497/F4AB/F4B7/
+  F4C5/F4D0/F4D4/F4DE`, `CC:088B/08B4/0924/0B44/0B57/1033/104B`, `C0:212B/2141`,
+  `C0:2AE0` → dice qué rutina escribe `$2100` en el 2º fundido y con qué
+  frecuencia.
+* **write callbacks** en `$2100`, `$DA`, `$E4/$E5`, `$0AF9/$0AFA`, `$0AFB/$0AFC`,
+  `$0AFD/$0AFE` (valores por frame).
+* **snapshot por frame** de `$E4/$E5/$DA/$0AFB/$0AFD` (leídos en `$00xx` y `$7Exx`)
+  y de `PC/D/DB` (`emu.getCpuState()`), más `emu.getMasterClock()`.
+
+Detalles de la API de esta build de MesenCE (aprendidos de `mesen_probe.log`, el
+script anterior se perdió):
+
+* No existe el global `memory` → usar `emu.addMemoryCallback(fn, type, memType,
+  start, end)` con `memType = emu.memType.snesMemory (0)`; `emu.callbackType` y
+  `emu.eventType` **no** están expuestos como tabla numérica: `write=1`,
+  `read=0`, `exec=2`; `endFrame=3`, `startFrame=2`, `scriptEnded=5`.
+* `emu.addEventCallback(fn, 3)` registra el fin de frame.
+* Registros PPU (`$2100`) **sí** disparan en `snesMemory`; `snesRegister (20)` no.
+
+### 15.8 Advertencias para la próxima comparación
+
+* El `mesen_oracle.tsv` tiene **dos pasadas**: la 1ª cubre los frames 0-410
+  (solo columnas `master`/`cpuCyc`) y la 2ª los frames **411-11701** con todas
+  las sondas.  El motivo no es un savestate: el script antiguo hacía una
+  *calibración* de ~400 frames (registraba sondas de prueba, contaba disparos y
+  elegía `snesMemory` como memoria válida) **antes** de registrar las 17 sondas
+  reales.  Consecuencia: **`inidisp`/`r4200`/`w2140` no existen antes del frame
+  411**; "el hardware no toca la APU al principio" es un artefacto, no un dato.
+  La sonda nueva (`tools/mesen_intro_probe.lua`) registra desde el frame 1.
+* `master` del oráculo = `fr * 357368` exacto en **ambas** pasadas → el índice de
+  frame es relativo al reset y sirve para alinear por `master`, pero la
+  comparación fina debe hacerse por **transiciones** (`tools/oracle_overlay.py`),
+  que compara *intervalos* (p.ej. `1.030` = mismo ritmo que el hardware).
+* `oracle_overlay.py --oracle ... --recomp <log>` exige que el horizonte del
+  recomp (`master` final) cubra los frames del oráculo que tienen datos (≥411):
+  una corrida de 200 host frames termina en `master≈115M` (frame 322) y el
+  overlay sale con `rows=0` — no es un fallo de la herramienta, hace falta una
+  corrida más larga (p.ej. `SNESRECOMP_EXIT_AT_FRAME=1200`).
+* `code_search` (ripgrep vendorizado) sigue roto: usar
+  `StarOceanRecompDocumentacion/rg.exe` o `grep` del shell.
+* `build-clean` intacto; `versionlimpiagithub` congelada; `StarOceanRecomp` no es
+  repo git.
+
+### 15.9 Causa raíz candidata y siguiente paso
+
+El invitado del recomp llega al fade-in-1 en el frame **133** y el de hardware en
+el **416**; los 283 frames de diferencia son **espera del invitado** (bucles de
+vblank), no trabajo extra del recomp.  Dos mecanismos pueden colapsar esas
+esperas de 283 frames a ~0, y ambos son medibles:
+
+1. **SDD1**: si el juego arranca la descompresión de gráficos y sondea el estado
+   hasta que termina, en hardware eso cuesta cientos de frames; en el recomp
+   `sdd1.c` descomprime dentro de una llamada de host y la espera desaparece.
+   Medir: callbacks de lectura `$4800-$4807` en la sonda de Mesen contra la
+   misma ventana en el recomp.
+2. **SPC/handshake**: hardware habla con `$2140-$2143` en cada frame del tramo
+   (890 escrituras + 8.270 lecturas por frame en el arranque del fade-in-1); el
+   recomp **no toca los puertos tras el boot** (§15.5).  Si el juego sincroniza
+   el avance de la intro con "el SPC ya cargó X", esa espera también colapsa.
+   Medir: comparar el tramo final del handshake del boot del recomp
+   (`SNESRECOMP_APU_PORT_RW`) con el mismo tramo en Mesen (misma sonda, ahora
+   desde el frame 1).
+
+Hasta fijar cuál de las dos es: **no tocar el driver**.  Las hipótesis que ya se
+probó y refutó están en §15.4, y el cambio de driver que se barajó antes
+(entregar V-IRQ por frame de invitado) no es necesario: la entrega ya es 1/frame.
+
+Cierre previsto: (a) ejecutar `mesen_intro_probe.lua` y comparar la cadencia de
+`$E4/$DA/$0AFB` y las esperas por frame; (b) decidir si el trabajo pendiente es
+el reloj del SDD1 (acreditar ciclos de guest por byte descomprimido), el
+handshake del SPC, o la secuencia de pasos de la intro; (c) sólo entonces
+cambiar el driver, con A/B byte-exacto contra el oráculo.
+
+## 16. El frame oracle, el reloj por frame, el cuelgue del menú y herramientas (2026-09-28, tarde)
+
+### 16.1 Cómo decide el runtime que un frame ha terminado (el «frame oracle»)
+
+Star Ocean **no activa NMI nunca**: `nmiEn=0` en todas las líneas `[fstate]` y
+`r4200` reconstruido = `21` (vIRQ + auto-joypad, sin bit 7). Por eso el borde de
+frame del invitado no puede ser el NMI y lo decide un heurístico:
+
+* `RunOneFrameOfGame` (`src/so_rtl.c`) define el frame invitado como
+  `counter_global_frames++` → NMI si estuviera activo →
+  `interp_bridge_run_until_quiescent` (modo auto-quiescente, `yield_pc =
+  0xFFFFFFFE`), más dos casos especiales: `$00FEBD` (fuerza el haz a vblank si el
+  invitado está en el vector IRQ) y el `$D9` de batalla.
+* El detector de quiescencia (`interp_bridge.c`, bloque `if (auto_quiescent)`)
+  compara el estado COMPLETO del invitado (pc, A/X/Y/SP/DP/DB/K, todas las
+  banderas, `write_epoch` y `continuous_read_epoch`) y **cede el frame en cuanto
+  ese estado se repite tres veces dentro de 256 pasos**. Es decir, el fin de
+  frame es «tercer estado idéntico en un bucle apretado», no un borde de
+  hardware.
+
+Consecuencias, medidas:
+
+* En juego normal el yield cae en el spin de vblank, de modo que **el frame del
+  recomp es exactamente un frame de hardware**: en ventanas de 100 frames entre
+  el 100 y el 1500, `master/frame = 357.368,0` exacto y `cpu/frame`
+  59.216-59.540 frente a los 59.561 teóricos. **No hay inflación de reloj.** La
+  cifra «380-464k master/frame» que se barajó antes era un error aritmético
+  (dividir el contador acumulado, que arranca con ~33,6 M de offset porque el
+  boot consume ~94 frames de tiempo de invitado en el frame 3).
+* Pero un bucle estable que **no** sea el de vblank también cede el frame ahí
+  mismo: el frame termina antes de tiempo y el runner sigue produciendo frames
+  mientras el invitado sigue dentro de su espera. Ese es el aspecto exacto de
+  «pantalla negra con los frames subiendo»: no es un cuelgue del emulador, es un
+  invitado esperando algo que no llega mientras el runner avanza frames vacíos.
+  Es la misma clase de fallo que el caso `$D9` de batalla ya documentado en
+  `so_rtl.c` (allí se tapó con un caso especial; aquí se detecta con §16.3).
+
+### 16.2 El experimento de cobro de ciclos de DMA queda OFF por defecto
+
+`snes_writeReg` case `$420b` cobraba `iters*2` ciclos de CPU y `iters*2*6` de
+master tras `dma_startDma`. Medido con `rep_menu2` (ventana + audio):
+
+| métrica (frames de invitado) | con cobro | sin cobro | hardware |
+|---|---|---|---|
+| force-blank del menú | 319→504 = **185** | 382→504 = **123** | fr 718→841 = **124** |
+| fade-in-1 → fade-out | — | **288** | **287** |
+
+Era la **única** diferencia de comportamiento real entre `build-dev` y
+`build-clean`: los 16 usos de `SNESRECOMP_CLEAN_BUILD` son log/medición (fase,
+perfil AOT, `wait_if_paused`) salvo la colocación de `GetActiveControllers()`,
+que es equivalente con el pad-marker apagado. Ahora está **OFF por defecto**;
+`SNESRECOMP_DMA_CHARGE=1` lo reactiva solo para A/B. Sin él, las dos métricas
+independientes caen a 1 frame del oráculo.
+
+### 16.3 Herramientas nuevas
+
+* `SNESRECOMP_HANG_GUARD[=base]` (+ `SNESRECOMP_HANG_FRAMES`, def. 600): un
+  muestreo por frame invitado, sin hashing. Si la pantalla lleva N frames
+  seguidos en force-blank **y** el invitado solo ha ejecutado ≤2 rutinas (pc de
+  reanudación + función AOT) en toda la ventana, escribe `base.json` (informe
+  completo vía `host_report_dump_json`, con volcado de WRAM/CPU) y `base.txt`
+  (rutina, pila AOT, registros, pila del invitado, `$E4/$DA/$AFB/$AFD/$0B01`,
+  puertos APU y el anillo de los últimos 96 frames). Verificado: con umbral 100
+  dispara en el hueco legítimo y avisa «la pantalla volvió a la vida en el frame
+  505»; con el 600 por defecto no dispara en ese hueco.
+* `run_dev_forense.bat` (raíz del proyecto): lanza `build-dev` con ventana y
+  audio y todas las sondas a `logs/` (estado por frame, PC por frame,
+  `$0B00-$0B03`, fase y hang-guard). `run_dev_forense.bat apu` añade la traza del
+  handshake SPC.
+* `build-clean-test/Release/` (`SNESRECOMP_CLEAN_BUILD=ON`, fuentes actuales, con
+  ROM, `SDL3.dll`, `config.ini` y `keybinds.ini` dentro) + `run_clean_ab.bat`:
+  para el A/B «¿es el código dev o son las fuentes?» sin tocar `build-clean`.
+  Verificado: resuelve la ROM por SHA-256 en 97 ms, `video=windows
+  audio=wasapi`, 695 frames en 14 s y el informe al cerrar (`taskkill` sin `/F`
+  cierra limpio y escribe `last_run_report.json`).
+* **Regla de invocación (importante):** las corridas lanzadas desde shell deben
+  pasar la ROM como PRIMER ARGUMENTO (`StarOcean.exe "Star Ocean (Japan).sfc"`).
+  Así el arranque la resuelve por SHA-256 y no abre el launcher; sin argumento,
+  si `rom.cfg` no apunta a un fichero válido, el launcher la pide a mano (dos
+  corridas de validación del 2026-09-28 se quedaron esperando eso). Todos los
+  `.bat` de la raíz ya lo hacen.
+
+### 16.4 Boot: coste y pacing
+
+* Reloj de pared, ventana + audio: hasta el frame 2 = 1,54 s; hasta el 100 =
+  4,49 s; hasta el 400 = 10,0 s ⇒ ~30 ms/frame en juego (`[phase] emu=15,4 ms
+  draw=13,5 ms => 34,6 FPS`). El boot hasta el frame 2 ≈ **1,2 s**.
+* En tiempo de invitado el boot se concentra en el frame 3: de f=3 a f=4 el
+  `master` avanza **23,57 M** = **66 frames** de invitado, con 290.662 accesos a
+  `$2140-$2143` (20.278 escrituras ≈ 10 KB de subida al SPC) y ~3,87 M ciclos de
+  CPU. El invitado factura ~393 ciclos por byte (hardware: ~30-40) porque
+  sondea mientras espera, y el SPC avanza al ritmo del hilo de audio (ver el
+  comentario del boot-watchdog en `common_cpu_infra.c`). En hardware esa subida
+  cuesta ~10-20 ms de pared, no 1,2 s.
+
+### 16.5 Estado de la petición vigente (cuelgue al dar New Game)
+
+En repeticiones con ventana + audio y la MISMA entrada de `rep_menu2` el tramo
+del menú **no** se queda colgado para siempre en ninguno de los dos modos de
+cobro: es un force-blank de ~123 frames (≈3,6 s a 34,6 fps) que resuelve y entra
+en código de escena (`E4` contando, `AFB=03`). Como el fallo real del usuario es
+intermitente y depende de su entrada/estado, hay que capturar el estado
+congelado: `run_dev_forense.bat` (logs + `hang_report`) y `last_run_report.json`
+(volcado de WRAM/CPU al salir).
+
+Nota de método: todas las corridas de esta sección son con **ventana y audio**.
+El informe de la app lo prueba (`SDL init ok: video=windows audio=wasapi`,
+`first audio callback (len=1280)`); el `video_driver: "(none)"` del JSON es solo
+porque ese campo se consulta después de cerrar SDL.
+
+### 16.6 Corrida buena del usuario (833 frames, input real, menú de nombre OK)
+
+Secuencia de `inidisp` (frames de invitado, entre paréntesis `$E4`):
+`5-19` fade-in 1 (01→0F, 1/frame) · `67-80` fade-out (0E→01, 1/frame) ·
+`81-102` **hueco** · `107-163` fade-in lento (**4 frames/nivel**: 107=01,
+111=02, 115=03 …, con `$E4` contando 0001,0005,0009…) · `271-278` fade-out ·
+`315-324` · `416-424` · `547-561` · `692-706` · `708-722`.
+
+Las **cadencias coinciden con hardware** (salida 1 nivel/frame, entrada lenta
+4 frames/nivel: hardware fr 703-717 y 842-898).  La divergencia está en el
+hueco: **22 frames en el recomp (81-102) frente a 124 en hardware (718-841)**.
+
+Estructura del hueco medida en el oráculo contando accesos APU por frame:
+
+| tramo hardware | frames | tráfico `$2140` |
+|---|---|---|
+| fr 718-779 | 62 | **cero** |
+| fr 780-815 | 36 | 232-889 W / 1.990-8.893 R por frame |
+| fr 820-841 | 22 | **cero** |
+
+En el recomp, `logs/pc.log` del tramo 81-102 muestra `resume` en
+`C04D62/C086BA/C086BE/C086C6/C086EB/C088xx/C085xx`: es el **bucle de subida al
+SPC** (`C0:86BA`: `LDA $2140` / `CMP $2140` / handshake en el bit 7 de `$4A`,
+escrituras a `$2141/$2142`, `INX INX INX`, `CPX $00`).  Es decir: la subida al
+SPC **sí** ocurre fuera del boot (el «APU muerto» de §15.5 era solo la ventana
+del boot), y lo que falta son los **~84 frames de esperas que no tocan el APU**
+(62+22), la firma de una descompresión S-DD1 que en hardware se espera y en el
+recomp (`sdd1.c`) se resuelve dentro de la llamada de host.  Hipótesis 1 de
+§15.9, ahora cuantificada: el mismo trabajo cuesta 22 frames en el recomp y 124
+en hardware.
+
+Cierre pendiente (medido en parte en §17.2): contar lecturas de `$4800-$4807` y
+`$4212` en hardware durante fr 718-779 con `tools/mesen_intro_probe.lua`; si ahí
+no hay lecturas SDD1, la espera es otra (delays/bucles del invitado) y hay que
+buscar su contador.
+
+### 16.7 Lanzador forense: entrada reproducible
+
+`run_dev_forense.bat` añade ahora `SNESRECOMP_INPUT_LOG=logs/input_manual.log`
+(registrador pasivo, borra la sesión anterior al arrancar): cada partida jugada a
+mano queda grabada por frame de invitado, de modo que un cuelgue se puede
+repetir tal cual con `SNESRECOMP_REPLAY_FILE=logs/input_manual.log` (misma
+clave: `snes_frame_counter`, que es como se graba).
+
+## 17. El hueco de carga, medido por dentro (2026-09-28, noche)
+
+### 17.1 Sonda nueva: lecturas de registro por frame (`SNESRECOMP_RDCOUNT`)
+
+Los bucles de espera del invitado son **lecturas** («¿ya está listo?»), no
+escrituras, así que ni `SNESRECOMP_WLOG_ADDR` ni la traza de puertos APU bastaban
+para ver esperas sobre otros registros.  Añadida en `cpu_state.c`:
+
+```
+SNESRECOMP_RDCOUNT="4800-4807,4212-4213,2140-2143"   # rangos hex, hasta 6
+SNESRECOMP_RDCOUNT_FILE=logs/rd_count.log           # opcional
+```
+
+Una línea por frame **solo si hubo accesos**:
+`f<frame> master=<clk> <función AOT> $ADDR=<n>/<último valor> …`.  Los enganches
+van en `cpu_read8`/`cpu_read16`, que es por donde lee **tanto el intérprete como
+el código AOT** (el generado no llama a `ReadReg`: 651 usos de `cpu_read8` y 44
+de `cpu_read16` en `generated/`, cero de `ReadReg`).  Coste cero sin la variable.
+
+### 17.2 Estructura del hueco en el recomp (repetición fiel de la corrida del usuario)
+
+`rep_bueno.txt` reproduce la corrida buena del usuario (gf y `inidisp` con ±1
+frame).  Con la sonda puesta, el hueco `f82-f107` (26 frames de force blank) se
+descompone así:
+
+| frames | `$4212` | `$2140` | `$4800-$4807` |
+|---|---|---|---|
+| 60-66 | 103/frame | 0 | `$4806`/`$4807` 1/frame |
+| 67-81 | 3/frame (fade-out, pad con A) | 0 | ídem |
+| **82** | 0 | 4 | **`$4806` 02→04, `$4807` 03→05** |
+| 83-102 | **0** | 1.262-55.402/frame | ídem (valor nuevo) |
+| 103-107 | 0-2/frame | 0-2 | ídem |
+| **104** | 10/frame | 0 | **`$4806` 04→02, `$4807` 05→03** |
+| 107-… | 58/frame (fade-in lento) | 0 | vuelta al valor viejo |
+
+Dos hechos nuevos y sólidos:
+
+1. **El cambio de página MMC de la S-DD1 (`$4806`/`$4807`) abraza exactamente el
+   hueco**: se cambia en `f82`, justo antes de la subida al SPC, y se restaura en
+   `f104`.  Es la primera evidencia *dentro del recomp* de que el tramo es una
+   carga de S-DD1 y no un simple delay.
+2. El invitado del recomp **nunca lee `$4800`/`$4801`** (habilitación/estado del
+   chip) en 950 frames: cero accesos.  Sondear el chip por `$4800-$4803` **no**
+   es lo que llena los 62 + 22 frames de hardware; el candidato que queda es el
+   acceso a la ventana MMC (`$4804-$4807`) y/o el tiempo de la propia DMA.
+
+### 17.3 Refutado con A/B: la fast-forward de vblank no es la culpable
+
+`SNESRECOMP_NO_VBLANK_FF=1` contra default, misma entrada (`rep_bueno`, 260
+frames, ventana + audio): **timeline de transiciones de `inidisp` idéntica
+byte a byte** (46 transiciones en ambos, hueco `f82-f107` = 26 frames en los dos
+casos).  Igual que en §15.4, pero ahora en el escenario del menú.  No se toca el
+driver.
+
+### 17.4 Nota de aritmética: el hueco *no* es siempre de 26 frames
+
+El mismo binario da huecos distintos según la corrida: `rep_bueno` (entrada real
+parcial) → **26** frames; una corrida anterior con `rep_menu2` → **~123** frames
+(≈ hardware 124).  Por eso cualquier comparación futura tiene que fijar primero
+la corrida (misma entrada, misma ventana/audio) y solo entonces comparar.
+
+### 17.5 Trampas reales de la sonda de Mesen (dos, ambas silenciosas)
+
+La sonda no dejaba ninguna huella por **un error de sintaxis mío**:
+`function(/*addr, value*/)` en la línea 310 — Lua no tiene comentarios `/* */`,
+así que el fichero no compilaba y no se ejecutaba *nada* (ni el beacon inicial).
+Lección: la primera línea ejecutable del script debe escribir en disco.
+
+Segunda trampa, encontrada al extraer la documentación de la API que va
+**incrustada en `Mesen.exe`**: el orden real es
+
+```
+emu.addMemoryCallback(callback, callbackType, startAddress,
+                      endAddress=start, cpuType=snes, memType=snesMemory)
+```
+
+Pasar `memType` en la 3ª posición **no falla**: el enum 0 también es un `cpuType`
+válido (`snes`), así que registra un rango equivocado en silencio.  La sonda
+prueba ahora primero la forma de 4 argumentos y deja la de `memType`-tercero la
+última.  Enums confirmados (orden documentado): `callbackType` read=0, write=1,
+exec=2; `eventType` nmi=0, irq=1, startFrame=2, endFrame=3, reset=4,
+scriptEnded=5; `memType.snesMemory=0`; `cpuType.snes=0`.
+
+Otras firmas verificadas: `emu.stop(exitCode)`, `emu.getRomInfo()` →
+`{name, path, fileSha1Hash}`, `emu.getScriptDataFolder()`, `emu.read(address,
+memoryType)`.  Y dato de compatibilidad: el `Mesen.exe` del usuario (jun-2025,
+70 MB, el del acceso directo) contiene la cadena `DD1` una vez; el S-DD1 entró en
+Mesen-S 0.3.0, así que el oráculo **sí** emula el chip.
+
+`tools/mesen_ping.lua` (nuevo) es la prueba mínima: escribe un beacon al cargarse
+y una línea cada 60 frames.  Si el ping no deja rastro, el problema es el lanzado
+del script, no el probe.
+
+## 18. Boot de hardware desde el frame 1 y A/B contra el recomp (2026-09-29)
+
+El usuario trajo `mesen_intro_probe.tsv` a `StarOceanRecompDocumentacion`.  Es la
+primera traza **fiable** de la sonda: en `mesen_intro_probe_status.log` hay 4
+sesiones y solo las dos últimas (`20:33:13` y `20:43:07`) usan la forma de
+registro correcta `formas=1(...)`; las dos primeras (`2(...)`, con `memType` en
+3ª posición) capturaban basura: por eso aparecían `ini=C8+F4+25+E0+…` (bytes de
+ROM leídos como si fueran escrituras a $2100).  El TSV en disco es de la sesión
+`20:43:07` (comprobado: `fr720 pc=000557` y `fr1200 E4=48` coinciden con las
+líneas de progreso de esa sesión).
+
+### 18.1 Orden de columnas del TSV (la cabecera miente; el código manda)
+
+`mesen_intro_probe.lua:246-261` escribe `… ini x <fmt_rd()> <sombras>`:
+
+| col | contenido real |
+|---|---|
+| 1-10 | `fr master pc D DB E4 E5 DA AFB AFD` (snapshots `emu.read`, **fiables**) |
+| 11 `ini` | valores escritos a `$2100` por la CPU ese frame |
+| 12 `x` | exec por dirección vigilada en ese frame |
+| **13** | **LECTURAS** `r4800=…,r2140=…` (la cabecera la llama `writes`) |
+| **14** | **sombras escritas** `DA=… E4=… AF9=…` (la cabecera la llama `reads`) |
+
+La cabecera del propio `.lua` ya está corregida.  **Trampa medida:** los
+callbacks de escritura a WRAM ($00DA/$00E4/$0AFB/$0AFD) solo se disparan de vez
+en cuando (en 2000 frames: **2**), así que la columna 14 está infra-registrada y
+no sirve para reconstruir la timeline; las columnas 1-10 (snapshot) sí.  Las
+escrituras a *registros* ($2100, $2140-$2143) sí se capturan bien.
+
+Otra limitación: `pc` es solo el PC de 16 bits, **sin banco**, así que
+`pc=00053E` puede ser WRAM (`K=$00`) o ROM (`K=$C0`/`$C3`).  No sirve para
+comparar PC contra el `resume` del recomp (que sí es de 24 bits).
+
+### 18.2 Timeline de hardware, fr1..2000, desde reset y **sin input**
+
+| tramo | frames | `DA` | `E4` | `AFB` | `AFD` | qué es |
+|---|---|---|---|---|---|---|
+| fr1-75 | 75 | 0F | BA | 01 | 004E | basura de arranque (WRAM sin inicializar) |
+| fr76-85 | 10 | 00 | 00 | 01 | 004E | apagado |
+| **fr86-818** | **733** | **80** | 00 | 00 | 0000 | **1ª carga S-DD1** (gráficos del logo Enix) |
+| fr819-840 | 22 | 00 | 00 | 00 | B073 | negro, ya sin force blank |
+| **fr841-900** | **60** | **01→0F** | 0→0x3B | 01→0x3C | B073 | **fundido de entrada: 4 frames por nivel** |
+| fr901-1169 | 269 | 0F | 1/frame | 1/frame | B073 | logo Enix en pantalla |
+| fr1170-1176 | 7 | 0F→01 (−2/frame) | congelado 0x48 | 8C | B073 | fundido de salida |
+| fr1177-2000 | 824+ | 80 | **0x48 congelado** | **0x8C congelado** | B073 | 2ª carga S-DD1 (logo Triace) |
+
+Reglas extraídas (todas verificadas con Python sobre las 2000 filas):
+
+* **`DA = 1 + ($E4 >> 2)`** durante el fundido de entrada: `$E4` es un contador
+  de **1 por vblank** y el brillo avanza **1 nivel cada 4 contadores**.  A
+  fr897 `E4=0x38` (56) y `DA=0x0F` (15) → `1+56/4 = 15`. ✓
+* `$E4` cuenta 1/frame desde fr842 y **se congela en 0x48 desde fr1169** (con el
+  fundido de salida hecho con `DA`, no con `$E4`: por eso el fade-out no lo mueve).
+* `$AFB` cuenta 1/frame desde fr841 y se congela en **0x8C** (~fr980).
+  `$AFD` pasa a **0xB073** en fr820 y ya no cambia en 1400 frames.
+* `$4212`: no estaba en los rangos vigilados (hueco de la sonda, ya añadido como
+  `r4212`).  Sí se ve `$4800-$4807`: **2 lecturas por frame en 1881/2000
+  frames** (último valor siempre `03`) → el invitado sondea la S-DD1 en *cada*
+  frame, también durante las cargas.  `$2140-$2143` se sondea solo en ráfagas
+  (fr11-76 arranque del SPC, fr405-415, fr778-815, fr1731-1741; ~330-450 frames
+  entre ráfagas) y esas ráfagas coinciden **exactamente** con los tramos en que
+  `D=$2100` (fr63-72, 408-414, 792-799, 801-804, 806-814, 1734-1740): el
+  handshake con el SPC usa el truco del direct page en $2100.
+* **La CPU escribe `$2100` solo 4 veces en 2000 frames** (fr2, fr76, fr86 con
+  `80+0F+80`, fr1213), pese a que `DA` recorre **15 niveles**.  Es decir: los
+  fundidos **no** salen por escrituras de CPU a `$2100` visibles al callback.
+* Exec vigilado: la biblioteca `C8:F4xx` casi no se usa (C8:F407 en fr249/403/
+  530-561/1414/1575/1729/1856-1864, y C8:F41D+F4D0+F4D4 una sola vez en fr415 y
+  fr1741); **el motor de cutscenes del banco `$CC` no se ejecuta ni una vez** en
+  2000 frames; `C0:2AE0` ejecuta 1 vez en fr818.
+
+### 18.3 Qué es de verdad la biblioteca `C8:F4xx` (desensamblada)
+
+`python tools/dis_range.py C8:F3F0 C8:F540` da el código real:
+
+```
+C8:F407  JSR $F407 = esperar 1 vblank exacto
+             F40F: LDA $4212 / BMI F40F     ; espera bit7 = 1
+             F414: LDA $4212 / BPL F414     ; espera bit7 = 0
+C8:F41D  esperar 1 vblank + mirar el pad ($4218 → $C1)
+             CLC = sin pulsación nueva,  SEC = hay pulsación nueva
+C8:F497  fade-in  DE 1 NIVEL POR FRAME (JSR $F407)          → 15 frames
+C8:F4AB  esperar A frames (no toca $2100)
+C8:F4B7  fade-out DE 1 NIVEL POR FRAME y luego $2100=$80
+C8:F4D0  fade-in  DE 1 NIVEL POR FRAME, abortable con el pad (JSR $F41D)
+C8:F4E9  igual que F4D0 pero hacia abajo
+```
+
+Conclusión firme: **la biblioteca es 1 nivel/vblank**, así que el fundido lento
+de hardware (4 frames por nivel, fr841-900) **no** es esa biblioteca: lo hace
+código con la fórmula `DA = 1 + ($E4>>2)` (el PC de esos frames está en una
+copia en RAM, 5 bytes, `$00053E..$000542`, que es `LDA $4212 / BPL` = la espera
+de vblank; el paso del nivel va aparte).
+
+### 18.4 A/B: recomp con `rep_bueno` y sin input, hasta el frame 2100
+
+Corrida reproducible (log en `build-dev/Release/logs/fstate_rep_bueno_err.log`):
+
+```
+SNESRECOMP_REPLAY_FILE=rep_bueno.txt SNESRECOMP_FRAME_STATE=1
+SNESRECOMP_EXIT_AT_FRAME=2100 SNESRECOMP_RDCOUNT="4800-4807,2140-2143,4212-4213"
+```
+
+Comparador: `python tools/ab_boot.py eventos|ventana|lecturas`.
+
+**Lo que coincide** (y desmonta la conclusión estrella de §15.1):
+
+* `$E4` cuenta **1 por frame** también en el recomp.
+* **La fórmula es idéntica**: en el fundido del recomp `f107-f163`,
+  `E4=0x01…0x38` y `DA = 1+(E4>>2)` (`E4=4→DA=2`, `E4=8→DA=3`, `E4=0x38→DA=0x0F`).
+* Y el registro real `inidisp` avanza **1 nivel cada 4 frames** durante ese
+  fundido.  El contador de cadencia **no está roto** en el recomp.
+* `$4800-$4807`: **2 lecturas por frame** (una de `$4806`, una de `$4807`), el
+  mismo ritmo que hardware; los valores `02/03` cambian a `04/05` en `f82-f103`
+  y vuelven (hardware solo muestra el último valor del rango, `03`, constante).
+* El *porqué* el hueco del recomp dura 26 frames y el de hardware 733 no es el
+  sondeo: el invitado sondea en ambos casos 2 veces por frame; en el recomp el
+  chip contesta «listo» de inmediato.  Es duración de la transferencia, no
+  frecuencia de sondeo.
+
+**Lo que diverge:**
+
+| | hardware | recomp |
+|---|---|---|
+| 1er fundido de entrada | fr841-900, **4 frames/nivel** (60 frames) | f5-18, **1 nivel/frame** (14 frames) |
+| rutina del 1er fundido | código propio (`DA=1+($E4>>2)`) | biblioteca `C8:F4D0` (1 nivel/vblank, abortable) |
+| duración de la 1ª carga | **733** frames | ~18-26 frames |
+| 2º fundido de entrada | — | f108-163, **4 frames/nivel** ✓ |
+| `$4212` por frame | `103` (espera de vblank; oráculo viejo) | `103` (f11-66), 8460 (f4-10), 58 (f107-162) |
+
+Es decir: el recomp **sí sabe** hacer el fundido a 4 frames/nivel (lo hace en su
+2º fundido, byte a byte igual que hardware) pero en el **1º** entra por la rutina
+de biblioteca de 1 nivel/frame.  La consecuencia observable para el usuario es la
+misma que describía §15.1, pero la causa no es «el contador de cadencia» sino
+**qué rutina de fundido elige el invitado**, y eso depende del estado que deja la
+carga del S-DD1 (que en el recomp es 28× más corta).
+
+### 18.5 Herramientas nuevas de esta sesión
+
+`tools/intro_tsv.py` (analiza el TSV; `resumen|tramos|fades|ini|lecturas|ventana`),
+`tools/ab_boot.py` (A/B hardware vs `[fstate]`), `tools/rd_profile.py` (perfil de
+`rd_count.log`), `tools/lua_balance.py` (comprueba el balance de bloques Lua:
+`function/if/for/while/do/repeat` contra `end/until`, la trampa que dejó la sonda
+muda días).
+
+## 19. Alineación por reloj de invitado y el estado real de la S-DD1 (2026-09-29)
+
+### 19.1 El oráculo viejo NO era basura: su columna `inidisp` eran las escrituras a $2100
+
+`mesen_oracle.tsv` son **dos pasadas concatenadas** (salto `fr 11788 -> 411`) de la
+**misma** corrida determinista (mismo `master` en el mismo `fr`: fr820 =
+292632288 en las dos).  La columna `inidisp` no es un snapshot del registro: son
+los **valores escritos a $2100** ese frame (`80`, `00+80`, `81+01+00+00`...), y por
+eso está vacía en los frames sin escritura.  Sosteniendo el último valor sale la
+lineal temporal **real de pantalla** de hardware:
+
+| tramo | frames | $2100 |
+|---|---|---|
+| fr416-430 | 15 | fade-in **a 1 nivel/frame** → 0F |
+| fr431-702 | **272** | 0F (contenido) |
+| fr703-716 | 14 | fade-out a 1 nivel/frame → 01 |
+| fr717-841 | **125** | 80 (force blank) |
+| fr842-897 | 56 | fade-in **a 4 frames/nivel** → 0F |
+| fr898-1165 | **268** | 0F (contenido) |
+| fr1166-1172 | 7 | fade-out a **2 niveles/frame** |
+| fr1173-1212 | 40 | 80 |
+| fr1213-…   |    | fade-in a **2 niveles/frame** |
+
+Confirmado con el desensamblado: la fase de 272 = **240 + 32**, que es exactamente
+el reproductor de logos `C8:F7xx` (`LDA #$0064 / JSR $F4E9` = 100 frames,
+`LDA #$008C / JSR $F4E9` = 140, y su bucle de `LDA #$20` = 32).  O sea: el
+"hueco de 124" de §15.1 era correcto, y la lectura del `$DA` de la traza nueva
+(733 frames de 80) **no** es la línea de pantalla: `$DA` es la sombra que usa
+*otra* ruta de fundido, no el registro.
+
+### 19.2 La sonda nueva infra-captura las escrituras a $2100
+
+`mesen_intro_probe.tsv` tiene `ini` (escrituras a $2100) en solo **4 frames**
+(fr2, 76, 86 con `80+0F+80`, 1213), mientras el oráculo viejo sí captura las
+rampas enteras.  Es decir: el callback de **escritura** a `$2100` de la sonda
+nueva está roto, y el de **lectura** funciona.  Consecuencia práctica: para
+$2100 vale el oráculo viejo; para `$DA/$E4/$0AFB/$0AFD` y las lecturas vale la
+sonda nueva.  (Las lecturas de `$C1` y `$1E` en el recomp se hacen con
+`SNESRECOMP_WLOG_ADDR`.)
+
+### 19.3 El pad aborta las esperas temporizadas (`$1E` == 0 y `$4218` != 0)
+
+Desensamblado de `C8:F41D` (usado por `F4D0`/`F4B7`/`F4E9`):
+
+```
+F425: LDA $4212 / BMI F425      ; espera vblank
+F42A: LDA $4212 / BPL F42A      ; espera fin de vblank
+F433: BIT $4212 / BNE F433      ; espera fin del auto-joypad
+F43A: LDA $1E  / BNE F445       ; $1E != 0  -> CLC (NO aborta: protege el fundido)
+F43E: LDA $4218 / STA $C1 / BNE F449   ; $4218 != 0 -> SEC (ABORTA: el juego
+                                        ;            deja saltar logos con el pad)
+```
+
+Medido en el recomp con `SNESRECOMP_WLOG_ADDR=C1:C1` + `rep_bueno.txt`: en **f66**
+`$C1 = 0x80` (o sea `$4218 = 0x80`) y `rep_bueno.txt` tiene `66 0100` = A pulsada.
+**El recomp obedece al pad y salta el logo, como debe.**  Por eso la corrida con
+`rep_bueno` parece "comprimir" las fases de contenido (49 frames frente a 272):
+no es un fallo, es que mi A/B comparaba una corrida **con** pulsaciones contra un
+hardware **sin** ellas.  Regla: para comparar fases usar la corrida **sin input**.
+
+### 19.4 El método correcto de alineación: el reloj master
+
+El recomp avanza **exactamente 357368 de master por frame** en régimen estable, el
+mismo valor que hardware (`mesen_intro_probe.tsv`: fr810 -> fr811 =
+357368).  Y el `master` de las dos trazas es comparable: el recomp alcanza
+292632288 en **f739**, que en hardware es **fr820**.  Así que la alineación se
+hace por reloj de invitado, no por índice de frame:
+
+| evento | hardware (master) | recomp (master) | déficit |
+|---|---|---|---|
+| arranque de la 1ª carga | fr86 = 30.325.644 | f4 = 23.586.292 (66 frames en 1 host) | — |
+| fin de carga / inicio fade-in | fr416 = 148.257.084 | f5 = 23.943.678 | **124,3M = 348 frames** |
+| inicio de contenido 1 | fr431 = 153.616.764 | f19 = 28.922.812 | 124,7M = 349 |
+| inicio fade-out 1 | fr703 = 250.813.540 | f150 = 75.762.020 | 175,1M = 490 |
+| inicio force blank 1 | fr717 = 255.816.724 | f164 = 80.765.244 | 175,1M = 490 |
+| inicio fade-in 2 | fr842 = 300.494.340 | f166 = 81.479.980 | 219,0M = 613 |
+| inicio contenido 2 | fr898 = 320.506.840 | f180 = 86.482.532 | 234,0M = 655 |
+
+El déficit **crece** en cada carga (348 -> 490 -> 613 -> 655 frames): no es un
+offset constante, es tiempo que se pierde en **cada** transferencia.  El orden de
+eventos y el tipo de cada fundido sí coinciden.
+
+### 19.5 La S-DD1 no entrega ni un byte en el recomp (causa medida del déficit)
+
+`sdd1_dma_get_byte` y la vía de lectura de CPU exigen `r4800 & r4801 & (1<<canal)`.
+Medido con `SNESRECOMP_WLOG_ADDR=4800:4801` y sin input:
+
+```
+f3  00:4800=01   IPC=C8F974     <- hard enable
+f3  00:4801=01   IPC=C8F99A     <- soft enable
+f3  00:4800=00   IPC=C8F9A2     <- ...y se apaga
+(no hay más escrituras en 120 frames)
+```
+
+`$4800` acaba en **00** y no se vuelve a tocar: **el chip queda deshabilitado y las
+dos vías de descompresión no sirven ni un byte** (medido con el contador nuevo,
+`SNESRECOMP_SDD1STATS`: 0 bytes en 120 frames).  El invitado sigue haciendo
+read-modify-write de `$4806`/`$4807` (2 lecturas por frame, igual que hardware),
+pero el chip no produce datos: los datos salen del ROM crudo por
+`sdd1_mmc_read`.  En hardware, en cambio, `$4806`/`$4807` **se escriben**
+(cambian de 02/03 a 04/05 al enmarcar el hueco), o sea que el invitado sí maneja
+el chip.
+
+Instrumento añadido (dev, coste cero sin la variable): `SNESRECOMP_SDD1STATS=<ruta>`
+emite una línea por frame con los bytes entregados por cada vía
+(`dma=`, `cpu=`, `total=`).  Es lo que convierte la tasa del chip en duración:
+`ciclos-por-byte = ciclos de invitado medidos en hardware / bytes que el invitado
+pide`.  Primera cifra de referencia: la 1ª carga de hardware dura 733 frames =
+**261.949.280** ciclos de master.
+
+### 19.6 Estado de las dos tareas
+
+* **Tarea 1 (por qué el recomp elige otra rutina de fundido)**: mecanismo
+  identificado —ambos lados usan las *dos* clases de fundido y en el mismo orden;
+  el recomp hace el lento (`DA = 1 + ($E4>>2)`, 4 frames/nivel) con una rutina del
+  banco **$C3** (`resume` C3:8F5E/C3:8FA8/C3:9083) en su 4º fundido, y usa la
+  biblioteca `C8:F4xx` (1 nivel/vblank) en el 2º—, pero **el selector no está
+  demostrado todavía**.  Con la carga arreglada (tarea 2) las dos trazas quedarán
+alineadas 1:1 y el selector se verá con un simple diff.
+* **Tarea 2 (duración de la S-DD1)**: causa demostrada y acotada (el chip no
+  entrega bytes en el recomp), instrumento de medida en su sitio, y la constante
+  a calibrar sale de 261.949.280 ciclos / bytes.  **Falta**: (a) decidir si el
+  modelo correcto es costar la transferencia (la curva de déficit dice que sí) o
+  mantener el chip "no listo" para que el bucle del invitado dé más vueltas;
+  (b) leer el bucle de carga del invitado, que es quien convierte tiempo de chip
+  en frames (los PC medidos: `C8:F41x/F42x` = esperas de vblank, `C0:4D5x` =
+  descompresor propio, `C8:F5xx` = copias de tilemap, `C0:86xx` = arranque).  El
+  camino se abre con `SNESRECOMP_SDD1STATS` para saber cuántos bytes por frame
+  pide el invitado en cada tramo.
+
+### 19.7 CORRECCIÓN (2026-09-29, noche): el hueco de carga NO es 28× más corto
+
+`tools/ab_master.py` alinea las dos trazas por **reloj master** (357.368 por frame
+en ambos lados) en vez de por índice de frame.  Con la alineación buena, la
+conclusión de §19 cae: el recomp **sí** pasa ~730 frames de invitado dentro del
+bucle de espera de vblank de la biblioteca `C8:F425/F428` —el mismo sitio que el
+hardware—, no 22.  Lo que descolocaba el A/B era el arranque: el recomp ejecuta
+~66 frames de invitado dentro de sus 4 primeros *host* frames, así que `f_recomp
+!= fr_hardware` y toda tabla indexada por frame comparaba fases distintas.
+
+Equivalencia medida (master → frame de invitado):
+
+| master | gf | recomp | hardware |
+|---|---|---|---|
+| 23.586.292 | 66 | `f=4`, arranca aquí el reloj por frame | `fr66`: aún en boot |
+| 30.325.644 | 85 | `f=23` | `fr86`: empieza la carga |
+| 292.632.288 | 819 | `f=757` | `fr820`: fin de la carga |
+
+Es decir: los dos pasan por `C8:F41x/F42x` durante la carga y durante el mismo
+tramo de reloj.  **La duración de la transferencia S-DD1 no puede ser la causa
+del desfase del fundido** y no hay que inventarle un modelo temporal al chip:
+sería un parche heurístico sobre un hueco que no existe.
+
+### 19.8 La divergencia real: el recomp ejecuta OTRA fase del programa
+
+Lista de **escrituras reales a `$2100`** de los dos lados, alineada por master.
+Hardware = 15.732 eventos únicos del oráculo viejo (`mesen_oracle.tsv`,
+`fr416..11701`, la única fuente que captura bien el registro).  Recomp = 290
+escrituras instrumentadas con `SNESRECOMP_INIDISP_TRACE=1` (900 frames).
+
+HARDWARE (ritmo por frame, `delta` entre escrituras consecutivas de frames
+seguidos):
+
+| gf | fr | delta | valores |
+|---|---|---|---|
+| 415 | 416-430 | **+1** | 01→0F (subida rápida, 15 frames) |
+| 431-702 | 431-702 | — | **272 frames sin escribir** (= 240 + 32) |
+| 702-715 | 703-717 | **−1** | 0E→00, luego `80` |
+| 716-841 | 718-842 | — | 126 frames (una sola escritura: `80` en fr777) |
+| 841-898 | 842-898 | **+1 cada 4 frames** | 01,01,01,01,02,02,02,02,…0F (57 frames) |
+| 899-1165 | 899-1165 | — | logo Enix (267 frames en `0F`) |
+| 1165-1171 | 1166-1172 | **−2** | 0D→01 |
+| 1172 | 1173 | — | `80` (2ª carga) |
+
+RECOMP (por `pc` que escribe; el fichero es del run **sin input**):
+
+| gf | f | pc | patrón |
+|---|---|---|---|
+| 66-80 | 4-18 | `C8F4DE` | **+1/frame** 01→0F |
+| 81-210 | 19-148 | — | 130 frames de contenido |
+| 211-225 | 149-163 | `C8F4C5` + `C8F4CC` | **−1/frame** 0E→00, luego `80` |
+| 227-241 | 165-179 | `C8F4DE` | +1/frame otra vez |
+| 242-361 | 180-299 | — | 120 frames |
+| 362-376 | 300-314 | `C8F4C5` | −1/frame |
+| … | | | **ciclo de ~145 gf que se repite** |
+| (188 escrituras) | | `CC280E` | sincronización `LDA $DA / STA $2100` |
+
+Dos diferencias independientes, ninguna de ellas de cadencia del contador:
+
+1. **El recomp está en otra fase del programa.**  Hardware hace *un* ciclo
+   rápido (subida 15 f) + 272 de contenido, y la subida **lenta** (4 f/nivel)
+   es la del segundo fundido.  El recomp hace ciclos subida/bajada de 15 frames
+   encadenados desde gf66, con fases de contenido de ~125.  No es que el
+   invitado avance 4× rápido: es que **está ejecutando otro tramo del guion**
+   (por eso §19 veía "el 4º fundido" del recomp donde hardware va por el 2º).
+2. **El recomp arranca los fundidos ~350 gf antes** que hardware (gf66 vs
+   gf416) mientras su `$DA` (sombra WRAM) ya vale `80`, es decir: mantiene la
+   pantalla en blanco forzado en el *shadow* pero **no** en el registro real
+   (escribe `0F` y lo deja ahí ~300 frames).  Hardware tiene `$2100=80` de
+   fr86 a fr415.
+
+### 19.9 RETRACTADO: el recomp SÍ sondea la S-DD1 una vez por frame
+
+Esta sección afirmaba, con `SNESRECOMP_RDCOUNT="4800-4807,2140-2143,4212-4213"`
+sobre el run sin input, que el recomp **nunca** lee `$4800-$4807` (0 en 2098
+frames) mientras hardware lo lee 2/frame, y concluía que era divergencia de
+flujo.  **Es falso: era un error de análisis mío, no del recomp.**  Dos fallos
+encadenados del lado del analista:
+
+1. **Parser.**  Busqué el campo con la subcadena `4800=` cuando el instrumento
+   emite **una entrada por registro** (`$4806=1/02 $4807=1/03`), no un agregado
+   del rango.  `grep -c 4806` sobre el mismo `rd_noinput.log` da **2096 líneas**:
+   las lecturas estaban ahí desde el principio.
+2. **Cap de visualización.**  La primera versión de la sonda de PCs (§19.13)
+   imprimía solo 240 líneas; con `$C8F42A` consumiéndolas salían "1 acierto"
+   para todo lo demás, y lo leí como "se ejecuta una vez".  Contaba bien pero
+   imprimía mal: un instrumento con cap miente por omisión.
+
+Medición correcta (build actual, `SNESRECOMP_RDCOUNT="4800-4807"`, 30 frames):
+
+```
+f4  master=23944466  $4806=1/02  $4807=1/03
+f5  master=24301828  $4806=1/02  $4807=1/03
+... 26/30 frames con exactamente las mismas dos lecturas
+```
+
+Es decir: **1 lectura de `$4806` + 1 de `$4807` por frame, valores 02 y 03** —
+idéntico a hardware (2 lecturas/frame, último valor `03`, que es la página MMC
+por defecto que el cargador restaura).  **No hay nada que arreglar aquí.**
+
+Y la rutina que las hace está identificada: `C0:032D` es la **bomba por frame**,
+que se ejecuta **una vez por frame** desde el handler de V-IRQ
+(`C0:0251 JSR $032D`, dentro del handler que acaba en `RTI` en `C0:025E`), con
+**DBR = $00** en el punto de la lectura, exactamente como hardware.  Su tail
+incondicional en `C0:0387` es: guardar la página MMC actual (`LDA $4806`,
+`LDA $4807`), ponerla a 4/5, y llamar a los descompresores (`JSR $03B4`,
+`JSR $05E5`) según los flags de `$50`.  La bomba también es el tick del driver
+de sonido (escribe `$2140-$2143` cuando hay comando pendiente en `$90`/`$91`).
+
+**Consecuencia para §19.5**: la frase «el chip queda apagado y `sdd1_dma_init`
+rechaza las sesiones» queda en entredicho — el camino por-frame del chip está
+vivo.  Antes de volver a apoyarse en ella hay que re-medir las **escrituras** a
+`$4800` con el mismo cuidado (el `WLOG_ADDR` usado entonces no cubre el camino de
+registro: `wlog_addr_note` solo se llama en la rama WRAM, `cpu_state.c:607`).
+
+### 19.10 Mapa completo de la biblioteca `C8:F4xx` (desensamblada)
+
+```
+C8:F407  esperar 1 vblank exacto (LDA $4212/BMI, LDA $4212/BPL)   [9 llamadas]
+C8:F41D  esperar 1 vblank + mirar pad -> CLC sin pulsacion / SEC con pulsacion
+         (solo si $1E==0);  el bucle caliente es F425(LDA $4212)/F428(BMI)
+C8:F497  fade-in  1 nivel/vblank (STZ $00; INC A; STA $2100; CMP #$0F)  [2]
+C8:F4AB  espera N vblanks: A -> $00, DEC $00 hasta 0 (sin pad)
+C8:F4B7  fade-out 1 nivel/vblank 0F..00 y despues $2100=80          [6]
+         cuerpo en F4C5 (STA $2100) / F4CC (LDA #$80; STA $2100)
+C8:F4D0  fade-in  1 nivel/vblank ABORTABLE por pad, cuerpo en F4DE   [12]
+         (JSR $F41D; BCS salir con SEC)
+C8:F4E9  espera N vblank ABORTABLE (A=16 bits -> $00)                [4]
+C8:F4FA  fade-out ABORTABLE
+```
+
+Confirmado: los PC que aparecen como `pc` en las escrituras del recomp
+(`C8F4DE`, `C8F4C5`, `C8F4CC`) **no tienen llamada directa** en la ROM: son los
+cuerpos de bucle de `F4B7` y `F4D0` alcanzados por caída.  Es decir, el recomp
+usa el fade-in **abortable** (`F4D0`, 1 nivel/vblank) y el fade-out `F4B7`, y
+completa los 15 niveles sin abortar: el pad no es la causa de la cadencia.
+
+### 19.11 Herramientas nuevas de esta sesión
+
+* `tools/ab_master.py` — A/B recomp↔hardware alineado por reloj master
+  (`eventos` / `fases` / `ventana gf0 gf1`).  Es la única comparación válida.
+* `tools/find_fade_calls.py` — lista todos los `JSR`/`JSL` de la ROM a un rango
+  de la biblioteca (`python tools/find_fade_calls.py F400 F540`).
+* `SNESRECOMP_INIDISP_TRACE=1` (ya existía, `ppu.c`) — escrituras reales a
+  `$2100` con el PC: es el instrumento que faltaba para el lado recomp.
+* **`SNESRECOMP_PCHIT="C0032D,C00387"`** (`interp816.c`, nuevo) — cuenta
+  ejecuciones de pc24 exactos por el intérprete y las imprime con
+  `frame=` y `DB=/DP=/S=` del invitado.  **Sin cap de impresión** (el cap fue
+  justo el fallo de §19.9): cuenta siempre, y solo las *líneas* están
+  acotadas; para saber el total hay que añadir un contador final si se necesita.
+* **`DB`/`PB`/`DP`/`S` en la línea `[fstate]`** (`so_rtl.c`, nuevo) — sin esto
+  no se puede distinguir «el invitado no lee el registro» de «lo lee con el
+  banco de datos equivocado», porque un acceso absoluto con DB≠0 cae en
+  WRAM/ROM y no pasa por `is_hw_reg`.  Hardware sostiene `DB=$00` en los 2000
+  frames medidos; el recomp varía (00 645, C8 176, D7 32, 7F 18, C0 15, 7E 4
+  en 900 frames) pero **en la bomba de la S-DD1 vale 00**, como hardware.
+
+### 19.12 Estado revisado de las dos tareas
+
+* **Tarea 1 (duración de la transferencia S-DD1)**: **no se implementa**, por dos
+  motivos independientes ya medidos: (a) el A/B por reloj master muestra que el
+  recomp gasta el mismo tiempo de invitado en el bucle de vblank que hardware, y
+  (b) el sondeo por-frame del chip **ya ocurre** (1+1 lecturas de
+  `$4806`/`$4807` por frame, valores 02/03, desde el V-IRQ).  No hay hueco que
+  modelar: costar la transferencia sería un parche sobre algo que ya funciona.
+* **Tarea 2 (más cobertura nativa / quitar trabajo al intérprete)**: las raíces
+  AOT salen de `config/bankNN.cfg` (`func <name> <pc> end:<hex>`) y hoy son
+  **6 bancos: 00, C0, C1, C2, C3, C9** (91 nodos / 75 raíces), y **casi todo
+  está en `interp_tier_dispatch`**: `generated/bankc0_v2.c` y `bankc3_v2.c` no
+  tienen ni una lectura emitida, solo despacho al intérprete.  Los bancos
+  calientes de la intro —**C8** (biblioteca de fundidos + espera de vblank) y
+  **CC** (motor de cutscenes, el que escribe `CC:280E`)— **no están ni listados**.
+  El recompilador ya soporta *promoción por perfil* (`profile_promot` en
+  `v2/codegen.py|decoder.py|emit_function.py`), así que el camino seguro es:
+  perfil → añadir `func` a la cfg del banco → regenerar → build → A/B
+  **byte-exacto** contra la huella WRAM de la build actual.  Los bancos C8/CC son
+  los "delicados": ahí el intérprete define la frontera de frame (spin de
+  sólo-lectura), y una función nativa mal delimitada cambia el modelo de frame,
+  no sólo la velocidad.
+
+### 19.13 Higiene de instrumentos (lección de esta sesión)
+
+Tres mediciones de esta sesión resultaron falsas por el **instrumento**, no por
+el sistema medido, y las tres costaron trabajo perdido:
+
+1. `rd_noinput.log` «0 lecturas de `$4800-$4807`» → **regex equivocado** del
+   analista (`4800=` en vez de `$4806=`).  Regla: antes de concluir "no ocurre",
+   hacer `grep` de la **subcadena corta** en el fichero crudo.
+2. «La bomba se ejecuta 1 vez» → **cap de 240 líneas** en la sonda de PCs.
+   Regla: los contadores cuentan sin cap; solo la salida humana se acota, y hay
+   que decir explícitamente que está acotada.
+3. «El hueco de carga es 28× más corto» (§19) → **alinear por índice de frame**
+   cuando el índice de los dos lados no empieza en el mismo sitio.  Regla ya
+   escrita en §19.4: alinear por `master`.
+
+### 19.14 Qué queda por medir (el bloqueo real)
+
+La comparación de fundidos de §19.8 tiene un agujero que **no se puede tapar del
+lado recomp**: el oráculo viejo (`mesen_oracle.tsv`), única fuente fiable de
+escrituras a `$2100` en hardware, **empieza en fr411** (su primera pasada).  Y la
+sonda nueva, que cubre fr1-2000, **infra-captura las escrituras a `$2100`** (4
+eventos en 2000 frames frente a 16.090 del viejo).  Por tanto, del tramo
+gf66-415 —justo donde el recomp arranca sus ciclos de fundido— **no hay traza de
+hardware**.
+
+### 19.15 Sonda v3: captura de `$2100` que se autodiagnostica (2026-09-29)
+
+Diagnóstico del fallo: la sesión que grabó el TSV registró las escrituras con la
+**forma 1** de `addMemoryCallback` (`cb, tipo, ini, fin`, defaults para
+cpu/memType) y reportó `writes=8/8` — pero las **lecturas** con esa misma forma
+sí disparan (1.973/2.000 frames) y las **escrituras** casi nunca (2 frames).  La
+firma documentada en la API incrustada de `Mesen.exe` (extraída de
+`F:\Recompilador Super Nintendo\Mesen\Mesen.exe`) es
+`addMemoryCallback(callback, callbackType, startAddress, endAddress, cpuType,
+memoryType)` con callback `(address, value)`, `read` llamado **después** de la
+lectura y `write` **antes** de la escritura — no aclara el fallo, así que en vez
+de suponer se mide dentro de la sonda.
+
+`tools/mesen_intro_probe.lua` (v3) registra **tres vías en paralelo** y captura
+`$2100` además por una cuarta independiente:
+
+| vía | mecanismo |
+|---|---|
+| `m1` | callback de escritura, forma de 4 argumentos |
+| `m6` | callback de escritura, forma de 6 argumentos explícita |
+| `mMT` | callback de escritura, `memType` en 3ª posición |
+| `x`  | **exec callbacks** en los **95 sitios de ROM** que almacenan en `$2100` (`STA`/`STX $2100` y `STA long`), leyendo el valor del acumulador |
+
+La vía `x` no depende de la semántica de los callbacks de memoria: los exec
+callbacks **están demostrados** en esta configuración (columna 12 del TSV viejo:
+`C8F407=1` en 69 frames).  Los 95 sitios **no están escritos a mano**: los genera
+`tools/gen_2100_sites.py` escaneando el ROM (79 `STA $2100`, 14 `STA long`,
+2 `STX $2100`) y los injerta en el `.lua`.  Como control cruzado, los cuatro
+sitios de boot del recomp (`C08088`, `C080D5`, `C081B4`, `C081B9` según
+`SNESRECOMP_INIDISP_TRACE`) aparecen en esa tabla.
+
+Además hay un **canario**: callback de escritura sobre la página de pila
+(`$00:0100-$01FF`), que recibe escrituras constantemente.  Si el canario da 0,
+ninguna captura de `$2100` por callbacks de memoria es creíble, y lo dice el
+propio fichero de estado.
+
+La columna 11 (`ini`) usa la primera fuente no vacía en orden de fiabilidad
+`x > m6 > mMT > m1`, y la nueva columna 15 (`src`) lleva el desglose
+(`x= pc= db= m1= m6= mMT= can1= can6=`).  **Todas las filas tienen 15 campos**
+fijos: se dejó de omitir columnas vacías porque ese desplazamiento es justo lo
+que hizo leer mal la traza anterior.
+
+Corrida: `START_FRAME=1`, `END_FRAME=900`, salida `mesen_fades900.tsv` y
+`mesen_fades900_status.log`.  Reglas: **una sola sonda cargada** y **no tocar el
+pad** (aborta las esperas de `C8:F41D` y cambia el guion).
+
+Herramientas de lectura:
+
+* `tools/fades900.py <tsv>` — valida la autodiagnosis (qué vía trajo los datos,
+  canario, `DB` de los almacenamientos) y emite los tramos de `$DA` con rangos
+  de frames, en la misma forma que los ciclos del recomp.
+* `SNESRECOMP_PROBE=<ruta> python tools/ab_master.py fases` — A/B por reloj master
+  contra la traza nueva sin editar nada.
+* `tools/lua_balance.py` — validador estático ampliado: además del balance de
+  bloques, caza `/* */` y `//` de C, paréntesis/corchetes/llaves desbalanceados
+  y caracteres no-ASCII (los dos `.lua` están ahora en ASCII puro).
+
+
+## 20. Veredicto del A/B por reloj master sobre los fundidos (2026-09-29, tarde)
+
+La traza `mesen_fades900.tsv` está **grabada** (900 filas, 15 campos todas) y
+el A/B por reloj master ya está hecho.  Lector único: `tools/fades900.py`
+(`--ab`).  Resumen de lo medido, en gf (frames de invitado, `master/357368`).
+
+### 20.1 Fiabilidad de las columnas (leer esto antes que nada)
+
+| columna | fiabilidad | motivo |
+|---|---|---|
+| `pc D DB E4 E5 DA AFB AFD` | **alta** | un `emu.read` por frame, sin callbacks |
+| `ini` (11) | **nula** | el volcado de la vía `mMT` la tapa (`mMT=64` vs `m1=0`/`m6=0` por frame) |
+| `x` (12), `wshadow` (13) | **baja** | los callbacks se registran por varias formas sobre el mismo PC/addr y **multiplican** |
+| `src` (15) | informativa | los contadores `m1/m6/mMT/can` son acumulados y fiables como *prueba de disparo*, no como recuento |
+
+Prueba dura de que la vía de escritura sigue rota: en `fr841..900` la columna
+muestreada `$00DA` cambia **15 veces** (01..0F, 1 nivel cada 4 frames) y en
+cambio la columna 14 (`wshadow`, callbacks de escritura sobre las sombras) sólo
+registra **2 eventos en 900 frames** (`fr86: DA=80`, `fr841: DA=01 AF9=01 AFB=01`).
+El canario de pila sí dispara (`can1=88015`), así que los callbacks de escritura
+funcionan; lo que no funciona es la **atribución por frame**.  ⇒ Para juzgar
+`$2100` en hardware hay que arreglar la sonda (§20.4).
+
+### 20.2 Tramos de `$00DA` (sombras leídas por frame — dato fiable)
+
+HARDWARE (sin input), 900 frames:
+
+| fr | gf(master) | dur | `$00DA` | nota |
+|---|---|---|---|---|
+| 1..75 | 0..74 | 75 | `80` | |
+| 76..85 | 75..84 | **10** | `00` | apagón corto (el recomp **no** lo hace) |
+| 86..818 | 85..817 | 733 | `80` | carga; PC en `C8:F42x` (spin de vblank) |
+| 819..840 | 818..839 | **22** | `00` | apagón antes del fundido (el recomp **no** lo hace); `$0AFD` pasa a `B073` en `fr820` |
+| 841..900 | 840..899 | 60 | `01`..`0F` | 15 niveles × **4 frames**; `AFB=01..3C` (+1/frame); `E4=00..3B` (+1/frame) |
+
+RECOMP (`fstate_noinput_err.log`, 2100 frames sin input):
+
+| f | gf(master) | dur | `$00DA` | nota |
+|---|---|---|---|---|
+| 1..3 | 0 | 3 | `00` | boot |
+| 4..711 | 66..791 | 708 | `80` | carga; `resume=C8:F42x` |
+| 712..767 | 792..847 | 56 | `01`..`0E` | 15 niveles × **4 frames** |
+| 768..2100 | 848..2180 | 1333 | `0F` | `AFB` se congela en `8C` al terminar |
+
+**Identidad estructural, que no se había medido antes:** en los dos lados,
+durante el fundido, `AFB = E4 + 1` exactamente y `DA = ceil(AFB/4)`.  Es decir el
+guion de fundido es el mismo y la cadencia es idéntica.
+
+### 20.3 Divergencias (esto es todo lo que difiere)
+
+1. **gf 75..84** — hardware apaga `$00DA` 10 frames; el recomp mantiene `80`.
+2. **gf 793..839** — el recomp empieza a fundir (`DA=01` en `f712` = gf 792)
+   mientras hardware sigue en `80`.  Hardware no funde hasta **gf 840** (`fr841`).
+3. **gf 818..839** — hardware hace su segundo apagón de 22 frames; el recomp ya
+   está fundiendo (`DA=02..0C`).
+4. Una vez que hardware empieza a fundir, ambos avanzan 4 frames por nivel, pero
+   con ~47 gf de desfase fijo.
+
+**Por qué el recomp llega 48 gf antes** (los 48 se descomponen):
+
+* **32 gf**: los dos apagones cortos (10 + 22) que hardware ejecuta y el recomp
+  no.  Es el hallazgo con consecuencias: el recomp **se salta el paso de apagar
+  la pantalla** entre la carga y el fundido.
+* **~16 gf**: el recomp consume **~2,4 % más de tiempo de invitado por frame
+del host** durante la espera de carga.  Medido: de `f22` (gf 85) a `f712`
+  (gf 792) pasan 690 frames de host y 707 gf ⇒ 1,0246 gf/host.  En el tramo de
+  fundido la razón es exactamente 1,0 (de `f712` gf 792 a `f815` gf 896 = 103
+  frames y 103 gf), así que no es un error de escala del reloj: es **el modelo de
+  frontera de frame** el que deja pasar de más durante el bucle de espera.
+
+### 20.4 Hipótesis refutadas por esta traza
+
+* **"El recomp funde a 1 nivel/frame y hardware a 1 cada 4"**: **FALSO**.  Los
+  dos son 15 niveles × 4 frames con `AFB=E4+1`.  El "1 nivel/frame" se había
+deducido de `SNESRECOMP_INIDISP_TRACE` (escrituras crudas a `$2100`), que
+  durante la carga cicla `C8F4DE` (01..0F) → `C8F4C5` (0E..00) → `C8F4CC` (80)
+  cada ~150 frames.  Ese ciclo **no** mueve `$00DA` (por eso el shadow se queda
+  en `80`), pero **tampoco es un artefacto del recomp**: los recuentos por sitio
+  en hardware dicen lo mismo (la columna de sitios es fiable; la prueba de que
+  no está multiplicada es `C8F4CC=3`, que no es múltiplo de nada):
+
+  | sitio | hardware (900 fr) | recomp |
+  |---|---|---|
+  | `C8F4DE` (cuerpo del fade-in, `STA $2100`) | 45 = 3 segmentos × 15 niveles | 4 segmentos (3 rápidos + el lento final) |
+  | `C8F4C5` (cuerpo del fade-out) | 45 = 3 segmentos × 15 niveles | 3 segmentos |
+  | `C8F4CC` (fija `$2100=$80`) | 3 | 3 |
+  | `CC280E` (aplicador por frame `LDA $DA/STA $2100`) | 59 | — |
+
+  ⇒ El guion de fundidos de la carga **coincide**.  Lo que no coincide es el
+  `$00DA` que los enmarca (§20.3).
+* **"El recomp entra ~350 gf antes en el guion de fundidos"**: con la traza
+  buena el adelanto es **48 gf (0,8 s)**, no 350.
+
+### 20.5 El defecto real de la sonda v3 (y por qué `ini` era un volcado)
+
+Dos fallos concretos, medidos sobre la propia traza y sobre el `.lua`:
+
+1. **El reset de contadores estaba en `EV_STARTFRAME`, que en Mesen-SNES se
+   dispara al *salir* de vblank.**  El juego escribe `$2100` **durante vblank**,
+   así que `reset_frame_counters()` borraba del registro exactamente la ventana
+   que se quería medir.  Consecuencia visible: los contadores `x`/`m6` del frame
+   sólo recogen el trozo VISIBLE (de ahí los `C00230/C00387` de la IRQ), y
+   `m6` acumula 161 disparos que nunca llegan a la fila.
+2. **La "forma 4" de `addMemoryCallback` no es una variante válida.**
+   `addMemoryCallback(cb, ctype, memType, start, end)` se interpreta como
+   `(start=memType=0, end=$2100)`, o sea un callback sobre **todo**
+   `$0000..$2100`.  Eso es lo que daba `mMT=251348` (≈279 disparos por frame) y
+   hacía que `ini` fuese un volcado de escrituras de la RAM baja en vez del valor
+   escrito a `$2100`.
+
+Prueba cruzada de que las dos vías de byte único sí eran correctas: `m1=161` y
+`m6=161`, y la suma de sitios de ROM da 152 (`59+45+45+3+1+1+1+1+1+1`).  161
+escrituras a `$2100` en 900 frames.  Dato añadido de `m6=161`: **hardware sí
+reescribe `$2100` unas 145 veces durante `fr86..818`**, o sea que el `$00DA=80` de
+ese tramo es una sombra estancada, no el contenido real del registro.
+
+### 20.6 Sonda v4 (aplicada, pendiente de una corrida)
+
+En `tools/mesen_intro_probe.lua`:
+
+1. **Fuera el reset en `EV_STARTFRAME`** (sólo se resetea después de escribir la
+   fila, dentro de `on_end_frame`).
+2. **Fuera la forma 4.**  La fuente de valor de `$2100` es sólo la forma 3
+   (byte exacto, `$2100-$2100`); la forma 1 se conserva únicamente como
+   contraste de rango sobre `$0000..$2100` (contadores `mA1`/`mA4`), nunca como
+   valor.
+3. `fmt_ini()` pasa a elegir entre `x > m6 > m1` (sin `mMT`).
+4. **Salida nueva**: `mesen_fades900b.tsv` / `mesen_fades900b_status.log`, para
+   que nadie mezcle esta corrida con la v3.
+
+Lo que decide la corrida v4: el **valor** real de `$2100` en `fr76..85` y
+`fr819..840` (los dos apagones que el recomp no hace) y si `$2100` en
+`fr86..818` sigue el ciclo de `C8F4DE`/`C8F4C5` como ya se deduce del recuento
+de sitios.  Si es así, lo único que queda por arreglar en el recomp son los
+dos apagones y el sobrerrecorrido del ~2,4 %.
+
+
+## 21. Sonda v4: el guion de fundidos COINCIDE; lo que falla es el reloj (2026-09-29, tarde-noche)
+
+Corrida v4 en `mesen_fades900b.tsv` (900 filas, 15 campos, 161 escrituras a
+`$2100` con sitio).  Comparador: `tools/fades_ab2100.py` (evento a evento contra
+`SNESRECOMP_INIDISP_TRACE`).
+
+### 21.1 La v4 funciona: `ini` ya es el valor real de $2100
+
+Ejemplos literales de la traza, con el sitio de ROM que escribe:
+
+| fr | sitio | valor | que es |
+|---|---|---|---|
+| 76 | `C08088` | `80` x2 | arranque del cargador |
+| 86 | `C081B4` | `80`,`0F`,`80` | imagen del driver de sonido |
+| 90..104 | `C8F4DE` | `01`..`0F` | **fade-in de 1 nivel/frame** |
+| 235..249 | `C8F4C5` | `0E`..`00` | fade-out |
+| 249 | `C8F4C5` | `80` | fuerza blank |
+| 251..265 | `C8F4DE` | `01`..`0F` | fade-in |
+| 386..400 | `C8F4C5` | `0E`..`00` + `80` | fade-out |
+| 416..430 | `C8F4DE` | `01`..`0F` | fade-in |
+| 703..717 | `C8F4C5` | `0E`..`00` + `80` | fade-out |
+| 777 | `CC0E35` | `80` | blank final antes del fundido |
+| 842..900 | `CC280E` | `01`..`0F` (4 frames/nivel) | fundido final de la intro |
+
+Sitios de `$2100`: en las dos corridas el recuento es el de la tabla de §20.4 y
+el canario da 87994.  `mA1` (contraste: escrituras en `$0000..$2100`) da 251328,
+que es exactamente el `mMT` de la v3 ⇒ confirma que la forma 4 era un rango.
+
+### 21.2 El guion es identico; solo fallan DOS esperas
+
+Segmentos emparejados 1:1 (mismo sitio, mismo n):
+`C8F4DE 01..0F n=15` ×3, `C8F4C5 0E..00 n=15` ×3, `80` tras cada fade-out,
+`CC0E35`, y `CC280E` en 15 tramos de 4 frames.  Todo igual.
+
+Huecos entre segmentos (frames de espera):
+
+| hueco | hardware | recomp | delta |
+|---|---|---|---|
+| `C8F4DE`→`C8F4C5` | 131 | 131 | 0 |
+| `C8F4C5`→`C8F4DE` | 2 | 2 | 0 |
+| `C8F4DE`→`C8F4C5` | 121 | 121 | 0 |
+| `C8F4C5`→`C8F4DE` | 16 | 11 | **-5** |
+| `C8F4DE`→`C8F4C5` | 273 | 273 | 0 |
+| **`C8F4C5`→`CC280E`** | **125** | **86** | **-39** |
+
+⇒ El recomp ejecuta el **mismo guion** con la **misma cadencia**; se salta 44
+frames de espera, 39 de ellos en el tramo final.
+
+### 21.3 Que hace hardware en esos 39 frames (traza v4, columna `pc`)
+
+La sonda imprime `%06X` de un PC de 16 bits, asi que **no hay banco**: los
+digitos de delante son siempre `00`.  Lo util es el PC:
+
+| fr | pc | que es |
+|---|---|---|
+| 777..779 | `0EB8`, `4D74` | salida del cargador |
+| 780..791 | `86BA`..`86EF` | **bucle de subida del driver al SPC700**: lee `$7F:0000,X`, escribe `$2141`/`$2142`, handshake `CMP $002140 / BNE`, alterna `$4A`, `CPX $00 / BCC` |
+| 792..814 | `892C`,`89A3`,…,`88E0` | resto de la transferencia |
+| 815..818 | `242C`, `432F`, `F545`, `2654` (+`C02AE0`) | cierre |
+| **819..840** | alterna `092x`-`096x` y `CE6x` | `C0:CE5F` es `LDA $08C3 / ASL / TAX / JSR ($CE6F,X)`: **despachador por frame del motor de sonido**.  `C0:0915+` es una tirada larga de handshakes `LDA $0021,X` / `LDA $40 / BPL` |
+| 841+ | `0540` | ya en el bucle del fundido |
+
+El recomp hace 780-791 en 12 gf **igual que hardware (12 frames)**, pero:
+792-814 lo hace en 12 gf en vez de 23, 815-818 en ~2 en vez de 4, y la fase
+**819-840 (22 frames) no existe**: salta del cierre directo al fundido.
+
+### 21.4 La causa comun de §21.2 y del sobrerrecorrido: el reloj de invitado no se conserva
+
+`SNESRECOMP_PC_LOG` da `gf` (fronteras de frame de invitado) y `hostf`.  Medido
+(`tools/fades_ab2100.py --pclog`):
+
+* Total del arranque a hostf 799: **880 gf / 799 host = 1,1014 gf/host**.
+* Ventanas de 50 frames de host: **2,33** (hostf 3..52), **1,125** (303..352),
+  **1,184** (653..702), **1,082** (703..752), y **1,000 exacto** en todas las
+demas.
+* Saltos concretos: hostf 4 → +66 gf; hostf 325 → +7 gf; hostf 701/702/705/708
+  → +4/+7/+3/+3 gf.
+
+Es decir: el recomp **no conserva el tiempo de invitado en los bucles de
+espera**.  Se pasa (los +66/+7/+17 del arranque y del final de la carga) y se
+queda corto (los 39 frames de §21.2).  Son las dos caras del mismo defecto, y
+vive en la maquinaria de frontera de frame / `s_lle_quiescent_yield`, **no** en
+el codigo de fundidos ni en las tablas `C8:F4xx`.
+
+### 21.5 Palancas ya existentes probadas (A/B, resultado negativo)
+
+Para no tocar nada a ciegas primero se movieron las palancas que ya trae el
+motor.  Las tres dan **salida identica** (mismo `f=712`, `gf=793`, 880/799,
+y mismo `E4`/`DA`/`AFB` al frame 800):
+
+| palanca | valores | efecto |
+|---|---|---|
+| `SNESRECOMP_LLE_APU_FLUSH_THRESH` | 0 / 1024 / 8192 | ninguno |
+| `SNESRECOMP_LLE_BOUNCE` | 0 / 1 | ninguno |
+
+⇒ El flush pre-bounce de la APU **no** es la causa.  Quedan como sospechosos el
+camino de `quiescent yield` y el FF de bucles de sondeo de `$4212`/`$2140`.
+
+### 21.6 Herramientas nuevas
+
+* `tools/fades_ab2100.py` — A/B evento a evento de `$2100` (hardware v4 vs
+  `inidisp_trace.log`): segmentos con sitio y valor, emparejado 1:1, huecos
+  entre segmentos, y tasa `gf/host` por ventana si se le pasa un `SNESRECOMP_PC_LOG`.
+* `tools/fades900.py --ab` — A/B por reloj master de las columnas de RAM.
+
+
+## 22. Conservación del tiempo de invitado: la deadline de frame (2026-09-29, madrugada)
+
+### 22.1 El defecto: un frame de host no valía un frame de invitado
+
+`interp_bridge_set_master_deadline()` existía desde el principio y lo consultan
+tanto el puente como el código AOT generado, pero **nadie lo fijaba**: el
+invitado corría "hasta quiescencia" sin más tope.  En los tramos que sí cambian
+estado (los bucles de handshake de la subida del driver al SPC700) eso dejaba
+que **un solo frame de host consumiera hasta 66 frames de invitado de un tirón**.
+
+Medido con `SNESRECOMP_FRAME_BUDGET=1` (línea `[fbudget] f= dgf= dmaster= res0=
+res1=` por frame de host), sin deadline:
+
+| f | dgf | dmaster (frames) | res0 → res1 |
+|---|---|---|---|
+| 1..3 | 0 | 0,01 | 00F703 → (arranque) |
+| 4 | **66** | 65,96 | 00F703 → C8F428 |
+| 324 | **7** | 6,87 | C086BE → C08751 |
+| 325 | 0 | 0,13 | C08751 → C8F425 |
+| 701 | **4** | 4,81 | C086C4 → C08751 |
+| 702 | **7** | 6,44 | C08751 → C08751 |
+| 705 | **3** | 3,36 | C085CD → C08751 |
+| 708 | **3** | 3,22 | C08751 → C08751 |
+
+10 frames de host con `dgf != 1` (7 tras el arranque).  Con
+`SNESRECOMP_FRAME_DEADLINE=1` (1 frame de invitado = 357368 ciclos master) sólo
+quedan los **3 de arranque** (`dgf=0`), y el `dmaster` de todos los demás es
+357350..357386, es decir exactamente un frame de invitado.
+
+Efecto medido sobre el guion (`[fstate]`, primer `$00DA` de fundido):
+
+| | frame de host del 1er fundido | `gf` correspondiente |
+|---|---|---|
+| hardware (Mesen, traza v4) | 841 | ~840 |
+| recomp sin deadline | **712** | 792 |
+| recomp con deadline | **791** | 788 |
+
+El invitado **no** cambia de sitio en su propio reloj (792 vs 788 gf): lo que
+cambia es que ahora tarda tantos frames de host como frames de invitado consume.
+
+### 22.2 El guion de `$2100` COINCIDE, hueco a hueco
+
+`tools/fades_ab2100.py` (con `--rc=`) empareja las escrituras a `$2100` de la
+sonda v4 de hardware contra `SNESRECOMP_INIDISP_TRACE=1`.  Con la deadline
+activa, los **30 segmentos** coinciden en sitio, valor y número de escrituras, y
+los huecos entre segmentos son **idénticos uno a uno** salvo el último:
+
+| tramo | hardware | recomp | Δ |
+|---|---|---|---|
+| `C8F4DE`→`C8F4C5` (1er fundido) | 131 | 131 | 0 |
+| `C8F4C5`→`C8F4DE` | 2 | 2 | 0 |
+| `C8F4DE`→`C8F4C5` (2º) | 121 | 121 | 0 |
+| `C8F4C5`→`C8F4DE` | 16 | 16 | 0 |
+| `C8F4DE`→`C8F4C5` (3º) | 273 | 273 | 0 |
+| **`C8F4C5`→`CC280E`** | **125** | **95** | **−30** |
+| arranque → `C08088` | 72 | 65 | −7 |
+| `C08088` → `C8F4DE` | 14 | 2 | −12 |
+
+Los tres fundidos (15 niveles × 4 frames cada uno, `C8F4DE` 01..0F / `C8F4C5`
+0E..00, el `80` tras cada fade-out, `CC0E35`, y el fundido final `CC280E` a 4
+frames por nivel) son **el mismo guion a la misma cadencia**.  Lo único que
+queda son 49 frames de invitado (≈0,8 s) que el hardware se pasa esperando y el
+recomp no.
+
+### 22.3 Qué son esas tres esperas
+
+* **`C08088`→`C8F4DE` (12 gf).**  Es el bucle principal del juego:
+  `C0:81B4 LDA #$80 / STA $2100` + `C0:81B9 LDA #$0F / STA $2100`,
+  `STA $4200=#$21` (vIRQ + auto-joypad), `CLI`, y luego despacho por la variable
+  de modo `$00` con lectura de pad (`LDA $4218 / ORA $C1 / BIT #$1000`) y
+  `JSL $C27EED`.  Hardware se queda 10 frames ahí (fr76-85, PC en
+  `$8183/$82B3/$82ED/$8318`), el recomp 1.
+* **`C8F4C5`→`CC280E` (30 gf).**  Hardware se pasa **22 frames (fr819-840)** en
+  el transferencia al SPC700: `C0:0509` (despachador del bucle principal, que
+  termina con `LDA $4A / EOR #$80 / STA $2140 / STA $4A`, el ping de frame al
+  SPC) llamando a la tarea de copia de bytes `C0:09xx`
+  (`LDA $001C,X / STA $42 / LDA $001B,X / STA $43 / LDA $40 / BPL`, con `X`
+  descendente: un grupo de 3 bytes por frame, gateado por el espejo en RAM `$40`
+  que actualiza el handler), junto con el tick del motor de sonido
+  (`C0:CE4A DEC $08C3 / JSR $C675 / JSR $CE5F`, y `C0:CE5F` despacha por fase con
+  `JSR ($CE6F,X)`).  En el recomp esa ventana no existe: su tráfico de puertos se
+  corta en `f=787` y pasa directo a 3 frames de `C0441C`/`C8F54A`/`CC267E` antes
+  del fundido.
+* **arranque → `C08088` (7 gf).**  Ya contabilizado en §19/§20 (sobrerrecorrido
+  del arranque).
+
+### 22.4 El SPC responde 12 veces por frame donde hardware responde 1
+
+Con `SNESRECOMP_APU_PORT_RW=logs/apu_rw_dl1.log` (una línea por acceso del SCPU a
+`$2140-$2143`, con frame y valor):
+
+| ventana | lecturas `$2140`/frame | alternancias `00`/`80` por frame |
+|---|---|---|
+| recomp f=759-769 (bucle `$86Cx`) | ~5800 | ~12 |
+| recomp f=771-786 (subida) | ~8600 | ~12 |
+| recomp f=788+ | 0 | — |
+
+Hardware, en la traza v4 (`rdcnt`): `r2140=1990/01` en fr815 (≈6544 lecturas) y
+**cero lecturas de `$2140` en fr819-840**, donde la espera va contra el espejo de
+RAM `$40`.  O sea: en el recomp el intercambio se completa ~12 veces por frame;
+en hardware, en la fase gateada por frame, **una vez por frame**.  El idioma del
+handshake está en la ROM 33 veces (`AD 40 21 / CD 40 21 / D0 F8` = *LDA $2140 /
+CMP $2140 / BNE*), es decir sondeo de "espera a que el puerto se estabilice".
+
+### 22.5 Refutaciones y trampas de instrumento
+
+* **`SNESRECOMP_APU_TOUCH_CYCLES` no sirve aquí.**  64 y 20 dan **salida
+  idéntica** (mismo `f=791`, `gf=788`, `dgf=1` en todo).  El motivo está en
+  `common_rtl.c`: esa palanca sólo escala el crédito sintético
+  (`rtl_accumulate_apu_catchup`, +256 ciclos master por *touch*), mientras que el
+  reloj real del SPC lo fijan `rtl_apu_guest_cycle()` /
+  `rtl_sync_apu_frame_boundary()` con la razón verdadera
+  `5632/118125 = 0,047678` (= 1,024 MHz / 21,477 MHz).  Con la deadline activa,
+  el SPC queda por tanto **slave del reloj de invitado** y no del crédito
+  sintético — que es justo lo que se quería.
+* **El comentario del propio motor lo dice**: la sobre-acceleración del SPC en
+  los handshakes ("boot/stage-load uploads measured 17-45x realtime") era un
+  parche para el frame **sin tope** (con SPC a ritmo real, la subida de otro
+  juego bloqueaba un frame más de 5 s y saltaba el watchdog).  Con la deadline
+  ese bloqueo es imposible por construcción: un handshake que ocupa N frames de
+  invitado cuesta N frames de host.  **Las dos piezas son complementarias.**
+* Las escrituras `$2100` de `CC280E` que sobran tras el último valor (`0F`
+  repetido cada frame) son del propio bucle: comparar contadores totales de
+  escrituras entre corridas de distinta longitud da falsos positivos.
+
+### 22.6 Estado
+
+* `SNESRECOMP_FRAME_DEADLINE` **por defecto = 1,0** (`0` = comportamiento
+  histórico ilimitado), y la deadline es **absoluta para todo el frame de host**
+  (antes se recalculaba por vuelta del `guard`, lo que habría permitido hasta 8
+  frames de invitado por frame de host en el camino del handshake de batalla
+  `$C084B2/B4`).
+* Determinismo comprobado: tres corridas idénticas (900 frames) dan **diff
+  vacío** tanto en `[inidisp]` como en `[fstate]` (211 escrituras cada una).
+* Corrida larga sin input, 2100 frames, todo `dgf=1` salvo los 3 de arranque, sin
+  cuelgues; `gf = f − 3` exacto de punta a punta.
+* Herramientas: `tools/fades_ab2100.py` gana `--rc=<log>` (acepta el stderr
+  completo, no sólo un fichero de trazas) y la sección *alineación evento a
+  evento*.
+* **Lo que queda** (tarea abierta): por qué el invitado del recomp consume 49
+  frames de invitado menos en las tres esperas de §22.3.  Candidato con
+  mecanismo concreto: los handshakes están gateados por estado que **cambia una
+  vez por frame** (el espejo `$40` que actualiza el handler) y en el recomp se
+  resuelven varias veces por frame (12 intercambios/frame en `$2140`).  Medirlo
+  hacia dentro exige contar por frame los accesos `$2140` de **ambos** lados (el
+  lado SPC ya tiene contadores en `apu.c`: `g_spc_outport_value_counts`,
+  `g_spc_recent_outport_writes`, `g_spc_pc_histogram`, hoy sólo expuestos por el
+  servidor de depuración).
+
+### 22.7 El fallo de audio con la deadline: el invitado ya no corre de más (2026-09-29)
+
+Observado por el usuario en cuatro corridas consecutivas (10:47 falla, 10:48 va,
+10:49 falla, 10:50 va) y **coincide exactamente con el A/B de la deadline**: el
+diario `tier2_so_*.json` de cada corrida graba el frame del primer fundido, y se
+alternan 1350 frames (= 791 + 559, deadline 1) con 1271 (= 712 + 559, deadline
+0) mientras el tamaño del fichero alterna 26670 / 26586 bytes.
+
+Mecanismo medido con `SNESRECOMP_AUDIO_STATS` (campos: `produced consumed dropped
+dropped_audible drop_runs underflows consume_calls ring_fill
+occupancy_highwater prod_cpu prod_audio`):
+
+| | deadline 0 | deadline 1 |
+|---|---|---|
+| fps de host (1800 frames) | 53,6 | 46,4 |
+| gf de invitado por frame de host | 1,101 | 1,000 |
+| **ritmo de la máquina emulada** | **0,98× tiempo real** | **0,765× tiempo real** |
+| `dropped` / `dropped_audible` / `drop_runs` | 0 / 0 / 0 | 392 / 186 / 3-4 |
+| `underflows` | 102 (constante) | 277→673 (≈50/s) |
+| `prod_audio` | 0 | 0 |
+
+`RtlRenderAudio` es **consumidor puro** a propósito ("SPC state is guest-frame
+driven by RtlAudioSyncFrame. The host callback is a consumer only"), y
+`prod_audio=0` lo confirma: **nadie inventa ciclos de SPC desde el hilo de
+audio**.  Por tanto el DSP/SPC avanza al ritmo de frames emulado.  A 46,4 fps de
+host con 1,000 gf/host la máquina emulada va a 0,765× tiempo real → el DSP se
+queda corto, el detector de deriva del motor dispara sus rampas de recuperación y
+se oyen cortes.  El modelo viejo sonaba bien **porque corría el invitado un 10%
+de más**: no era mérito del audio.
+
+Corolario importante para el rendimiento: con la deadline el invitado consume
+*de verdad* 357368 ciclos master por frame, incluidos los bucles de sondeo
+(~8600 lecturas de `$2140` por frame).  Antes, el yield por quiescencia cerraba
+muchos frames casi sin ejecutar ciclos mientras el contador de frames avanzaba
+igual.  O sea: **parte del "60 fps" anterior era trabajo que no se hacía**.  La
+cifra honesta hoy es ~46 fps en la intro con `build-dev`, y el objetivo de la
+tarea 4 (quitar trabajo al intérprete) pasa a tener un número concreto que batir.
+
+No hay pérdida de determinismo por el audio: tres corridas idénticas dan diff
+vacío, y `prod_audio=0` en ambas configuraciones significa que el hilo de audio
+no toca el SPC.
+
+### 22.8 Reparto del coste por frame en la intro (2026-09-29)
+
+Medido con reloj de pared restando la corrida de 900 a la de 1800 frames (así se
+cancela el ~1,3 s de arranque de SDL+ROM).  `SNESRECOMP_FRAME_DEADLINE=0.001`
+deja al invitado consumir ~357 ciclos master por frame en vez de 357368: sirve de
+"sin trabajo de invitado" y separa el coste del núcleo del coste del invitado.
+
+| config | tramo 900-1800 | fps equivalente |
+|---|---|---|
+| `FRAME_DEADLINE=1.0` (por defecto) | **21,79 ms/frame** | 45,9 |
+| `FRAME_DEADLINE=0.001` (invitado sin ciclos) | **16,80 ms/frame** | 59,5 |
+| `FRAME_DEADLINE=0` (histórico) | 16,82 ms/frame | 59,5 |
+
+Dos conclusiones:
+
+* El **suelo de `build-dev` es 16,8 ms/frame (59,5 fps) aun sin ejecutar el
+  invitado**: render, audio y ventana.  Con eso, **ninguna optimización del
+  emulador lleva `build-dev` a 60 fps**; para eso hace falta un build sin
+  instrumentar o un render más barato.  (Y explica que el audio se degrade antes
+  de tiempo: el umbral real de los ~58 fps está por debajo del suelo del build.)
+* La deadline añade **+5,0 ms/frame** (21,79 vs 16,80) que son *ciclos del
+  invitado que el modelo histórico se saltaba*: el yield por quiescencia cerraba
+  el frame casi sin ejecutar.  En el tramo 1-900 el extra es +3,9 ms/frame.
+
+Dónde está ese coste, en el código: con deadline activo, el bucle
+auto-quiescente del puente (`interp_bridge.c:990`, `auto_quiescent &&
+s_lle_master_deadline`) **no sale hasta alcanzar la deadline**, y la alcanza
+ejecutando el bucle de espera **instrucción a instrucción**.  La optimización con
+sentido es un *fast-forward de ciclos en quiescencia*: cuando el estado es
+demostradamente estable (lectura pura, sin escrituras), avanzar `master_cycles`
+hasta la deadline de una vez con el mismo `snes_sync_master_clock()` /
+`cart_sync_coprocessors()` que ya usa cada instrucción, y devolver.  Conserva el
+modelo de tiempo (la deadline se respeta), elimina el coste, y **puede además
+mejorar la fidelidad**: en hardware la fase fr819-840 avanza *un paso de
+handshake por frame* justamente porque espera un espejo de RAM que sólo cambia
+en la frontera de frame.  Riesgo: cambia los valores que el invitado puede
+observar *dentro* de un spin, así que hay que validarlo con el A/B de `$2100` y
+con diff de `[fstate]`, no darlo por bueno porque sea más rápido.
+
+### 22.9 Fast-forward de ciclos en quiescencia, y dónde está de verdad el coste (2026-09-29)
+
+Implementado en `interp_bridge.c` (rama de quiescencia, la que pone
+`s_lle_quiescent_yield = 1`): cuando hay deadline de frame y el estado de CPU/RAM
+se ha repetido >=2 vueltas **sin lecturas de MMIO** (`continuous_read_epoch`
+igual), ejecutar las vueltas restantes de un bucle que no puede salir hasta un
+evento externo no puede cambiar nada, así que se **carga el tiempo**:
+`master_cycles` hasta la deadline + `snes_sync_master_clock()` /
+`cart_sync_coprocessors()`, igual que hacía cada instrucción.
+
+Medido (tramo 900-1800 frames, intro + fondo de estrellas, `build-dev`):
+
+| | ms/frame |
+|---|---|
+| deadline 1, sin fast-forward | 24,11 |
+| deadline 1, **con** fast-forward | **23,05** |
+| deadline 0 (histórico) | 17,85 |
+
+Ganancia modesta (**−1,1 ms/frame**) y fidelidad intacta: primer fundido sigue en
+el frame 791 y, con el contador de frames de invitado arreglado (§22.9.b),
+`dgf = 1` en **los 899 frames** (antes el contador sólo avanzaba con
+`SNESRECOMP_PC_LOG`, así que la sonda leía 0 y el modelo parecía peor de lo que
+es).  Moraleja: los spins *estables* no eran el coste; el coste restante son los
+**bucles de sondeo de MMIO**, que el propio detector excluye a propósito
+(`continuous_read_epoch` cambia en cada lectura de registro) y que el invitado
+ejecuta de verdad (~8600 lecturas de `$2140` por frame durante la subida).
+
+### 22.9.b Arreglos de instrumento en este cambio
+
+* `snes.c`: el contador de frames de invitado se lleva **siempre** (estaba dentro
+  del `if (SNESRECOMP_PC_LOG)`), y se expone con `snes_guest_frame_count()`.
+* `src/so_rtl.c`: repuesta la sonda `SNESRECOMP_FRAME_BUDGET` (línea `[fbudget]`
+  por frame de host con `dgf`/`dmaster`/PC antes y después).
+
+### 22.10 Dónde está el trabajo que falta para 60 fps (tarea 4)
+
+El motor ya escribe un diario por corrida, `tier2_so_*.json`, con los sitios donde
+el código AOT **cede el control al intérprete** (huecos de cobertura) y cuántas
+veces cada uno salió "limpio" (`clean_hits` = el intérprete ejecutó el hueco y
+volvió equilibrado ⇒ promocionable).  En la corrida de la intro (150 sitios):
+
+| sitio | destino | clean_hits | qué es |
+|---|---|---|---|
+| `C0:024E` | `C0:02F6` | 1732 | cadena del handler de IRQ |
+| `C0:0251` | `C0:032D` | 1732 | la "bomba" por-frame |
+| `C0:0254` | `C0:1E64` | 1732 | continuación del handler |
+| `C0:51B3` | `C0:51F3` | 1149 | bucle principal del juego |
+| `C0:527A` | `C8:75CF` | 1149 | |
+| `C8:75E0` | `C3:8BB7` | 1149 | motor de fundidos |
+| `C8:7644` | `C5:035D` | 1149 | |
+| `CC:270D/2715/2718` | `CC:29F3/2943/29C8` | 1010 | motor de cutscenes |
+| `CC:278C/2790/2796/27FC` | `C0:5193`/`C3:8D3D`/`CC:0530`/`CC:0F21` | 1010 | idem |
+
+Todas son rutas **por frame** (1732 ≈ 1800 frames): cada frame paga una vuelta
+AOT→intérprete→AOT por cada una.  Promocionarlas (añadir `func` al `bankNN.cfg`
+y **volver a pasar el recompilador v2**) es el trabajo que reduce de verdad el
+coste del invitado, que es lo que la deadline destapa.  Ojo: `generated/*.c` son
+ficheros pre-generados (09-28 16:39), **no** los regenera el build, así que la
+promoción exige correr el recompilador y validar con diff byte-exacto, no sólo
+recompilar.
+
+### 22.11 El coste de la fidelidad era un FF desactivado, no el invitado (2026-09-29)
+
+**El hallazgo.** La deadline de frame (que arreglo el modelo de tiempo, §22) estaba
+APAGANDO sin querer toda la familia de fast-forwards de espera de vblank del motor.
+En `interp_bridge.c` el guard de ese FF exigia `!s_lle_master_deadline`:
+
+```c
+if (auto_quiescent && g_snes && !in.i && !s_lle_master_deadline &&
+    ((pc_before == 0xC8F425u || ... 0xC20B82u || ...))) {
+```
+
+El FF nacio cuando la deadline era codigo muerto (nadie llamaba a
+`interp_bridge_set_master_deadline()`), asi que la incompatibilidad nunca se probo.
+No existe: el destino del FF es el fin NATURAL de la espera (borde de vblank a
+225*1364 ciclos, o fin de frame a 357368), siempre DENTRO del frame en curso, que es
+justo el tramo que la deadline delimita. Mientras estaba apagado, la deadline obligaba
+a ejecutar esos spins instruccion a instruccion.
+
+Numero del coste, medido en la intro (`SNESRECOMP_PHASE_MS=1`):
+
+| config | emu | draw | total | FPS |
+|---|---|---|---|---|
+| deadline 0 (historico, FF activo) | 2,0-8,6 ms | 12-14,7 ms* | 16,6 ms | 60,1 |
+| deadline 1, FF apagado (hasta hoy) | **14,0-17,5 ms** | 1,7-4,0 ms | 17,1-21,5 ms | 46-58 |
+| deadline 1, FF reactivado (ahora) | **1,8-7,3 ms** | 10,5-14,9 ms* | 16,6-18,2 ms | 55-60 |
+
+\* cuando el frame entra en el presupuesto, el `draw` medido incluye la espera de
+vsync en el present, por eso sube a ~12-14 ms: el total clavado en 16,6x ms es la
+prueba de que el frame se entrega a 60,0 fps.
+
+**El cambio (minimo y reversible).** Dos lineas en `interp_bridge.c`:
+1. quitar `!s_lle_master_deadline` del guard del FF;
+2. clamp: `if (s_lle_master_deadline && target > s_lle_master_deadline) target = 0;`
+   El FF solo puede cargar tiempo DENTRO del frame; si su destino quedase mas alla
+   de la deadline no se dispara y el spin se ejecuta normalmente (dgf = 1 intacto).
+
+**Validacion A/B (protocolo byte-exacto).** Mismo binario, dos corridas sin input,
+`SNESRECOMP_FRAME_STATE=1`, comparando la linea `[fstate]` (26 campos: PC, master,
+cpu, inidisp, pad, r4200, irq/nmi, E4, DA, AFB, AFD, D01, DB, PB, DP, S):
+
+| ventana | FF off (deadline 1) vs FF on (deadline 1) |
+|---|---|
+| 2100 frames | **byte-identicos** (2100/2100 lineas) |
+| 3600 frames | **byte-identicos** (3600/3600 lineas) |
+
+Y `dgf = 1` en **1799/1799** frames en las dos configuraciones
+(`SNESRECOMP_FRAME_BUDGET=1`), o sea que el modelo de tiempo no se toca: el invitado
+sigue consumiendo exactamente 357368 ciclos master por frame de host.
+
+**Efecto en el audio (la consecuencia, no la causa).** `RtlRenderAudio` es consumidor
+puro y el SPC/DSP avanzan con el reloj de frames emulado, asi que la maquina tiene que
+correr a tiempo real para no dejar seco al DSP. Con la intro a 47-56 fps la maquina iba
+a 0,78-0,93x y el detector de deriva del motor cortaba el sonido. Numeros
+(`SNESRECOMP_AUDIO_STATS`, 1800 frames, mismo binario):
+
+| | FF off | FF on |
+|---|---|---|
+| FPS de host (1800 fr) | 47,0 | **56,1** (60,1 en regimen) |
+| `underflows` | 1519 | **104** |
+| `dropped` / audibles / `drop_runs` | 643 / 233 / 3 | 3756 / 430 / 15 |
+| `hiwater` / `prod_audio` | 8192 / 0 | 8192 / **0** |
+
+`prod_audio = 0` en las dos: nadie inventa ciclos de SPC desde el hilo de audio, el
+determinismo esta intacto. Tras el cambio, el unico evento audible que queda es **un
+unico desbordamiento de 413 muestras (~9,5 ms) en 8 rachas, una sola vez por corrida
+(unos 17 s tras el arranque)**, causado por un paron del consumidor de ~0,2 s: la
+ocupacion salta 610 -> 7837 en un segundo (el productor sigue a 534/frame, luego el
+consumidor paro), el anillo llega a 8192 y el rebose tira lo mas nuevo. Antes y despues
+de ese instante: **cero descartes** durante el resto de la corrida. La ocupacion queda
+drenando suavemente (3061 -> 2523) segun el servo, como esta disenado.
+
+**Estado de los builds.** `build-dev` (instrumentado) y `build-clean-test` (el de
+jugar) recompilados desde el fuente actual: los dos entregan 60 fps en regimen
+(`[fps] 60 fps` en el heartbeat del clean). `build-clean` NO se ha tocado (referencia
+congelada, sigue con el binario de 09-28 16:58). Logs de referencia:
+`build-dev/Release/logs/{vff_on,vff_off}_3600.fstate`, `logs/{vff_on,vff_off}.log`,
+`logs/aud_vff_{on,off}.log`, `logs/fb_vff_{on,off}.log` y
+`build-clean-test/Release/logs/{aud_cleantest,fps_cleantest}.log`.
+
+**Lo que queda pendiente y por que no lo he tocado.** El desbordamiento unico se
+eliminaria con un *trim con fade* en el camino normal: el motor ya tiene la maquinaria
+(`dsp_trimSamples` + `RTL_AUDIO_RECOVERY_RAMP`, hoy solo en el camino de turbo), y
+aplicarla cuando la ocupacion pase de un umbral alto convertiria el rebose brusco
+(click) en un recorte suave. No lo he hecho porque cambia el camino de audio que se usa
+en juego normal y no puedo oirlo aqui: hay que medirlo con el contador de descartes
+audibles y confirmarlo de oido, que es el protocolo que venimos siguiendo.
+
+### 22.12 El audio: dos defectos de tasa, no de mezcla (2026-09-29)
+
+**Sintoma.** En `build-clean`/`build-clean-test` (los builds de jugar) no se oia
+nada, y en la ventana del logo (f757-789) habia un ruido y una caida a ~47 fps.
+`build-dev` tampoco sonaba desde el cambio de deadline.
+
+**Causa 1 — la tasa del consumidor no era la del productor.** El runner compila
+`snesrecomp/runner/src/common_rtl.c` (no la copia `snes/`, ojo con eso: son dos
+ficheros distintos y solo el primero entra en el enlace). Su revision del 28-09
+19:47 paso la produccion a la fraccion exacta de hardware
+(`RTL_APU_RATIO_NUM/DEN = 5632/118125` sobre `RTL_MASTER_CYCLES_PER_FRAME =
+357368`, o sea **31.944 natives/s**), pero dejo el consumo declarado a mano:
+
+```c
+#define RTL_AUDIO_NATIVE_RATE 32040.0 /* SPC output rate: 1.024 MHz / 32 */
+```
+
+El comentario ya se contradecia (1.024 MHz / 32 = 32.000). Consecuencia: el
+consumidor drenaba `32040 x servo` natives/s contra una produccion de 31.944/s,
+o sea **-0,3% estructural**; el anillo del DSP se vaciaba, `need = span+2` no se
+alcanzaba nunca y **`output_underflows` subia exactamente +60/s (una por
+callback) durante toda la intro**: silencio, aunque el SPC estuviera produciendo
+(`produced` crecia a 32.000/s y `prod_audio = 0`). El modelo antiguo sonaba solo
+porque corria 1,101 frames de invitado por frame de host: el 10% de mas llenaba
+el anillo. Era el defecto de §22, no merito del audio.
+
+Arreglo (una constante): derivar `RTL_AUDIO_NATIVE_RATE` de las MISMAS constantes
+del productor, para que las dos tasas no puedan volver a separarse.
+
+**Causa 2 — el anillo no tenia colchon ni forma de recuperarlo.**
+1. El dispositivo arranca pidiendo 534 natives cuando el anillo esta vacio (el
+   invitado produce 534 por frame, asi que en el primer tiro no hay nada). Se
+   pre-encolan 4 bloques (~67 ms, el objetivo del propio servo) de silencio en el
+   `SDL_AudioStream`: el dispositivo tarda 67 ms en pedir, el invitado produce 4
+   frames en ese tiempo y el anillo arranca lleno. **Es cola del host: no toca ni
+   un ciclo del invitado.**
+2. Los bursts de produccion (arranque: el anillo llego a ~5.500 con `prod/s =
+   35.901`; logo: 7.610 con `prod/s = 40.293`) rebosaban los 8.192 natives porque
+   el servo solo recupera al +-0,5% (165 natives/s). Ahora
+   `rtl_sync_apu_frame_boundary()` recorta el exceso a 2x el objetivo
+   (`dsp_trimSamples`, que existia sin usarse) descartando lo mas ANTIGUO de la
+   cola -latencia pura- con la rampa de recuperacion del motor.
+
+**Medido (`SNESRECOMP_AUDIO_STATS`, 1800 frames, mismo binario):**
+
+| | antes | despues |
+|---|---|---|
+| `output_underflows` | 1.800 (60/s, todos) | **90** (solo los 2 primeros s) |
+| `dropped` / audibles / `drop_runs` | 5.897 / 393 / 22 | **0 / 0 / 0** |
+| colchon (`occupancy`) | 0-5.055 | ~1.800 estable |
+| `hiwater` | 8.192 (tope) | 4.818 |
+| `prod_audio` | 0 | **0** |
+
+En `build-clean-test` (42 s): `dropped=0 audible=0`, colchon 1.855, y el heartbeat
+de FPS da **60 fps** en 29 de 40 ventanas (59 en 5, 56/55/51/49 en las de
+transicion).
+
+**Validacion de que el invitado no se toca.** Mismo binario con y sin estos
+cambios, 3600 frames sin input, `SNESRECOMP_FRAME_STATE=1`:
+`logs/vff_on_3600.fstate` == `logs/vff_on_3600b.fstate`, **3600/3600 lineas
+`[fstate]` byte-identicas**. La tasa y el recorte son del lado del host.
+
+**Lo que queda (y es lo mismo que causa el hueco de fps).** La ventana f757-789
+sigue costando `emu = 20-23 ms` (f788: 42 ms) contra 1,3 ms del resto de la
+intro: son los 30 frames del handshake con el SPC700, donde el invitado ejecuta
+**el 79% de sus instrucciones en 11 PCs de un unico bucle,
+`$C0859D-$C085D0`** (perfilado con `-DSNESRECOMP_INTERP_PROFILE`, ver
+`build-prof`). Es trabajo real del invitado, no un FF mal puesto: el bucle sondea
+los puertos APU. Como el SPC de este motor solo avanza en la frontera de frame
+(`apu_runToGuestCycle` por frame), dentro de un frame el valor leido no puede
+cambiar, asi que ese bucle ES fast-forwardeable al mismo criterio que los spins
+de `$4212` -la linea siguiente-: seria a la vez el fin del hueco de fps y la
+causa de que el handshake avance un paso por frame como en hardware. Las dos
+tareas que quedan: (a) ese FF, (b) AOT de `$C0859D-$C085D0` (necesita pasar el
+recompilador v2, `generated/*.c` son pre-generados).
+
+### 22.13 La deadline silenciaba la musica: el tick del driver vive en el V-IRQ (2026-09-29)
+
+**Hallazgo, con evidencia directa.** Se anadio una sonda del PCM REAL que se
+entrega al dispositivo (`SNESRECOMP_PCM_DUMP=<path>` en `FillAudioBuffer`: volca
+los bytes exactos que van al dispositivo). Resultado en la intro:
+
+| config | PCM entregado |
+|---|---|
+| `FRAME_DEADLINE=0` | silencio 0-6 s y **musica continua desde 7 s** (picos 2.000-4.500, rms ~700) |
+| `FRAME_DEADLINE=1` | silencio 0-13 s, un unico chasquido (pico 7.748) en f790 y **pico 2** el resto |
+| `FRAME_DEADLINE=0.5` / `0.25` | **pico 0 en todo** (ni el chasquido) |
+
+No es entrega ni mezcla: el DSP emulado no suena. Y no lo causan los fast-forwards
+- desactivando solo el de quiescencia (`SNESRECOMP_NO_QUIESCENT_FF=1`) y solo el de
+vblank (`SNESRECOMP_NO_VBLANK_FF=1`) el silencio es identico. **Es la deadline en
+si**, y es binario: basta 0,25 frames para silenciarlo todo, asi que no va de
+"cuanto tiempo" sino de POR DONDE sale el frame.
+
+**Mecanismo (encaja con lo ya medido).** Con deadline,
+`interp_bridge_run_until_quiescent()` cede por RAMA DE DEADLINE en vez de por
+QUIESCENCIA, y el tick del driver de sonido del juego vive en el handler de V-IRQ
+por frame (`C0:032D`, la "bomba" por-frame de §19: la llama `C0:0251 JSR $032D`
+desde el handler). El camino de quiescencia ya entrega el NMI/IRQ del frame al
+invitado bloqueado (por eso existe `interp_bridge_lle_took_quiescent()`); el de
+deadline no. Sin ese tick, el driver carga, toca la primera nota (el chasquido de
+f790) y se queda mudo.
+
+**Estado: la deadline NO se activa por defecto** (`SNESRECOMP_FRAME_DEADLINE`,
+default 0 desde hoy) para no dejar el juego sin audio. La fidelidad del modelo de
+tiempo y su A/B byte-exacto (§22) siguen intactos y disponibles con
+`SNESRECOMP_FRAME_DEADLINE=1`; lo que falta para poder activarla por defecto es que
+el camino de deadline entregue tambien el NMI/IRQ del frame como hace el de
+quiescencia. Los arreglos de audio de §22.12 (tasa del consumidor, colchon inicial,
+recorte de exceso) son independientes de la deadline y siguen activos; con la
+deadline en 0 se miden `dropped=0 audible=0` y sin hambre del anillo.
+
+**Instrumento nuevo y reutilizable:** `SNESRECOMP_PCM_DUMP=<path>` (S16LE
+entrelazado al ritmo del dispositivo). Separa "el motor entrega silencio" de "el
+motor entrega audio y no se oye", que es la pregunta que hizo perder tiempo antes.
+
+#### 22.13.b Evidencia afinada y test de regresion
+
+Dos sondas mas acotan donde se para la musica con la deadline (1200 frames,
+mismo binario):
+
+| sonda | `FRAME_DEADLINE=0` | `FRAME_DEADLINE=1` |
+|---|---|---|
+| escrituras a registros del DSP (`SNESRECOMP_DSPREG_TRACE_FILE`) | **8.848** | **142** |
+| de ellas, key-on (`$4C`) | **205** | **1** |
+| 1er tick del driver `$C0032D` (`SNESRECOMP_PCHIT`) | frame 4 | frame 69 |
+| ritmo del tick tras arrancar | ~1/frame | ~1/frame |
+
+O sea: el tick del driver **si** corre ~1x/frame en los dos modelos, y el DSP no
+esta roto. Lo que cambia es que con la deadline el driver **deja de escribir notas**
+(205 key-on -> 1): el secuenciador del SPC700 se para despues de la primera nota.
+El siguiente paso ya no es el entregable de audio ni el DSP, es el reloj del APU
+(`rtl_sync_apu_frame_boundary` / `apu_runToGuestCycle`): la sincronia por frame
+(`snes_frame_counter * 17038`) y la sincronia por reloj master
+(`rtl_apu_guest_cycle()`, que con la deadline llega al final del frame) pueden
+quedar desfasadas un frame, y `apu_runToGuestCycle()` retorna sin ejecutar nada
+cuando `guest_cycle < apu->portGuestAnchor`.
+
+**Test de regresion: `tools/audio_health.py`.** Vuelca el PCM que se entrega al
+dispositivo y falla si hay un segundo en silencio absoluto o si menos del 60% de
+los segundos sonando tienen musica. Verificado en las dos direcciones:
+
+```
+python tools/audio_health.py                  # OK: 16/18 segundos con musica, ningun silencio absoluto
+python tools/audio_health.py --deadline=1     # FALLO: 6 segundos en silencio absoluto desde el 8
+```
+
+Este test es la respuesta al fallo que costo horas: el motor tenia `dropped=0`,
+`underflows` de arranque y anillo lleno, todos los contadores bien, y el juego
+estaba mudo. Hay que ejecutarlo tras tocar el modelo de frame o el camino de audio.
+
+### 22.14 Protocolo de trabajo y sus herramientas (2026-09-29)
+
+Acordado con el usuario: **nada de conjeturas ni hipotesis**. Si aparece algo, se
+prueba, se corroboran los datos, y solo se aplica si pasa la comparativa A/B
+byte-exacto; si no la pasa, se anota por si sirve en otra zona y se sigue con el
+siguiente error.
+
+* **`PROTOCOLO.md`** — el ciclo paso a paso (medir el sintoma con el instrumento
+  correcto, hipotesis falsable, un experimento por hipotesis, la puerta A/B, y
+  aplicar-o-anotar) y la lista de trampas que ya nos han costado tiempo.
+* **`DESCARTADAS.md`** — registro de lo probado y no aplicado, con la evidencia:
+  el reloj del APU siguiendo el master (revertido, no arregla el silencio), el
+  desacoplo del reloj del DSP (descartado por determinismo), `DisableFrameDelay`
+  (empeora con datos), los fast-forwards como causa del silencio (no lo eran), y
+  los instrumentos que mintieron.
+* **`tools/verificar.py`** — las tres pruebas en un comando:
+  `audio` (PCM real entregado al dispositivo), `fps` (mediana en regimen >= 58) y
+  `ab` (`[fstate]` contra el baseline guardado en
+  `build-dev/Release/logs/golden_fstate.log`). Sale 1 si algo falla. Acepta
+  `--only audio,ab`, `--deadline=N` y `--update-golden` (regenerar el baseline es un
+  acto deliberado: significa "este cambio SI debe alterar el comportamiento").
+* **`tools/audio_health.py`** — el detector de silencio, validado en las dos
+  direcciones: pasa con el default y **falla** con `--deadline=1`.
+
+Estado medido con `python tools/verificar.py` sobre el arbol actual
+(deadline por defecto = 0):
+
+```
+[PASA ] audio            OK: 26/29 segundos con musica (90%) desde el 8, ningun silencio absoluto
+[PASA ] fps              mediana 60.0 fps en regimen (52-60), minima 52.2
+[PASA ] A/B byte-exacto  2100/2100 frames byte-identicos al baseline
+```
+
+Y el mismo comando con `--deadline=1 --only audio,ab` **falla las dos**: la que
+delata el fallo de §22.13 y la que confirma que activar la deadline SI cambia el
+comportamiento (frame 1: master=357368 con deadline, 4360 sin ella).
+
+## 22.15 Instrumento nuevo: grabadora de partida en Mesen (`tools/mesen_so_trace.lua`)
+
+**Por qué (29/09, cierre de jornada).** El usuario tenia razon en dos cosas que
+habia que dejar por escrito:
+
+1. **Las pruebas con "grabacion" eran cortisimas.** El guion que yo estaba usando
+   como partida grabada (`build-dev/Release/rep_bueno.txt`, copiado a
+   `tools/input_scripts/grabada.txt`) dura **425 frames**: cinco pulsaciones de A
+   (f66, f147, f209, f270, f413) y se acaba justo cuando empieza la cinematica.
+   Con esa entrada, cualquier prueba de audio corta **antes** de que la musica
+   continua arranque, y por eso el resultado no decia nada de la parte que se oye.
+2. **Existe una partida grabada larga y no la estaba usando**:
+   `run-trace/replay_3_peleas.txt`, **23.435 frames (~390 s, 6,5 min)** desde
+   f424, con las pulsaciones que describia el usuario: A (235 veces), Arriba
+   (0x10), Abajo (0x20), Izquierda (0x40), Derecha (0x80) y combinaciones
+   (0x60 abajo+izquierda, 0x110 A+arriba, 0x190 A+arriba+derecha...). Es la que
+   recorre menu -> Continue -> seleccion de nombre -> cinematica -> juego.
+
+**Que se ha hecho.** Un script de Mesen que graba la partida *mientras se juega*
+y vuelca tres ficheros, para no depender de capturas manuales ni de guiones
+inventados:
+
+| fichero | contenido |
+|---|---|
+| `<rom>_trace.tsv` | 34 columnas, una fila por frame: pad (mascara + botones), estado de CPU y SPC700, PPU, handshake APU, `$2100`, key-on acumulado, bucle caliente `$C0859D-$C085D0`, `$4212`, NMI y `$4200` |
+| `<rom>_events.tsv` | un evento por linea: escrituras a `$2100`/`$4200`, puertos del APU desde CPU y desde SPC, escrituras al DSP (`$F2`/`$F3`) con el registro y **key-on**, sombras WRAM, NMI/IRQ |
+| `<rom>_replay.txt` | **solo pulsaciones**, `"<frame> <mascara>"` en el orden `$4218`, es decir el mismo formato que `SNESRECOMP_REPLAY_FILE`: se puede meter tal cual en el motor |
+
+El valor de la mascara es el mismo que usa el motor (b0=B b1=Y b2=Sel b3=Start
+b4=Up b5=Down b6=Left b7=Right b8=A b9=X b10=L b11=R), asi que la partida del
+usuario se puede reproducir en el recomp frame a frame y comparar con lo grabado
+en Mesen: es la referencia que faltaba para el A/B con input real.
+
+**API: verificada, no supuesta.** Se comprobo en dos fuentes: el fuente de
+Mesen-S (`Core/LuaApi.cpp`) y la **referencia de API JSON incrustada en el
+`Mesen.exe` del usuario** (la de su build exacta): `eventType` = nmi 0, irq 1,
+startFrame 2, **endFrame 3**, reset 4, scriptEnded 5, inputPolled 6;
+`cpuType.snes`/`spc`; `memType.snesMemory`/`spcMemory`;
+`addMemoryCallback(callback, callbackType, start, end, cpuType, memType)`;
+`getInput(port, subPort)`, `getCpuState(cpuType)`, `getMasterClock()`,
+`getCpuCycleCount(cpuType)`, `stop(exitCode)`.
+
+**Dos defectos que se corrigieron antes de entregarlo** (por eso conviene
+revisar antes de escribir codigo nuevo):
+
+* los hooks del SPC **no pueden** usar la forma de `addMemoryCallback` sin
+  `cpuType`: `$00F2/$00F3` en banco 0 son WRAM, asi que habrian dado "key-on"
+  falsos a mansalva. Ahora el SPC va siempre con `cpuType` explicito (y con una
+  variante de diagnostico registrada aparte, `alt_spcw`/`alt_dspw`, para detectar
+  si la forma canonica no dispara en esa build: el log lo avisa);
+* `emu.stop()` **cierra el emulador** (es del modo `--testRunner`), asi que no se
+  llama al terminar salvo que se ponga `PARAR_AL_TERMINAR = true`.
+
+Ademas el script se autodiagnostica: vuelca las claves reales de `getState()`,
+vigila que el desfase con el contador de frames del PPU no cambie, y avisa si la
+grabacion no empezo en el arranque (ese replay no se alinearia con el motor).
+
+**Lo que NO esta hecho todavia** (para manana): la puerta `tools/verificar.py`
+sigue apuntando a la entrada de 425 frames. Hay que pasarla a la partida larga
+(`run-trace/replay_3_peleas.txt`) y regenerar su baseline A/B de forma
+deliberada: la ventana de la cinematica (donde arranca la musica continua) queda
+fuera de la entrada actual, que es exactamente el motivo por el que las pruebas
+de audio de §22.12/§22.13 no cubrian lo que el usuario oia.
+
+Los ficheros que produce el script se guardan con la ROM; el usuario los ha
+centralizado en `StarOceanRecompDocumentacion/TracesMesen`.
+
+## 22.16 Turbo utilizable: aceleracion del host sin tocar al invitado (2026-09-29)
+
+### Que habia
+
+`Turbo = Tab` existia desde siempre (`config.ini`, `kKeys_Turbo`,
+`g_turbo`), pero su unico efecto era cambiar la espera de fin de frame por
+`SDL_Delay(1)`. Y no servia de nada: el present (`SDL_RenderPresent` con
+`vsync=true` en `SnesRenderer_Init`) bloquea hasta el refresco de pantalla, asi
+que el frame seguia costando 16,7 ms de reloj de pared aunque se quitase la
+espera. Turbo sobre el papel, ~1x en la practica.
+
+### Que hace ahora (`src/main.c`)
+
+1. **Sin pacing en turbo.** El frame de turbo no espera nada (ni deadline de 60
+   Hz ni `SDL_Delay(1)`): el bucle corre tan rapido como el host pueda. El hilo
+   de audio drena por su cuenta y el pump de eventos se hace en cada vuelta, asi
+   que no se queda nada sin atender.
+2. **Present elidido** en los frames de turbo salvo uno de cada N
+   (`SNESRECOMP_TURBO_PRESENT_EVERY`, por defecto 16; 0 = ninguno). El elidido es
+   solo el lock de la textura, el memcpy y el `RenderPresent`.
+   **NO se toca `SoDrawPpuFrame`**: esa funcion no es cosmetica -hace el HDMA
+   linea a linea y entrega el vIRQ de raster/vblank que el juego espera- y por eso
+   el invitado sigue viendo el frame entero. Es la misma particion que hace el
+   host MMX (`disableRender`, `runner/src/desktop/mmx23_host_main.inc:1642`).
+3. **Control sin teclado** (dev, inerte sin variables):
+
+   | variable | efecto |
+   |---|---|
+   | `SNESRECOMP_FORCE_TURBO=1` | turbo en todos los frames |
+   | `SNESRECOMP_TURBO_BURST=a,n` | turbo solo en los frames de invitado `[a, a+n)` |
+   | `SNESRECOMP_TURBO_PRESENT_EVERY=N` | 1 present cada N frames de turbo (0 = ninguno) |
+
+   La ventana del burst va sobre el **contador de frames de invitado**
+   (`snes_frame_counter`), el mismo reloj que el fichero de replay y los logs
+   `[fstate]`/`[fps]`: se puede pasar a toda velocidad un prefijo ya revisado y
+   mirar a tempo normal los frames que interesan **en la misma corrida**.
+4. `RtlAudioSetFastForward(g_turbo)` por frame: activa el camino de trim/rampa
+   que el motor ya tenia para turbo (§22.12), de modo que soltar turbo no deja el
+   audio descolgado.
+
+### Medido (misma maquina, `build-dev`)
+
+Intro sin input, hasta el frame 900:
+
+| config | reloj de pared | por frame | vel. relativa |
+|---|---|---|---|
+| normal | 18,79 s | 20,9 ms | 1,00x |
+| turbo con `SDL_Delay(1)` (antes) | 9,14 s | 10,2 ms | 2,06x |
+| **turbo sin pacing (ahora)** | **7,73 s** | **8,6 ms** | **2,43x** |
+
+`SNESRECOMP_TURBO_PRESENT_EVERY` = 16 / 32 / 0 da 7,74 / 7,79 / 7,66 s: con la
+cola de presents vacia el vsync no llega a bloquear, asi que el present no era el
+coste. El limite es el coste real del invitado (`emu` 1,4-13,4 ms/frame en la
+intro, `draw` 1,2-2,8 ms): turbo no puede ser 10x en un recompilador CPU-bound.
+
+Partida larga (`run-trace/replay_3_peleas.txt`), hasta el frame 2400:
+
+| config | reloj de pared | vel. relativa |
+|---|---|---|
+| normal | 44,56 s | 1,00x |
+| burst `0,2000` (83% del tramo) | 22,70 s | 1,96x |
+| turbo total | 15,57 s | **2,86x** |
+
+### Prueba de que turbo es inocuo para el invitado
+
+Turbo cambia solo el ritmo del **host**; el invitado sigue ejecutando un frame
+por vuelta. Comprobado con la puerta A/B (que compara la linea `[fstate]`
+completa: master, registros de CPU/SPC, PPU, contadores de handshake):
+
+| corrida | contra | resultado |
+|---|---|---|
+| `SNESRECOMP_FORCE_TURBO=1`, 1200 frames sin input | baseline sin turbo | **1200/1200 byte-identicos** |
+| turbo durante 2000 de 2400 frames con replay largo | misma corrida sin turbo | **2400/2400 byte-identicos** |
+| determinismo (dos corridas turbo) | - | 900/900 identicos |
+
+Y el audio sobrevive al turbo: con `TURBO_BURST=0,600` y luego tempo normal, el
+PCM entregado al dispositivo da 16/16 segundos con musica (100%) desde el segundo
+8, sin silencio absoluto -el camino de trim/rampa de §22.12 hace su trabajo-.
+Durante el turbo el sonido no sirve para escuchar (el dispositivo drena a 1x
+mientras el invitado produce casi 3x): turbo es para avanzar, no para oir.
+
+### Uso
+
+```bash
+# a mano: mantener Tab (config.ini: Turbo = Tab)
+
+# automatizado: pasar a toda velocidad el prefijo ya revisado y pararse en el tramo util
+SNESRECOMP_REPLAY_FILE=run-trace/replay_3_peleas.txt \
+SNESRECOMP_REPLAY_UP_PAUSE_MS=0 \
+SNESRECOMP_TURBO_BURST=0,2000 \
+SNESRECOMP_EXIT_AT_FRAME=2400 ./StarOcean.exe
+```
+
+`build-dev` y `build-clean-test` (el que se juega) estan recompilados con esto;
+`build-clean` sigue intacto como referencia congelada.
+
+Nota de metodo: la prueba `fps` de la puerta es sensible a la carga de la
+maquina. Una corrida completa dio mediana 57,7 fps (umbral 58) con el sistema
+ocupado y 60,2-60,2 fps al repetirla en solitario; antes de dar un fallo de fps
+por real, repetirla con la maquina tranquila.
