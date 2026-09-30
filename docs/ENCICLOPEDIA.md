@@ -3164,3 +3164,67 @@ y el volcado de PCM, no escuchando.
 * `tools/perfil_interp.py` + `tools/trabajo_aot.py --hist`: cobertura medida.
 * Regla: **ningun artefacto AOT sin poder regenerarlo desde el repo**. Si no se
   reproduce con las entradas versionadas, no es un baseline: es una foto.
+
+## 35. La exactitud es una propiedad DEL ARTEFACTO AOT, y la receta que sube la
+cobertura al 51 % sin romperla (2026-09-30)
+
+### 35.1 El A/B contra el interprete puro distingue los tres artefactos
+
+Mismo binario (`build-dev`), misma palanca (`SNESRECOMP_LLE_BOUNCE=1` AOT vs `=0`
+interprete puro), mismo guion keyeado al reloj, 6000 frames, sin presentar:
+
+| artefacto AOT | C de `$C0` | A/B byte-exacto |
+|---|---|---|
+| validado (`legacy-2026-09-29`) | 14,2 KB (stubs) | **identico 6000/6000** |
+| bloques medidos de Ghidra para `$C0` | 75,9 KB (cuerpos reales) | **identico 6000/6000** |
+| el del arbol (1,39 MB) | 502,5 KB inventados | **NO: primer diff `f=1687`** |
+
+Lectura: la divergencia AOT-vs-LLE **no es del motor, es del artefacto**. Meter C
+de `$C0` codigo real no la rompe; el artefacto que hay en el arbol si, y es el
+unico que no se puede regenerar (34.1). Consecuencia practica: **la puerta para
+cualquier expansion AOT es `tools/ab_lle.py`**, y se corre en 4 minutos.
+
+### 35.2 Lo que NO funciona (dos intentos, con numeros)
+
+| via | resultado |
+|---|---|
+| destinos sin cuerpo del manifiesto (`tools/aot_seeds.py`) | **0** nodos convertidos (33.5) |
+| PCs mas calientes del histograma como entradas | 0,36 % -> **0,59 %** |
+
+El segundo caso merece el diagnostico: un PC caliente del histograma es una
+*mitad de funcion* (el cuerpo de un bucle de espera), y el analizador no puede
+emitir C para un cuerpo que empieza a mitad: `$C6` (4,2 M pasos, 20,2 % del
+total) apenas se movio. Lo que funciona en `$C0` es el **inicio de funcion**.
+
+### 35.3 La receta que funciona: destino de llamada x ejecucion
+
+`tools/cfg_entradas_llamada.py`: escanear la pagina 0 del MMC (bancos `$C0-$CF`,
+`ROM[0:0x100000]`) buscando operandos de `JSR`/`JMP` (mismo banco) y
+`JSL`/`JML` (banco explicito), y quedarse solo con los destinos cuyo PC **se
+ejecuta** en el histograma (eso es lo que quita los falsos positivos de datos que
+se leen como opcode). Sin `end:`, el analizador descubre la extension.
+
+| | nodos | elegibles | pasos interpretados dentro de C | sin nodo |
+|---|---:|---:|---:|---:|
+| base (validado) | 91 | 47 | 74.993 (0,36 %) | 99,42 % |
+| **+ entradas de llamada en `C2..CC`** | **1.271** | **200** | **10.646.992 (51,33 %)** | **30,94 %** |
+
+Y el A/B con ese artefacto: **identico 6000/6000 frames**, `master` final igual
+(2.179.587.442). Es decir, **142x mas trabajo en C manteniendo la exactitud**.
+
+### 35.4 Lo que falta antes de adoptarlo como artefacto del arbol
+
+1. Los 8 cfg nuevos (`config/bankC4/C5/C6/C7/C8/CA/CB/CC.cfg`) ya estan en el
+   repo: la regeneracion es reproducible.
+2. Los 6000 frames cubren intro + menu de nombres + primer campo. **Falta el
+   replay largo (23.590 frames)**: la escena que no se ejecuta no se valida.
+3. No se ha sustituido `generated/`: cambiarlo es un acto deliberado, con el A/B
+   largo delante. El artefacto generado esta en `out/aot-calls/`.
+
+### 35.5 Nota operativa de PyGhidra (instalado hoy)
+
+PyGhidra 3.1.0 quedo en el venv de Ghidra
+(`%APPDATA%/ghidra/ghidra_12.1.4_PUBLIC/venv`). **Ojo con la trampa 32.1**: el
+parche de "aislar `APPDATA`" para esquivar la extension SNES duplicada **rompe
+PyGhidra** (el venv vive bajo el APPDATA real). Para usar PyGhidra hay que
+arreglar la extension duplicada, no aislar el APPDATA.
