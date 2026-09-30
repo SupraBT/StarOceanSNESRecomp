@@ -3624,3 +3624,78 @@ de invitado), `g_yield_*` (motivo de cesion del LLE), `spcOfrecido/Ejecutado/
 Perdido` y `pWrite/pCola/pColaMax/pDesc` en `[hstat]`.
 Herramientas: `tools/deadline_irq_ab.py`, `tools/fdiff.py`, `tools/pcm_health.py`.**
 
+
+### 22.17 EL TRACE DE MESEN ESTABA EN DISCO: con la deadline el modelo es EXACTO, y el fallo esta en el IPL del SPC700 (2026-09-30)
+
+Los ficheros estaban en `E:\Recompilador Super Nintendo\StarOceanRecompDocumentacion\TracesMesen`
+(`*_events.tsv` 56 MB, `*_trace.tsv`, `*_replay.txt`). 29.560 fotogramas de
+hardware. El input coincide con el que usa el motor (`mesen_master.txt` esta
+derivado de ESTA traza, y no hay pulsaciones antes del fotograma 1171), asi que
+la comparacion de la intro es valida.
+
+**1. La deadline NO rompe el audio: lo hace CORREGIR.** Escrituras del
+invitado a `$2140-$2143`, por bloques de 50 fotogramas:
+
+| | f1-50 | f51-100 | f101-400 |
+|---|---|---|---|
+| hardware (Mesen) | 22.002 | 9.318 | 0 |
+| **motor con deadline** | **22.002** | **9.312** | 0 |
+| motor sin deadline | 31.314 | 0 | 0 (+7.460 en f301) |
+
+Con la deadline la subida del motor de sonido coincide con hardware practicamente
+byte a byte (31.314 contra 31.320: **6 escrituras de diferencia en 31.320**). Sin
+deadline el invitado se come las dos tandas de golpe en el f2 y se adelanta 7.460
+escrituras que en hardware no existen todavia. **Esto valida el modelo de tiempo
+de la deadline y refuta de raiz la explicacion de §22.13** ("la deadline no
+entrega el NMI/IRQ del frame"), que era una conjetura sin dato.
+
+**2. Lo que el hardware hace y el motor no.** Escrituras del SPC al DSP
+(`$F2`/`$F3`), por bloques de 50 fotogramas:
+
+| | f1-50 | f50-99 | f100-149 | f150-199 | f200-249 | f250-299 | f300-349 |
+|---|---|---|---|---|---|---|---|
+| hardware | 11 | 78 | 123 | 123 | 120 | 123 | 123 |
+| motor | 138 | 8 | **0** | **0** | **0** | **0** | ~0 |
+
+En hardware el SPC700, una vez subido el motor, **tira solo**: 2,46 escrituras al
+DSP por fotograma, para siempre. En el motor **se para en seco en el f50** y no
+vuelve a escribir. Por eso el DSP nunca se programa (volumenes de canal a cero,
+`§22.16`) y suena a silencio.
+
+**3. El IPL del SPC700 es el culpable, y aqui esta el dato duro.** Columna
+`spcpc` del trace (PC del SPC700):
+
+```
+hardware:  f1..f26  spcPC=$00EF      f27..  spcPC=$00FB   <- ya esta en el motor subido
+motor:     f1..f19  spcPC=$FFC6/$FFCF/$FFE2/$FFDA  (ROM del IPL)   f25.. spcPC=$391B
+```
+
+En hardware el SPC700 pasa del IPL al programa subido **dentro del primer
+fotograma**. En el motor **se queda 19 fotogramas en el IPL** y luego salta a
+`$391B`, mientras hardware ejecuta `$00EF`. Son las dos mitades del mismo bug: el
+IPL no ve la peticion de arranque a tiempo y ademas aterriza en la direccion
+equivocada.
+
+**4. Y el spin que el hardware NUNCA ejecuta.** Columna `hc` (instrucciones en
+el bucle caliente `$C0859D-$C085D0`), **0 en los 400 fotogramas del hardware**,
+maximo 0. En el motor con deadline, el invitado acaba **23 fotogramas de host
+dentro de ese spin** (`resume=$C085A6`). Ese spin es la espera del handshake
+con el IPL: si el IPL tarda 19 fotogramas, el invitado se queda esperando en
+una direccion en la que el hardware no llega a estar. Las dos sintomas
+(`$C085A6` y el audio mudo) son la misma causa.
+
+**5. Descartado de paso: el temporizador del SPC700 NO va mal.** El codigo
+divide cada 128 ciclos (timer 0/1) y cada 16 (timer 2), o sea 8 kHz y 64 kHz, que
+es exactamente lo que dice la especificacion (superfamicom.org SPC700 Reference,
+emudev). Hipotesis formulada, comprobada contra la referencia y **descartada**
+antes de tocar nada. El timer 0 marca ~0,8 tik por fotograma, y su PC recorre
+$391B, $1A61, $0BD6, $19F2, $0958, $09C9, $0A30... con normalidad: **el SPC700
+no esta colgado, esta trabajando en el sitio equivocado.**
+
+**Donde queda el arreglo.** En `RtlUploadSpcImageFromDpInternal()`
+(`common_rtl.c:1296`, rama `ipl_phase`): ahi se hace
+`g_snes->apu->spc->pc = final_pc` con `sp = 0xef`. Dos cosas a verificar con
+dato: (a) por que el IPL no consume la peticion de arranque hasta el f19, y (b)
+de donde sale `final_pc = $391B` cuando hardware entra por `$00EF`. Todo lo demas
+- la deadline, el reloj del APU, el SPC, el DSP, la cola de puertos - queda
+descartado con contadores.
