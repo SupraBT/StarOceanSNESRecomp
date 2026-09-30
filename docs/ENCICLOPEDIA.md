@@ -2551,12 +2551,121 @@ ultima 10.480.422.216.
 byte-identico** contra su baseline propio (`build-dev/Release/logs/`
 `golden_fstate_mesen_master.log`, local como los demas).
 
-### 25.4 Lo que deja abierto
+### 25.4 El desfase de relojes NO es un error de ritmo (medido 2026-09-30)
 
-* El **desfase de ~2 %** del reloj de invitado frente al hardware en el mismo
-  frame hay que medirlo aparte: o es contabilidad del boot, o es tiempo de
-  invitado de mas (y afectaria a todo lo que se compare por frame).
+La duda razonable era: si a fr=4.000 vamos ~2 % por delante, ¿corremos el juego
+rapido? La respuesta, medida sobre la corrida master-keyeada de `build-dev`
+(4.000 frames) contra el trace, es **no**:
+
+* **Avance de reloj por frame** en regimen (f>=1000, 3.000 frames): **mediana
+  357.368 master**, valor mas frecuente 357.368 (568 veces) y **2.991 de 3.000**
+  en el rango 350k-400k. Hardware: `1364 x 262 = 357.368`; Mesen da mediana
+  357.366 con solo dos valores distintos. **El frame dura lo que el de
+  hardware.** El jitter del borde es +-1 dot (valores 357.356-357.380) porque el
+  borde lo marca la entrega del vblank/IRQ, no un contador de linea.
+* Lo que si hay es **7 frames "lote"** (0,49-2,65 M) y **3 frames "cortos"**
+  (42.992-256.454), siempre pegados unos a otros: f=1690 (2,46 M) + f=1691
+  (42.992); el racimo f=2021-2028 (2,65 / 0,50 / 1,73 / 0,50 / 1,20 / 0,77 M)
+  con f=2023 (256k) y f=2028 (250k) en medio. Son los tramos de carga (boot y
+  S-DD1): el borde del frame de host **no esta clavado en el vblank**, lo marca
+  donde el motor decide ceder (quiescencia/deadline).
+* **Exceso neto de ese tramo: +6.789.974 master** (lotes +7.312.440, cortos
+  -522.466) ~ **+19 frames de hardware** que el indice no cuenta.
+* El desfase total es **escalonado**, no lineal: +22,2 M ya en fr=4 (boot),
+  +24,0 M en fr=500, +28,6 M en fr=1000, +30,4 M en fr=2000, +35,4 M en fr=3000
+  y plano hasta fr=4000 = **+99 frames de hardware ~1,65 s**. En fr=1173 (la
+  pulsacion de New Game) ya ibamos ~62 frames por delante: eso es exactamente
+  por lo que la entrada caia en otro instante del juego (§25.2).
+
+Consecuencias: (1) para keyear entradas o comparar contra hardware la clave
+valida es el **reloj de invitado**, no el indice de frame (ya esta asi en la
+puerta, §25.3); (2) el desfase se concentra en los **caminos de fast-forward**
+(quiescencia/deadline), que son los conservadores: no es un bug de timing de CPU,
+es el borde del frame; (3) no afecta al ritmo percibido (mediana exacta) ni al
+audio (la tasa se deriva del productor, §22.12).
+
+### 25.5 Lo que deja abierto
 * El cuelgue **manual** e intermitente del §16.5 sigue sin explicacion: alli la
   entrada era a mano, no un replay, asi que el keyeo no lo cubre.
+* Si el borde del frame deberia clavarse en el vblank del invitado (en lugar de
+  ceder donde la quiescencia lo permita) es una decision de diseño, no un bug
+  medido: el efecto esta acotado a los tramos de carga y no toca el ritmo.
 * Cualquier conclusion sacada de corridas guiadas por un guion keyeado al frame
   (incluidas las de §16) es sospechosa y hay que **repetirla con el reloj**.
+
+## 26. Reparto real del trabajo interpretado, por banco (2026-09-30)
+
+Instrumento: `build-prof` (`SNESRECOMP_INTERP_PROFILE`, imprime la tabla por
+banco al salir) + `tools/input_scripts/mesen_master.txt` (reloj de invitado) +
+`SNESRECOMP_TURBO_BURST=0,29330` para que quepa en tiempo. El turbo no toca al
+invitado (es justo lo que comprueba la prueba `turbo` de la puerta), asi que la
+tabla vale. **29.331 frames = la sesion completa de Mesen. Total 164.462.778
+pasos interpretados (5.607 por frame).**
+
+| banco | PCs distintos | pasos LLE | % | acumulado |
+| :--- | ---: | ---: | ---: | ---: |
+| `$C3` | 3.939 | 56.575.298 | 34,4% | 34,4% |
+| `$C6` | 5.440 | 53.856.107 | 32,7% | 67,1% |
+| `$C0` | 6.656 | 22.842.731 | 13,9% | 81,0% |
+| `$C2` | 9.036 | 12.996.603 | 7,9% | 88,9% |
+| `$CC` | 4.395 | 6.990.091 | 4,3% | 93,2% |
+| `$C8` | 2.767 | 6.648.460 | 4,0% | 97,2% |
+| `$CB` | 883 | 2.265.077 | 1,4% | 98,6% |
+| `$C1` | 4.777 | 820.797 | 0,5% | 99,1% |
+| `$C9` | 2.220 | 374.879 | 0,2% | 99,3% |
+| `$C4` | 267 | 342.484 | 0,2% | 99,5% |
+| `$C5` | 218 | 273.706 | 0,2% | 99,7% |
+| `$CA` | 4.355 | 238.415 | 0,1% | 99,9% |
+| `$C7` | 516 | 196.071 | 0,1% | 100,0% |
+| `$00` | 167 | 42.059 | 0,0% | 100,0% |
+
+**Lectura:** `$C3` y `$C6` solos son **dos tercios** del trabajo interpretado; con
+`$C0` y `$C2`, el **88,9 %**. Los dos bancos que el HANDOFF externo ponia como
+prioridad (`$C8`, `$CC`) son el **8,3 %**.
+
+**Unidad que cuenta:** esto son *pasos del interprete* (codigo LLE), no
+ejecucion total. Los bancos con `.cfg` (`00 C0 C1 C2 C3 C9`) tienen parte de su
+codigo ya en AOT y **no aparece aqui**; los que no tienen `.cfg`
+(`C4`-`C8`, `CA`-`CC`) aparecen enteros. Por eso `$C6` (54 M) es el candidato
+numero uno: esta **entero** en el interprete. Y el trabajo real de `$C3` es
+mayor que los 56,6 M que se ven.
+
+### 26.1 Contra los dos documentos externos (mismos datos, otra conclusion)
+
+| banco | HANDOFF | MASTER | medido ahora (sesion completa) |
+| :--- | ---: | ---: | ---: |
+| `$C6` | "no aparece" | 18,7 % | **32,7 % (53,9 M)** |
+| `$C3` | 1,0 M (~5 %) | 14,0 % | **34,4 % (56,6 M)** |
+| `$C2` | 115 K | 54,3 % | 7,9 % (13,0 M; parcial, tiene AOT) |
+| `$C8`+`$CC` | 15,2 M, "88 % del juego" | 3,8 % + 0,6 % | 13,6 M, **8,3 %** |
+
+Los dos se equivocan en la misma direccion: **infravaloran `$C3` y `$C6`** y
+sobrevalorar lo que ellos señalaron. La unica cifra que acierta es el `$C8` 3,8 %
+del MASTER (medido: 4,0 %). No es cuestion de que un documento gane: **ninguno de
+los dos se puede usar para priorizar**, y ahora hay tabla propia.
+
+**Prioridad por datos:** 1) `$C6` (54 M, entero en LLE), 2) `$C3` (56,6 M LLE +
+lo que ya va por AOT), 3) `$C0` (22,8 M), 4) `$C2` (13,0 M). Los "PCs distintos"
+son el tamano del trabajo por banco (`$C2` 9.036, `$C0` 6.656, `$C6` 5.440...).
+
+**Lo que falta para cerrar el reparto:** la mitad AOT. Cada bloque AOT llama a
+`cpu_trace_block(cpu, pc24)` al entrar (existe ya en el motor), asi que un
+contador por banco ahi —y, mejor, atribuir el delta de `master_cycles` a ese
+punto— da la tabla complementaria. Sin eso solo se ve la parte interpretada.
+
+### 26.2 Nota: los sintomas de una corrida EN TURBO no se juzgan a oido
+
+La corrida larga del 2026-09-30 16:13 se hizo con `TURBO_BURST=0,29330`, y de
+ella salieron estos sintomas reportados: "no tiene musica", "carga parte de la
+melodia pero mal", "los SFX de la cinematica y la pelea suenan, los de los
+cofres no". **En turbo el invitado produce ~3x mientras el dispositivo drena a 1x**
+(§22.16): la melodia sale troceada o muda por diseño, y los SFX cortos se
+reconocen mejor. Con el MISMO guion y **sin** turbo, `tools/audio_health.py` da
+`OK: 16 s con musica de 25 s` (medido en la puerta, §25.3). Conclusion: no juzgar
+audio en turbo, ni leer esos sintomas como regresion.
+
+Lo **que si es real** y queda abierto (no lo explica el turbo, porque es estado
+del invitado): la partida sigue su propio camino tras los cofres y **se bloquea
+al acabar la primera pelea**. Medirlo sin turbo, con `SNESRECOMP_HANG_GUARD`
+(volcado automatico de rutina + pila + flags) y comparando por reloj contra el
+trace.
