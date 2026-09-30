@@ -3699,3 +3699,76 @@ dato: (a) por que el IPL no consume la peticion de arranque hasta el f19, y (b)
 de donde sale `final_pc = $391B` cuando hardware entra por `$00EF`. Todo lo demas
 - la deadline, el reloj del APU, el SPC, el DSP, la cola de puertos - queda
 descartado con contadores.
+
+### 22.18 Sonda compacta de referencia (`tools/mesen_so_probe.lua`) (2026-09-30)
+
+La grabadora anterior (`mesen_so_trace.lua`) transcribe TODO: una linea por
+acceso. Para la intro son 1,45 M de lineas y **56 MB**, de los que el 95% es el
+mismo dato repetido (702.846 escrituras a `$2140`, una a una). Es ilegible y
+ademas **no reachaba**: de §22.17 salio que lo que hacia falta no estaba
+grabado (el PC del SPC700 fotograma a fotograma, los contadores de timer, el
+estado del DSP, y una huella de WRAM para saber el primer fotograma de
+divergencia).
+
+**El principio: resumir, no transcribir.** Un flujo de alta densidad se resume
+por fotograma con dos numeros: **cuantas** y un **digest** del contenido. El
+digest no deja ver que bytes fueron, pero si deja **probar** que dos corridas
+son identicas byte a byte, que es la pregunta que se hace el 90% de las veces al
+comparar hardware contra motor. Ocupa 30 bytes en vez de 3.000. Lo que si cambia
+de verdad (un fundido, un key-on, un reset) se escribe como evento, pero
+**solo cuando cambia** respecto al valor anterior. Y se anade lo que faltaba.
+
+**Cinco ficheros, ~120 bytes por fotograma:**
+
+| fichero | una fila por | que lleva |
+|---|---|---|
+| `<rom>_frames.tsv` | fotograma | reloj de invitado, PC, a/x/y/sp/d/db/p, PPU, pad, NMI/IRQ, fundidos, y el **recuento en 7 zonas de codigo vigiladas** |
+| `<rom>_audio.tsv` | fotograma | puertos del CPU al APU, puertos del SPC, escrituras al DSP con su registro, **key-on**, digests de ambos flujos, **PC y registros del SPC700**, **los tres timers**, ocupacion del anillo, huella de la RAM del SPC |
+| `<rom>_fp.tsv` | 20 fotogramas | huella de WRAM y de la RAM del SPC: **el primer fotograma exacto de divergencia** |
+| `<rom>_events.tsv` | transicion | solo cuando el valor cambia; detalle byte a byte dentro de la ventana `VERBOSE_DESDE..VERBOSE_HASTA` |
+| `<rom>_replay.txt` | cambio de pad | pulsaciones en **reloj de invitado**, listo para `SNESRECOMP_REPLAY_FILE` |
+
+Tamano: **47 KB para 400 fotogramas, 3,5 MB para 29.560** (la traza vieja: 60 MB).
+Para la intro, 2000 fotogramas son 234 KB.
+
+**Las zonas vigiladas** (`RANGOS`, configurables) son la respuesta directa a
+"donde se fue el tiempo" yinclude el hallazgo de §22.17: `$C0859D-$C085D0`
+(spin del IPL, el que hardware nunca ejecuta), `$C084AE-$C084B4` (espera del
+latch `$D9`), `$C00221-$C00260` (handler de V-IRQ), `$C0032D` (tick por
+fotograma del driver de sonido), `$C08751`, `$C08F94` y `$00F400-$00F43F`
+(estado del motor de sonido en WRAM).
+
+**Defensas incorporadas, aprendidas de los fallos anteriores:**
+
+1. **CANARIO**: un callback de escritura sobre la pagina de pila (`$00:0100-$01FF`),
+   que recibe miles de escrituras por fotograma. Si da 0, los callbacks de
+   escritura no disparan en esa build y **todo lo que dependa de ellos es
+   mentira**: el log lo avisa. Ese fallo hizo que la sonda anterior perdiera el
+   98% de las escrituras a `$2100` sin que nada lo dijera.
+2. **`readMemory` con los argumentos en el orden correcto**: el orden no esta
+   verificado en esta maquina, asi que se prueban las dos formas y se recuerda
+   la que funciona. Adivinarlo daria huellas del bus equivocado.
+3. **Los hooks del SPC llevan SIEMPRE `cpuType` explicito**: sin el, caen en el
+   bus de la CPU, donde `$00F2/$00F3` son WRAM y no el DSP, y salen key-on falsos.
+4. **Un valor ausente se imprime como `-`, no como hex**: `-1 % 16 = 15` en Lua,
+   asi que imprimir un campo inexistente en hexadecimal daria `FFFFFFFF`, que es
+   indistinguible de un valor real. Es exactamente el tipo de dato creible y
+   falso que hay que evitar.
+5. **Digest con multiplicador 65599, no el 16777619 del FNV-1a canonico**: el
+   producto cabe en las 53 bits de un double de Lua y no se pierde precision.
+6. **Las huellas de WRAM van espaciadas** (`HUELLAS_CADA`, 20 por defecto): son
+   8.192 lecturas por toma, y subirlas a 1 mete el coste de Lua dentro de la
+   emulacion y falsea las medidas de tiempo.
+
+**Validador: `tools/check_lua.py`.** No hay Lua en esta maquina, asi que un error
+de sintaxis solo apareceria cuando el usuario ejecuta el script en Mesen, con la
+sesion a medias. Este script comprueba el equilibrio de bloques y de
+ parenteses distinguiendo codigo de cadenas y comentarios. **Calibrado contra
+los dos scripts antiguos que si funcionan: cero falsos positivos.** (El
+calibrado fue necesario: la primera version se comia los saltos de linea, asi
+que todos los numeros de linea valian 1 y el diagnostico era inservible, y
+acusaba de 30 errores a un fichero correcto.)
+
+**Lo que este script NO hace, y no disimula:** no comprueba el ARRANQUE del motor
+de sonido mas alla de las columnas de audio; para eso habria que enganchar el
+contador de instrucciones del SPC por region, que es lo siguiente que haria falta.
