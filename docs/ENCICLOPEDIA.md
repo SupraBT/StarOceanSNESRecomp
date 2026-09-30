@@ -3772,3 +3772,46 @@ acusaba de 30 errores a un fichero correcto.)
 **Lo que este script NO hace, y no disimula:** no comprueba el ARRANQUE del motor
 de sonido mas alla de las columnas de audio; para eso habria que enganchar el
 contador de instrucciones del SPC por region, que es lo siguiente que haria falta.
+
+### 22.19 CORRECCION a §22.17.3: el IPL del SPC700 NO es el culpable (2026-09-30, noche)
+
+**El punto 3 de §22.17 estaba mal y se retira.** Alli se afirmo que en hardware
+el SPC700 estaba en `$00EF` desde el f1 y que el motor se quedaba 19 fotogramas
+en el IPL. **Era un error de columna**: en `*_trace.tsv` la columna 30 es
+`spcsp` (la PILA del SPC700), no el PC. El PC real es la **columna 26**.
+
+Leida la columna correcta:
+
+```
+hardware: f1..f26  spcPC=00FFC5..00FFFD  sp=EF      f27.. spcPC=00391B  sp=FB
+motor:    f1..f24  spcPC=00FFC6..00FFF3  sp=EF      f25.. spcPC=00391B  sp=FB
+```
+
+**El motor coincide con hardware casi fotograma a fotograma**: los dos estan en
+el IPL (`$FFxx`) durante el arranque, los dos saltan a `$391B` en el f25-27, y
+los dos cambian la pila de `$EF` a `$FB`. El array `bootRom[0x40]` de `apu.c`
+es ademas **byte a byte identico al IPL de bsnes**, asi que tampoco ahi hay nada.
+**El IPL queda exonerado.** La lesson: antes de comparar una columna de un TSV
+hay que imprimir sus PRIMERAS filas una a una y numerarlas. Cuesto 20 minutos y
+estaba a punto de "arreglar" una linea de codigo que era correcta.
+
+**Lo que sigue en pie de §22.17 (todo medido, nada retirado):**
+
+1. La **deadline hace que la subida del motor de sonido coincida con hardware**
+   (22.002 contra 22.002, y 9.312 contra 9.318). El modelo de tiempo es correcto.
+2. El **invitado acaba 23 fotogramas de host dentro del spin `$C0859D`**, y en
+   hardware ese bucle se ejecuta **0 veces en los 400 primeros fotogramas**
+   (columna `hc`). Esto es lo mas fuerte que hay ahora mismo.
+3. El **SPC700 deja de escribir al DSP en el f49** (138 escrituras en f1-49,
+   8 en f50-99, 0 a partir de ahi) mientras hardware **sigue a 2,46 por
+   fotograma para siempre**. El codigo es el mismo y los puertos reciben lo
+   mismo, asi que el motor se queda parado por algo que no llega.
+4. El `RtlUploadSpcImageFromDpInternal()` **no se llama nunca** en este juego
+   (instrumentado y sin una sola salida): el `final_pc` y la rama `ipl_phase`
+   que §22.17 señalaba son CODIGO MUERTO aqui. La subida la hace el IPL real
+   emulado, byte a byte por los puertos, y se ve funcionando en el log.
+
+**Siguiente paso concreto:** el invitado espera en `$C0859D` algo que en hardware
+ya esta. Lo que hay que mirar es el estado del SPC en el instante en que el
+invitado entra en ese spin y que no ocurre en hardware: RAM del SPC, puertos de
+entrada y el estado del BRAM del DSP. Con eso deberia caer.
