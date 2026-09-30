@@ -2653,19 +2653,136 @@ son el tamano del trabajo por banco (`$C2` 9.036, `$C0` 6.656, `$C6` 5.440...).
 contador por banco ahi —y, mejor, atribuir el delta de `master_cycles` a ese
 punto— da la tabla complementaria. Sin eso solo se ve la parte interpretada.
 
-### 26.2 Nota: los sintomas de una corrida EN TURBO no se juzgan a oido
+### 26.2 La corrida larga iba a 1x: los sintomas de audio y de partida SON reales
 
-La corrida larga del 2026-09-30 16:13 se hizo con `TURBO_BURST=0,29330`, y de
-ella salieron estos sintomas reportados: "no tiene musica", "carga parte de la
-melodia pero mal", "los SFX de la cinematica y la pelea suenan, los de los
-cofres no". **En turbo el invitado produce ~3x mientras el dispositivo drena a 1x**
-(§22.16): la melodia sale troceada o muda por diseño, y los SFX cortos se
-reconocen mejor. Con el MISMO guion y **sin** turbo, `tools/audio_health.py` da
-`OK: 16 s con musica de 25 s` (medido en la puerta, §25.3). Conclusion: no juzgar
-audio en turbo, ni leer esos sintomas como regresion.
+Correccion de una conclusion mia. La corrida del 2026-09-30 16:13 se lanzo con
+`SNESRECOMP_TURBO_BURST=0,29330` y `TURBO_PRESENT_EVERY=0`, y **no hubo turbo**:
+el proceso arranco ~16:13:30 y el volcado se escribio a las 16:21:20, o sea
+**470 s para 29.331 frames = 62 fps**, y el usuario la vio a velocidad normal. La
+hipotesis "lo distorsiona el turbo" era falsa.
 
-Lo **que si es real** y queda abierto (no lo explica el turbo, porque es estado
-del invitado): la partida sigue su propio camino tras los cofres y **se bloquea
-al acabar la primera pelea**. Medirlo sin turbo, con `SNESRECOMP_HANG_GUARD`
-(volcado automatico de rutina + pila + flags) y comparando por reloj contra el
-trace.
+Causa medida: **`build-prof/Release/StarOcean.exe` era de las 2026-09-29 12:14**,
+anterior a `src/main.c` (09-29 15:02, donde vive el turbo) y a los cambios de
+motor de las 15:58 (`interp_bridge.c`, `common_rtl.c`). Un binario no ejecuta el
+codigo que no existia cuando se compilo: **los `SNESRECOMP_TURBO_*` de esa corrida
+fueron inertes** (por eso tambien la ventana se veia avanzar pese a
+`TURBO_PRESENT_EVERY=0`). Leccion de metodo: **antes de leer una variable de
+entorno como evidencia, comparar la fecha del exe con la de la fuente**; el log
+no lo dice. El binario ya esta recompilado (2026-09-30 16:25).
+
+Consecuencia: esos sintomas son estado del invitado y son fallos de verdad:
+
+* la melodia se carga a medias y suena mal, y despues de la cinematica no hay
+  musica;
+* dialogos y SFX suenan en la cinematica y en la primera pelea; los de los
+  **cofres no**;
+* la partida se va por otro camino tras los cofres y **el personaje se queda
+  clavado** al acabar la primera pelea. Ojo a la distincion: **los frames siguen
+  contando** (el motor avanza y ejecuta codigo), asi que no es el cuelgue por
+  force-blank que vigila `SNESRECOMP_HANG_GUARD`; es un estado de partida del que
+  no sale, y pide volcado de estado + comparacion por reloj contra el trace.
+
+El unico dato de audio limpio hasta ahora es el de la puerta con este mismo guion
+y sin turbo: `16 s con musica de 25 s` (§25.3), que solo cubre los primeros ~25 s
+(intro y menu), no la cinematica ni los cofres. **Siguiente medicion**: correr con
+`SNESRECOMP_DSPREG_TRACE_FILE` (escrituras al DSP en la linea de tiempo del
+invitado, incluido KON) y comparar por reloj contra los eventos `keyon`/`sdsp_*` y
+la columna `kon` del trace de Mesen: si los key-on cuadran, el fallo esta en la
+sintesis o en la entrega; si faltan, el driver del invitado ya se desvio.
+
+### 26.3 Aviso sobre esta misma tabla
+
+La tabla de §26 se midio con ese `build-prof` de las 12:14, o sea **con el motor
+anterior a los cambios de las 15:58**. El reparto por banco no deberia moverse
+(esos cambios tocan caminos de fast-forward y de audio, no que codigo se ejecuta),
+pero **no esta verificado**: hay que repetir la corrida con el binario recompilado
+antes de usar la tabla para priorizar AOT.
+
+## 27. La entrada del replay se entregaba UN FRAME TARDE (2026-09-30)
+
+### 27.1 El instrumento: alinear por reloj e interrogar al pad
+
+El trace de Mesen trae, por frame, la mascara del pad, el master absoluto del
+invitado, el PC, los registros de la CPU y el banco de datos
+(`*_trace.tsv`, leyenda en sus 13 primeras lineas). Nuestro `[fstate]` imprime
+`master`, `pad`, `PB`, `DB`, `resume`... en cada frontera de frame, asi que los
+dos lados se pueden alinear **por reloj master** (`tools/divergencia_mesen.py`),
+que es exacto, en vez de por indice de frame (§25).
+
+Comprobado antes de sacar conclusiones:
+
+* la columna `in` y la columna `pin` son **identicas en las 29.560 filas**, o sea
+  Mesen no cambia el pad a mitad de frame: `in(fr)` es lo que el juego vio
+  durante el frame `fr`;
+* en regimen, nuestro master por frame avanza exactamente 357.368 ciclos
+  (1364 x 262), y nuestra frontera de frame cae entre +50.900 y +52.800 ciclos
+  (0,14-0,15 de frame) **despues** de la de Mesen: el residuo es siempre
+  positivo, asi que nuestra frontera esta siempre por detras del inicio del frame
+  de hardware.
+
+Primera medida: la mascara de A que hardware tiene en los frames **1173-1177**
+(el `New Game`) la entregabamos en **1174-1178**: misma duracion, un frame tarde.
+El aparato de filtraciones, sin embargo, se mide con correlacion cruzada sobre
+las 29.560 muestras (`tools/divergencia_mesen.py`), no con un caso suelto:
+
+| desplazamiento `s` (comparamos nuestro pad contra `in(fr+s)`) | frames de cambio acertados |
+|---|---|
+| `s=-1` | **890/890 (100,00 %)** |
+| `s=0` | 443/890 (49,78 %) |
+| `s=+1` | 1/890 (0,11 %) |
+
+`s=-1` perfecto significa que **la mascara que presentabamos durante el frame
+`fr` era la que hardware tenia en `fr-1`**: toda transicion entraba un frame
+tarde. Es un desplazamiento *sistematico*, no ruido de borde.
+
+### 27.2 Mecanismo, que es una cuestion de semantica de la clave
+
+El motor elige la mascara del frame que **va a ejecutar** leyendo el master **al
+inicio** de ese frame (`replay_key_now()` + `replay_mask_for_key()` en
+`src/main.c`, antes de `RunOneFrameOfGame`). Como los frames son contiguos en el
+reloj, el inicio del frame `fr` de hardware es exactamente `M(fr-1)`, el master
+del **frame anterior**. Pero `tools/mesen_replay_por_reloj.py` keyeaba cada
+evento al master del frame **en que se observo el cambio**, que es el **final**
+de ese frame (`M(fr)`): la clave queda dentro del frame siguiente, y la mascara
+solo entra en vigor un frame despues. Medio frame de desfase de semantica se
+materializa en un frame entero de retraso porque nos sobra 0,15 de frame de
+residuo.
+
+Arreglo: la clave de un evento es el reloj del **inicio** del frame en que la
+mascara es valida, o sea el del frame anterior
+(`mesen_replay_por_reloj.py --clave frame-start`, ahora por defecto; el
+comportamiento viejo queda como `--clave frame-end` para reproducir guiones ya
+validados). Verificado **sin recompilar**, simulando el cargador del motor sobre
+el log que ya existia (`--simular`):
+
+| guion | `s=0` | `s=-1` |
+|---|---|---|
+| viejo (`frame-end`) | 443/890 (49,78 %) | 890/890 (100,00 %) |
+| nuevo (`frame-start`) | **890/890 (100,00 %)** | 443/890 (49,78 %) |
+
+Que la simulacion del guion viejo reproduzca exactamente el fallo medido es la
+validacion del simulador: predice 100 % en `s=0` para el guion nuevo.
+
+### 27.3 Por que esto explica "el personaje se queda clavado"
+
+En un recorrido guiado a mano, cada pulsacion y cada suelta entran un frame
+tarde; el invitado recorre un poco mas de lo que debia en cada giro y acaba
+contra una pared o fuera de la casilla que dispara el evento (el puente, la
+puerta, el cofre). El motor sigue corriendo y **los frames siguen contando**
+—justo lo que reporto el usuario— pero la partida ya no es la grabada. No es un
+cuelgue por force-blank ni un bucle infinito: es **deriva de estado por entrada
+desplazada**.
+
+Corolario de metodo: con `s=+1` el acuerdo es del 0,11 %, o sea el pad correcto
+no aparece en ningun vecino. Un desfase de entrada de un frame no se detecta
+"mirando si el boton llega": hay que correlacionar contra hardware frame a frame.
+
+### 27.4 Lo que NO arregla
+
+El pad se entrega ahora en el frame correcto, pero eso no toca la sintesis de
+audio ni la entrega: los sintomas de melodia a medias y de SFX de cofre
+ausentes (§26.2) siguen abiertos y hay que medirlos con la comparacion de
+key-on por reloj (`SNESRECOMP_DSPREG_TRACE_FILE` contra `keyon`/`kon` del
+trace), sabiendo que el trace de DSP registra **cambios del espejo** y hardware
+cuenta **escrituras al registro**, asi que hace falta un contador a nivel de
+escritura en el motor para que la comparacion sea valida.
