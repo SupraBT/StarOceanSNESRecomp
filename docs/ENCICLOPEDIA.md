@@ -2786,3 +2786,67 @@ key-on por reloj (`SNESRECOMP_DSPREG_TRACE_FILE` contra `keyon`/`kon` del
 trace), sabiendo que el trace de DSP registra **cambios del espejo** y hardware
 cuenta **escrituras al registro**, asi que hace falta un contador a nivel de
 escritura en el motor para que la comparacion sea valida.
+
+## 28. Fase 0: el build actual NO es byte-exacto contra LLE puro (2026-09-30)
+
+### 28.1 La palanca y por que hacia falta una medicion nueva
+
+La puerta A/B de `tools/verificar.py` compara una corrida contra **su propio
+baseline**, asi que no puede ver que el camino AOT difiera del interpretado: las
+dos corridas serian igual de divergentes y el A/B pasaria. La referencia de
+exactitud del proyecto es el **interprete puro**, y el motor ya trae la palanca:
+`SNESRECOMP_LLE_BOUNCE=0` desactiva el salto a los cuerpos AOT ("interpret-
+everything behavior (A/B differential lever)" en `interp_bridge.c`), con el
+criterio escrito alli mismo: *bounced (=1) vs interpreted (=0) must be
+guest-state bit-exact; any persistent split is a recompiler bug*.
+
+Experimento (`tools/ab_lle.py`): mismo binario (`build-dev`), mismo guion
+(`tools/input_scripts/mesen_master.txt`, 490 eventos keyeados al reloj, el
+arreglo de §27), 6.000 frames, con y sin bounce, en turbo y sin presentar
+(`SNESRECOMP_FORCE_TURBO=1 SNESRECOMP_TURBO_PRESENT_EVERY=0`, o sea **ventana
+en negro a proposito**: en esa configuracion no se juzga imagen ni sonido).
+
+### 28.2 Resultado: primer frame distinto = `f=1687`
+
+| campo | primer frame distinto |
+|---|---|
+| `cpu` / `master` (reloj) | **f=1687** |
+| `resume` (PC muestreado) | f=1688 |
+| `S` | f=1994 |
+| `DB` | f=5533 |
+| `PB` | f=5821 |
+| `nmiEn`, `inidisp`, `pad`, `r4200`, `hIrq`, `vIrq`, `irq`, `nmi`, `vTimer`, `E4`, `DA`, `AFB`, `AFD`, `D01`, `DP` | identicos en los 6.000 |
+
+En `f=1687` la diferencia es de **3 ciclos de CPU / 14 de master**, y aparece en
+la zona `$C086xx` — el mismo bucle de handshake con la APU cuyo tramo caliente es
+`$C0859D-$C085D0` (§26). El `resume` distinto (`C086BE` vs `C086C4`) es
+consecuencia: el muestreo cae unos ciclos antes en el mismo bucle, no en otra
+rutina.
+
+**La deriva esta acotada, no crece**: delta de master entre ambos lados, en los
+6.000 frames, `min = -48`, `max = +230`, mediana 0 (0,00013 de frame), y **en
+ningun frame** el delta llega a un frame (0/6.000 con `|delta| > 357.368`). Los
+campos de partida aguantan hasta `f=1993`, y `S`/`DB`/`PB` ahi tambien son
+muestreos a distinto punto del mismo flujo. Reparto: 4.312/6.000 frames (71,9 %)
+con reloj distinto y 1.656/6.000 (27,6 %) con `resume` distinto.
+
+### 28.3 Conclusion
+
+* Con el criterio estricto del proyecto (byte-exacto) **el build actual NO
+  reproduce LLE puro: primer frame distinto `f=1687`**. La documentacion de
+  `docs/BUILD.md` ya avisaba de la deriva del generador con otra medida
+  (exe-regenerado vs baseline validado: 21.628/23.700 frames distintos desde
+  `f1033`, -369.682 masters al final = 0,004 %); esta es la medida directa
+  AOT-vs-LLE en el mismo binario y localiza el origen en el contaje de ciclos
+  del handshake con la APU, no en la logica de partida.
+* Lo que **si** queda descartado: que el AOT cambie el estado de partida o el
+  numero de NMI/IRQ dentro de esos 6.000 frames. La discrepancia es de
+  contabilidad de ciclos en un tramo concreto.
+* Consecuencia para el plan de §4/§7: promover bancos no puede apoyarse en la
+  puerta A/B actual. La puerta necesita el A/B **contra LLE** (`tools/ab_lle.py`)
+  y la deriva del generador hay que cerrarla **antes** de ampliar cobertura.
+* Pendiente de repetir sin turbo (aqui turbo es neutral para el invitado, ya
+  validado 1.200/1.200 y 2.400/2.400) y de medir lo mismo con el `generated/`
+  archivado en `StarOceanRecomp-legacy-2026-09-29/generated/` (bankc0 14 KB y
+  bankc3 1 KB frente a los 502 KB y 55 KB actuales): eso separa "maquinaria AOT
+  del motor" de "bancos nuevos mal promocionados".
