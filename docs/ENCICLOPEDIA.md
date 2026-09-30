@@ -2913,3 +2913,64 @@ el resto del frame ya va en C. La palanca correcta es la Fase 2 del plan AOT
 Corolario de metodo: `SNESRECOMP_FRAME_STATE` y `SNESRECOMP_PHASE_MS` juntos
 localizan un atasco sin necesidad de saber el frame: el coste por frame dice
 *cuando* y el muestreador de PCs dice *donde*.
+
+## 32. Lista de trabajo AOT a partir del manifiesto del generador (2026-09-30)
+
+### 32.1 Ghidra: estado real y regla de uso
+
+Headless si funciona en esta maquina, con dos trampas ya resueltas:
+
+* la extension SNES esta instalada DOS veces (en la instalacion y en la carpeta
+  de usuario de Ghidra) y Ghidra aborta con "Multiple modules collided with same
+  name". No hay que borrar nada: se aisla con `APPDATA=<dir sin espacios>` para
+  el proceso hijo (en Windows el directorio de usuario sale de APPDATA, no de
+  `user.home`; y `user.home` ademas se parte por palabras porque `VMARG_LIST` va
+  sin comillas, asi que una ruta con espacios rompe el classpath).
+* JDK: no hay `java` en el PATH pero si
+  `C:\Program Files\Eclipse Adoptium\jdk-25.0.4.101-hotspot`; se pasa por
+  `JAVA_HOME` y `analyzeHeadless` arranca.
+* **El scripting Java no compila** en este montaje (`JavaScriptProvider` lanza
+  ClassNotFoundException sin error de compilacion visible). PyGhidra viene como
+  wheel en `Ghidra/Features/PyGhidra/dist`, sin instalar; usarlo exige decidir
+  aparte la instalacion de ese paquete. **Bloqueo conocido.**
+
+Regla de uso acordada (aviso del agente anterior, confirmado): **no mandar a
+Ghidra descompilar bancos enteros**; su analisis lineal inventa funciones y eso
+seria basura metida en el cfg. Ghidra aporta *estructura* (codigo vs datos,
+limites, destinos de llamada y tablas de salto) y esa estructura se **cruza
+siempre con lo que se ha medido que se ejecuta** antes de tocar un cfg.
+
+### 32.2 Lo que ya dice el generador, y que no estabamos usando
+
+`generated/program_manifest.json` (formato v3) trae, por nodo: entrada
+(`pc24` + estado `m/x`), `min_pc24`/`max_pc24`, `instruction_count`,
+`disposition` y **`reasons`**. Valores reales de `disposition`: `aot_eligible`
+(tiene cuerpo en C) y `lle_only` (se queda en el interprete).
+
+99 nodos, 75 raices. Motivos agrupados de los `lle_only`: `unproven_call` 32
+nodos (6.917 instrucciones), `truncated_call_continuation` 10 (2.212),
+`has_lle_indirect_edge` 2 (1.306), `cop` 4 (506), `brk` 21 (254),
+`structural_poison` 22 (491). Cada uno es un bloqueo **concreto y arreglable en
+el recompilador**, no una impresion: el de mas evidencia es `C00221-C002F3` (el
+manejador de IRQ, 280 instrucciones y **188 de 29.560 frames muestreados**),
+`lle_only` por `truncated_call_continuation` y `unproven_call_at_C0024E_to_C002F6`.
+
+### 32.3 Medida de cobertura (`tools/trabajo_aot.py`)
+
+Cruce de los 748 PCs distintos que se ven en el trace de hardware (una muestra
+por frame, 29.560) contra los rangos de los nodos:
+
+* **99,0 % de las muestras caen fuera de cualquier nodo**, y solo el 5,1 % del
+  banco `C3` cae dentro de codigo con C generado;
+* el codigo donde el juego **espera** cada frame (justo lo que pagamos en el
+  interprete) esta en bancos que no tienen ni cfg: `C2` (18.067 muestras), `CC`
+  (5.731), `C0` (2.544), `C1` (1.467), `C8` (1.244), `C6` (241);
+* **seis bancos sin ningun cfg**: `C1`, `C6`, `C7`, `C8`, `CA`, `CB`, `CC` (el
+  bucle del paron del puente, `$C62D95-$C62DA9`, esta en `C6`: no es que falte
+  una funcion, es que el banco entero no esta declarado).
+
+Cautela de lectura: 748 PCs es la *muestra de frontera de frame* (donde el
+invitado espera), no todo el codigo ejecutado (nuestro perfil vio 44.788 PCs
+distintos y no los vuelca completos: solo imprime los 60 primeros). Para la
+lista completa hay que volcar el histograma entero del perfil; esta medido lo que
+se puede medir hoy.
