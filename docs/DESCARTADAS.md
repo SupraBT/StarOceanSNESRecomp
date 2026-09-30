@@ -161,3 +161,30 @@ bucle*, no el estado del juego. `DP` sobrevive porque el juego lo deja fijo.
 del frame o acumulativo**, no un registro instantaneo. El pad lo era (§27) y el
 flujo de escrituras al puerto de la APU tambien (§30): los produce el driver de
 sonido como funcion del estado de partida, no del ciclo exacto.
+
+---
+
+## 2026-09-30 — Repetida sin querer: el reloj del APU siguiendo al master (2a vez)
+
+**Por que esta aqui otra vez.** El 2026-09-30 se rederivó desde cero la
+hipótesis que ya estaba descartada el día anterior. La forma de pensar "el APU
+usa una rejilla inventada en vez del reloj del invited, probemos el real" es
+atractiva y no cuesta 30 segundos, asi que **vuelve a aparecer**. Se probó
+igual: `SNESRECOMP_APU_REAL_CLOCK=1` sustituye `snes_frame_counter * 357368`
+por `g_cpu.master_cycles` en `rtl_apu_guest_cycle()` y en
+`rtl_sync_apu_frame_boundary()`.
+
+**Que se midio.** `dsp_ring_energy()` por fotograma (nuevo): con la deadline,
+energia **0 en los 624 fotogramas** igual que sin la puerta. Sin ningun cambio
+en el sintoma.
+
+**Regla que sale de ahi.** Antes de proponer "cambiar el reloj del APU por el
+del master", leer esta tabla. La causa **no** es el reloj del APU: con la
+deadline el SPC ejecuta exactamente los mismos 17.039 ciclos por fotograma
+(0 perdidos en el tope de 10.000), el invitado entrega las mismas 38.774
+escrituras a `$2140` con la cola siempre vacia, y los volumenes de canal del DSP
+se quedan sin programar. Ver ENCICLOPEDIA §22.16.
+
+**Donde si queda acotado.** En el spin del handshake de sonido `$C0859D`: con la
+deadline el invitado acaba 23 fotogramas de host parado en `$C085A6` (dentro de
+ese spin) y sin ella, 0 veces. Ahi, y no en el audio, hay que mirar.

@@ -3532,3 +3532,95 @@ detector: si la clave difiere, la comparación completa también fallaría.
 3. **El tamano de ventana NO era la causa.** Escala 1, 2 y 3 dan el mismo
    atasco; una primera corrida con escala 3 que no se atascó era ruido y
    produjo una correlacion falsa.
+
+### 22.16 El audio con la deadline: lo que se ha descartado de mas, y donde esta el atasco (2026-09-30)
+
+Sesion dedicada al audio con `SNESRECOMP_FRAME_DEADLINE=1` (§22.13), que es el
+UNICO bloqueo que queda para activar la deadline por defecto. La deadline es lo
+unico que arregla los tres bajones de fotograma del usuario (arranque, tercer
+logo, transicion al fondo estrellado), asi que cerrarla aqui desbloquea eso.
+
+**Lo que la deadline SI cambia, medido fotograma a fotograma** (`tools/fdiff.py`,
+`[fstate]` A vs B, 900 fotogramas): el reloj del invitado es IDENTICO salvo en
+**6 fotogramas de 900** — `f4` (el invitado se come 23.570.058 ciclos master de
+golpe en vez de 357.368: ese es el congelamiento de arranque), `f324`, `f701`,
+`f702`, `f705` y `f708` (1,1-2,4 M de golpe cada uno: el tercer logo y la
+transicion al fondo estrellado). Los tres sintomas del usuario estan ahi
+dentro. En los otros 894 fotogramas `master`, `irq`, `nmi`, `E1`, `D8`, `F7` y
+`resume` dan lo mismo. Los motivos de cesion del LLE tambien son los mismos en
+regimen permanente: `yIrq=1 yDL=0 yQuiesc=0 yWai=0` por fotograma en los dos
+modelos (`g_yield_*` en `interp_bridge.c`).
+
+**Descartes de hoy, todos con contador, ninguno con suposiciones:**
+
+| hipotesis | como se midio | resultado |
+|---|---|---|
+| Tope de 10.000 ciclos/call en `snes_catchupApu` estrangula al SPC | `g_apu_cycles_offered` vs `g_apu_cycles_run` | **FALSO**: 17.039 ofrecidos = 17.039 ejecutados, 0 perdidos, en los dos |
+| El invitado no entrega sus escrituras a `$2140` | `g_apu_port_writes` por frame | **FALSO**: 38.774 escrituras en los DOS modelos, cola siempre a 0, 0 descartadas |
+| La cesion por deadline rompe la sincronia APU↔CPU | `SNESRECOMP_APU_REAL_CLOCK=1` (reloj real en vez de `snes_frame_counter*357368`) | **FALSO**: identico. Y ya estaba en `DESCARTADAS.md` del 2026-09-29: no volver a proponerlo |
+| El fast-forward de quiescents se come el audio | `SNESRECOMP_NO_QUIESCENT_FF=1` | **FALSO**: silencio igual |
+
+**El sintoma, aislado por el lado correcto.** La pregunta "el motor entrega
+silencio" era la equivocada: el DSP ** produce muestras pero son todas
+ceros**. `dsp_ring_energy()` (nuevo, `SNESRECOMP_DSPSTAT=1`):
+
+| | `DEADLINE=0` | `DEADLINE=1` |
+|---|---|---|
+| primer frame con energia en el anillo | f328 | **ninguno, 0 de 624** |
+| energia en ese instante | 1.906.694 | 0 |
+
+Y el volcado del estado del DSP **en el MISMO instante de reloj de invitado**
+(`portClock=6876014`, `SNESRECOMP_DSP_DUMP_AT`) dice por que:
+
+```
+DEADLINE=0  echoVol=32/32 fir=7F/0000...  c0=08/FF c1=07/FF c2=06/FF c3=03/FF
+DEADLINE=1  echoVol=-32/32 fir=7F/0000...  c0=00/00  c1=00/00  c2=00/00  c3=00/00
+```
+
+Los volumenes de canal del DSP **nunca se programan** con la deadline. O sea:
+el motor de sonido nunca arranca, no es que arranque y suene bajo.
+
+**El dato mas nuevo y el que mejor acota el atasco:** el punto de reanudacion al
+final de cada fotograma de host (`resume` del `[fstate]`):
+
+```
+DEADLINE=0   C8F428 x277  C8F425 x207  C8F40F x14  C8F412 x17  C085A6 x0
+DEADLINE=1   C8F428 x236  C8F425 x178  C8F40F x15  C8F412 x16  C085A6 x23
+```
+
+Con la deadline el invitado se queda **23 fotogramas de host parado dentro de
+`$C085A6`**, que es el spin del handshake con el motor de sonido
+(`$C0859D SEI / LDA $002140 / CMP $002140 / BNE $C0859D`, el `HOT_LO` que ya
+vigilaba `tools/mesen_so_trace.lua`). **Sin deadline, 0 veces.** El invited no
+cede nunca a mitad de ese spin porque en el arranque se come 66 fotogramas de
+invitado de golpe y el handshake se resuelve dentro de ese ataco; con la
+deadline el handshake se estira y el invitado queda esperando.
+
+Esto NO explica todavia por que el motor no arranca, pero acota el problema a un
+solo sitio: **la interaccion entre la cesion por deadline y el spin del
+handshake de sonido `$C0859D`**. No es el APU, no es el DSP, no es el SPC, no es
+el invitado.
+
+**Lo que hace falta para cerrarlo (no se puede decidir sin esto).** El trace de
+`tools/mesen_so_trace.lua` (el grabador YA existe y el ROM esta en
+`F:\Recompilador Super Nintendo\Mesen\Star Ocean (Japan).sfc`), con dos preguntas
+separadas que la medicion actual no puede distinguir:
+
+1. En hardware, ¿el handshake `$C0859D` bloquea al invitado **23 fotogramas**
+   seguidos, o se resuelve siempre de golpe? Si en hardware es un bloque corto,
+   la cesion por deadline estaPartiendo el spin por un sitio que el hardware no
+   parte, y el arreglo es de la cesion, no del audio.
+2. En hardware, ¿en que **fotograma de invitado** empieza a sonar la musica de
+   la intro? Con `DEADLINE=0` el primer tick de `$C0032D` cae en el frame de
+   host 4 y con `DEADLINE=1` en el 69: en reloj de invitado **es el mismo**
+   (~70), porque sin deadline el invitado va 66 fotogramas por delante. Toda la
+   comparacion de audio que se ha hecho hasta ahora es en **tiempo de host**, y
+   por eso no puede separar "la musica llega tarde" de "la musica no llega".
+
+**Instrumentos nuevos (todos.env-gated, coste cero si no se activan):
+`SNESRECOMP_DSPSTAT=1` (energia del anillo y estado del DSP por fotograma),
+`SNESRECOMP_DSP_DUMP_AT=<portClock>` (volcado del DSP en un instante de reloj
+de invitado), `g_yield_*` (motivo de cesion del LLE), `spcOfrecido/Ejecutado/
+Perdido` y `pWrite/pCola/pColaMax/pDesc` en `[hstat]`.
+Herramientas: `tools/deadline_irq_ab.py`, `tools/fdiff.py`, `tools/pcm_health.py`.**
+

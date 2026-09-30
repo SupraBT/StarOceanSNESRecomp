@@ -243,6 +243,10 @@ void RunOneFrameOfGame(void) {
     snes_sync_master_clock(g_snes, 225 * 1364);
   }
 
+  /* CPU de proceso vs reloj de pared. Es la unica forma de distinguir
+   * "el hilo calcula" de "el hilo espera": si el CPU del proceso queda muy
+   * por debajo del reloj, el fotograma esta parado (sincronizacion, espera de
+   * evento, device); si van juntos, es trabajo real. */
   /* env-gated per-frame hot-spot stat (SNESRECOMP_HOTSTAT=1): cuantas
    * instrucciones se interpretaron y cuantas lecturas al puerto del SPC700
    * ($2140-$217F) se hicieron, y cuanto TIEMPO DE HOST se llevaron. Con esto
@@ -254,15 +258,42 @@ void RunOneFrameOfGame(void) {
     if (hs) {
       extern uint64_t g_hm_ops, g_hm_apu_reads, g_hm_apu_ns;
       extern uint64_t g_hm_iter_ns, g_hm_op_ns;
-      fprintf(stderr, "[hstat] f=%d ops=%llu apuRd=%llu | msBucle=%.2f "
-                      "msOpcode=%.2f msApu=%.2f msResto=%.2f\n",
+      extern uint64_t g_hm_bus_ns, g_hm_bus_n;
+      extern uint64_t g_apu_cycles_offered, g_apu_cycles_run;
+      fprintf(stderr, "[hstat] f=%d ops=%llu apuRd=%llu busRd=%llu | msBucle=%.2f "
+                      "msOpcode=%.2f msBus=%.2f msApu=%.2f | spcOfrecido=%llu "
+                      "spcEjecutado=%llu spcPerdido=%lld\n",
               counter_global_frames, (unsigned long long)g_hm_ops,
               (unsigned long long)g_hm_apu_reads,
+              (unsigned long long)g_hm_bus_n,
               (double)g_hm_iter_ns / 1e6, (double)g_hm_op_ns / 1e6,
               (double)g_hm_apu_ns / 1e6,
-              (double)(g_hm_iter_ns - g_hm_op_ns - g_hm_apu_ns) / 1e6);
+              (double)(g_hm_iter_ns - g_hm_op_ns - g_hm_apu_ns) / 1e6,
+              (unsigned long long)g_apu_cycles_offered,
+              (unsigned long long)g_apu_cycles_run,
+              (long long)g_apu_cycles_offered - (long long)g_apu_cycles_run);
+      { extern uint64_t g_yield_irq, g_yield_deadline, g_yield_quiesc,
+                     g_yield_wai;
+        printf("       yIrq=%llu yDL=%llu yQuiesc=%llu yWai=%llu\n",
+               (unsigned long long)g_yield_irq,
+               (unsigned long long)g_yield_deadline,
+               (unsigned long long)g_yield_quiesc,
+               (unsigned long long)g_yield_wai);
+        g_yield_irq = 0; g_yield_deadline = 0; g_yield_quiesc = 0;
+        g_yield_wai = 0; }
+      { extern uint64_t g_apu_port_writes, g_apu_port_queue_max,
+                     g_apu_port_dropped;
+        extern unsigned apu_portQueueDepth(void *);
+        printf("       pWrite=%llu pCola=%u pColaMax=%llu pDesc=%llu\n",
+               (unsigned long long)g_apu_port_writes,
+               g_snes->apu ? (unsigned)apu_portQueueDepth(g_snes->apu) : 0u,
+               (unsigned long long)g_apu_port_queue_max,
+               (unsigned long long)g_apu_port_dropped);
+        g_apu_port_writes = 0; g_apu_port_queue_max = 0;
+        g_apu_port_dropped = 0; }
       g_hm_ops = 0; g_hm_apu_reads = 0; g_hm_apu_ns = 0;
-      g_hm_iter_ns = 0; g_hm_op_ns = 0;
+      g_hm_iter_ns = 0; g_hm_op_ns = 0; g_hm_bus_ns = 0; g_hm_bus_n = 0;
+      g_apu_cycles_offered = 0; g_apu_cycles_run = 0;
     } }
   /* env-gated per-frame render-state trace (SNESRECOMP_FRAME_STATE=1):
    * logged just before SoDrawPpuFrame, so inidisp is exactly what the
