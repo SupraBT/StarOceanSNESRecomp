@@ -3815,3 +3815,57 @@ estaba a punto de "arreglar" una linea de codigo que era correcta.
 ya esta. Lo que hay que mirar es el estado del SPC en el instante en que el
 invitado entra en ese spin y que no ocurre en hardware: RAM del SPC, puertos de
 entrada y el estado del BRAM del DSP. Con eso deberia caer.
+
+### 22.20 La capa de configuracion del DSP es IDENTICA a hardware (2026-09-30, noche)
+
+Instrumentado el SPC700 por dentro (puertos de salida, escrituras a $F2/$F3) y
+comparado con el trace de hardware. Se cae otra hipotesis y se acota mucho mas.
+
+**1. EL SPC700 NO SE PARA (retira §22.17.3).** Escrituras del SPC por
+fotograma, nuestro motor (con deadline) contra hardware:
+
+| bloque | puertos del SPC (motor / hw) | escrituras al DSP (motor / hw) |
+|---|---|---|
+| f1-50 | **220 / 220** | 0 / 0,2 |
+| f51-100 | **62 / 62** | 2 / 1,6 |
+| f101-350 | **3 / 3,2** | 2 / 2,46 |
+
+Empiezan igual y siguen igual. El motor de sonido **funciona al ritmo
+correcto**, siempre. La afirmacion de §22.17 de que "deja de escribir al DSP en
+el f49" era **FALSA**: venia de un contador (`SNESRECOMP_DSPREG_TRACE_FILE`) que
+solo registra el cambio de valor, asi que "0 escrituras" queria decir "0
+cambios de valor", que no es lo mismo. **Regla: un contador que filtra no cuenta
+accesos, cuenta cambios, y las dos cosas se confunden con facilidad.**
+
+**2. EL REGISTRO DEL DSP ES IDENTICO, REGISTRO A REGISTRO.** Con
+`tools/dsp_regs_hardware.py` se reconstruye el registro del DSP de hardware a
+partir de las lineas `sdsp_data` del trace y se compara con el del motor:
+
+```
+frame 120 y frame 380:
+  registros que hardware escribe y el motor no ...... 0
+  mismos registros con VALOR distinto ............... 0
+  hardware escribe 21 registros; el motor, ademas, 107 (que no le hacen falta)
+```
+
+Los 21 registros que hardware programa ($0C,$0D,$0F,$1C,$1F,$2C,$2D,$2F,$3C,
+$3D,$3F,$4D,$4F,$5C,$5D,$5F,$6C,$6D,$6F,$7D,$7F) estan en el motor **con el
+mismo valor exacto**, tanto a los 120 como a los 380 fotogramas. La
+configuracion del DSP (ADSR, pagina DIR, buffer de eco, retardo de eco) esta
+**bien**.
+
+**3. Luego el silencio NO es del registro: es de los DATOS.** Si el registro
+coincide y aun asi la salida es cero, lo unico que queda es que el secuenciador
+no encuentra muestras: el BRAM que lee el DSP (la RAM del SPC), la pagina DIR
+con su extension de direccion ($2F/$3F), o el propio mezclador/`mute`. Los
+datos de la subida llegan bien (22.002 escrituras, §22.17), asi que el
+sospechoso es COMO se leen, no si llegaron.
+
+Herramienta nueva: **`tools/dsp_regs_hardware.py`** reconstruye el registro del
+DSP de hardware desde el trace y lo compara con el del motor, registro a
+registro y valor a valor, en el fotograma que se le pida. Convierte 56 MB de
+eventos en una tabla de 21 numeros que se puede mirar de un vistazo.
+
+**Estado honesto:** el IPL y el registro del DSP quedan descartados con datos.
+El problema es el camino de los DATOS de audio dentro del emulador, que es una
+capa distinta y no se ha tocado.
