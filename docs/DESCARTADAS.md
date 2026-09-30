@@ -124,3 +124,40 @@ f270 C38FAD, f413 C2FCF8).
 **Leccion para la puerta.** El baseline de una escena tiene que salir de una
 grabacion real de una persona jugando, no de un guion inventado: lo segundo mide
 que el emulador no se rompe, pero no que la escena ocurra.
+
+## 29. Los registros de CPU por frame NO sirven como oraculo de estado (2026-09-30)
+
+**Hipotesis.** El trace de Mesen trae A/X/Y/SP/D/DB/P por frame; anadiendo los
+mismos campos al `[fstate]` del motor y alineando por reloj master, la primera
+divergencia de registros localizaria el frame exacto en que nuestra partida se
+separa de la grabada. Objetivo: explicar por que el personaje se traba.
+
+**Instrumento.** Campos `A=`, `X=`, `Y=`, `P=` anadidos al final de `[fstate]`
+(prefijo intacto), y `tools/oraculo_estado.py`, que compara por ventanas de 60
+frames y busca el desplome del acuerdo. Corrida: 19.697 frames de la sesion de
+Mesen con la entrada keyeada al reloj.
+
+**Medida (19.481 frames comparables).**
+
+| registro | coincide |
+|---|---|
+| `DP` | 95,4 % |
+| `DB` | 27,4 % |
+| `X` | 21,3 % |
+| `P` | 20,4 % |
+| `S` | 19,2 % |
+| `Y` | 16,8 % |
+| `A` | **0,2 %** |
+
+**Rechazada.** A practicamente nunca coincide y el resto oscila sin patron; no hay
+desplome que localizar porque el acuerdo ya es malo desde el primer frame. La
+causa es de metodo, no de emulacion: **el instante de muestreo manda sobre el
+valor**. Nuestra frontera de frame cae ~0,15 frame despues de la de Mesen, y en
+ese punto del bucle los registros son valores de trabajo (A es casi siempre
+scratch): comparar registros instantaneos mide *donde esta el PC dentro del
+bucle*, no el estado del juego. `DP` sobrevive porque el juego lo deja fijo.
+
+**Leccion.** Un oraculo de estado tiene que ser un observable **estable dentro
+del frame o acumulativo**, no un registro instantaneo. El pad lo era (§27) y el
+flujo de escrituras al puerto de la APU tambien (§30): los produce el driver de
+sonido como funcion del estado de partida, no del ciclo exacto.

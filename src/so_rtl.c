@@ -261,7 +261,8 @@ void RunOneFrameOfGame(void) {
       fprintf(stderr, "[fstate] f=%d nmiEn=%d resume=%06X inidisp=%02X "
                       "cpu=%llu master=%llu pad=%04X r4200=%02X hIrq=%d vIrq=%d "
                       "irq=%llu nmi=%llu vTimer=%u E4=%04X DA=%02X AFB=%02X "
-                      "AFD=%04X D01=%02X DB=%02X PB=%02X DP=%04X S=%04X\n",
+                      "AFD=%04X D01=%02X DB=%02X PB=%02X DP=%04X S=%04X "
+                      "A=%04X X=%04X Y=%04X P=%02X\n",
               counter_global_frames, g_snes->nmiEnabled,
               (unsigned)interp_bridge_lle_resume_pc(),
               g_ppu ? (int)g_ppu->inidisp : -1,
@@ -287,7 +288,17 @@ void RunOneFrameOfGame(void) {
                * sostiene DB=$00 en los 2000 frames de la traza, asi que
                * cualquier DB != 0 aqui es divergencia de banco, no de flujo. */
               (unsigned)g_cpu.DB, (unsigned)g_cpu.PB,
-              (unsigned)g_cpu.D, (unsigned)g_cpu.S);
+              (unsigned)g_cpu.D, (unsigned)g_cpu.S,
+              /* Oraculo de estado: el trace de Mesen trae a/x/y/sp/d/db/p por
+               * frame, y el recomp no tiene PC que comparar (CpuState no
+               * guarda PC: el codigo AOT usa control de flujo nativo y el LLE
+               * solo publica su punto de reanudacion). Los registros SI son
+               * estado del invitado y se pueden alinear por reloj: si se
+               * mantienen iguales durante miles de frames y en un punto se
+               * despegan, ese punto es la divergencia (no el ruido de ±1
+               * instruccion del instante de muestreo). */
+              (unsigned)g_cpu.A, (unsigned)g_cpu.X, (unsigned)g_cpu.Y,
+              (unsigned)g_cpu.P);
     }
   }
 }

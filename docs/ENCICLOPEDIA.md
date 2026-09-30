@@ -2850,3 +2850,66 @@ con reloj distinto y 1.656/6.000 (27,6 %) con `resume` distinto.
   archivado en `StarOceanRecomp-legacy-2026-09-29/generated/` (bankc0 14 KB y
   bankc3 1 KB frente a los 502 KB y 55 KB actuales): eso separa "maquinaria AOT
   del motor" de "bancos nuevos mal promocionados".
+
+## 30. Oraculo de progreso por el flujo de la APU, y la trampa del trace sin buffer
+
+### 30.1 Dos intentos fallidos antes de dar con el observable
+
+1. **PC del invitado**: no existe. `CpuState` no guarda PC (el codigo AOT usa
+   control de flujo nativo y el LLE solo publica su punto de reanudacion), y el
+   `g_dispatch_log` del motor solo registra transferencias indirectas.
+2. **Registros de CPU por frame** (§29, `DESCARTADAS.md`): medido, inutilizables
+   (A coincide en el 0,2 %) porque manda el instante de muestreo.
+
+El observable que si vale es el **flujo del CPU a los puertos de la APU**
+(`$2140-$2143`). Lo produce el driver de sonido del juego, que es esclavo de la
+logica de partida: cambia cuando la partida cambia de escena, de musica o dispara
+un SFX. Ademas es un observable **acumulativo** (cuenta de escrituras por frame y
+secuencia de valores), inmune al desfase de borde de frame.
+
+Instrumentos: el motor ya trae `SNESRECOMP_APU_PORT_RW=<ruta>` (cada lectura y
+escritura del CPU al puerto, con frame de invitado y master) y el trace de Mesen
+trae el mismo flujo del lado hardware en `*_events.tsv` (`src=cpu`, `kind=w214x`,
+con `fr`, `master`, `addr`, `val`) mas el conteo por frame en las columnas
+`r2140`/`w2140` del `*_trace.tsv`. El comparador es `tools/oraculo_apu.py`.
+
+### 30.2 Trampa medida: el trace sin buffer hace que el invitado se arrastre
+
+`SNESRECOMP_APU_PORT_RW` escribia con `setvbuf(_IONBF)`. En el arranque, el IPL
+polea `$2140` miles de veces por frame, asi que eso es un `write()` del sistema
+por linea: medido, **3.348 lineas/s y 3 frames de invitado en 25 s**. En pantalla
+eso es una ventana negra con el contador clavado en `f2`, que parece un cuelgue y
+no lo es. Arreglado en `cpu_state.c`: buffer de bloque de 1 MB, volcado una vez
+por frame, y filtros `SNESRECOMP_APU_PORT_RW_W` / `_R` (0 apaga cada sentido) y
+`SNESRECOMP_APU_PORT_RW_FROM=<frame>`. Con buffer y solo escrituras: **2.861
+frames en 22 s**, la velocidad normal del motor.
+
+## 31. Los parones y el bloqueo del puente son codigo INTERPRETADO caliente (2026-09-30)
+
+Medido con `SNESRECOMP_PHASE_MS=1` (coste por intervalo) y el muestreador de PCs
+calientes, en la sesion completa de Mesen con la entrada keyeada al reloj.
+
+**Coste por frame:** el primer intervalo del arranque (subida del SPC/S-DD1) es
+`emu=81,66 ms` (12 FPS); en regimen sano `emu=3,00 ms` (236 FPS). El tramo de
+**estado bloqueado** se sostiene en `emu=12,5-13,7 ms` (61-66 FPS) — cuatro veces
+el coste sano. Entre medias hay picos puntuales (27,21 ms en un intervalo), que
+son los parones que se ven.
+
+**Donde se va:** el bloque de PCs calientes del tramo bloqueado es
+
+| PCs | muestras | banco | AOT |
+|---|---|---|---|
+| `$C62D95-$C62DA9` | ~1,0-1,4 % cada uno (~11 % el bloque) | `$C6` | **ninguno** |
+| `$C0516C-$C0518E` | ~0,7 % cada uno | `$C0` | parcial |
+
+Los dos bucles son codigo del invitado y estan **enteros en el interprete**: el
+banco `$C6` no tiene ni una linea de C generado (§26: 40,0 M pasos LLE, el
+segundo mayor del reparto) y el tramo `$C0518x` de `$C0` no esta cubierto por su
+cfg. Es decir, el bloqueo del puente no es un fallo de logica de partida: es el
+juego esperando en un bucle que interpretamos a ~0,9 M instrucciones/s mientras
+el resto del frame ya va en C. La palanca correcta es la Fase 2 del plan AOT
+(promocionar `$C6`, empezando por `$C62D95-$C62DA9`), no tocar el motor.
+
+Corolario de metodo: `SNESRECOMP_FRAME_STATE` y `SNESRECOMP_PHASE_MS` juntos
+localizan un atasco sin necesidad de saber el frame: el coste por frame dice
+*cuando* y el muestreador de PCs dice *donde*.
