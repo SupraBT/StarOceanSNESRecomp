@@ -299,6 +299,22 @@ void RunOneFrameOfGame(void) {
                * instruccion del instante de muestreo). */
               (unsigned)g_cpu.A, (unsigned)g_cpu.X, (unsigned)g_cpu.Y,
               (unsigned)g_cpu.P);
+      /* Ramo del handler de V-IRQ $C0:0221 (medido por desensamblado, no
+       * supuesto):
+       *   $C0:0229 TCD #$0000      -> DP=$0000 ; $C0:022F/0230 -> DB=$00
+       *   $C0:0234 LDA $D8          tipo de IRQ (1 -> JMP $02B0, 2 -> JMP $025F)
+       *   $C0:0244 LDA $F7/EOR #1/STA $F7   conmutador de medio-frame
+       *   $C0:024C INC $E1          contador de ticks del handler
+       * Si la columna `irq` sube pero $E1 no, el vector entra y el handler se
+       * queda dentro ANTES del INC: ahi esta el cuelgue, y ningun cfg lo
+       * arregla porque $C0:0221 cae a interp_tier_dispatch (LLE), sin cuerpo
+       * AOT. Diagnostico puro; coste cero si SNESRECOMP_FRAME_STATE no esta. */
+      fprintf(stderr, "[irqstate] f=%d D8=%02X E1=%02X F7=%02X AF8=%02X\n",
+              counter_global_frames,
+              (unsigned)cpu_read8(&g_cpu, 0x00, 0x00D8),
+              (unsigned)cpu_read8(&g_cpu, 0x00, 0x00E1),
+              (unsigned)cpu_read8(&g_cpu, 0x00, 0x00F7),
+              (unsigned)cpu_read8(&g_cpu, 0x00, 0x0AF8));
     }
   }
 

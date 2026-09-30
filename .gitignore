@@ -216,3 +216,6 @@ _git_verify/
 # ── Generated AOT sources are tracked (see above) ──────────────────────
 !generated/
 !generated/program_manifest.json
+
+# build de trabajo de la copia de experimentacion
+build-hm/
