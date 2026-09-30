@@ -3443,3 +3443,92 @@ no se publica ni se adopta.
 
 Tambien: `generated/` en el arbol es la union, pero `out/gen-ab` es el arreglado;
 **no** confundir cual exe esta usando cual build dir.
+
+
+## ESCANEO DE SPIN DEL INTÉRPRETE: EL PICO DE 90-250 ms NO ERA EL S-DD1
+
+(2026-09-30, rama de la COPIA `E:/Experimento Hermes`. Instrumentado con
+`SNESRECOMP_HOTSTAT=1`, que imprime `[hstat]` por fotograma.)
+
+### Lo que se sospechaba y NO era
+
+El fotograma lento se sospechaba a la zona de codificación; el S-DD1
+quedó **descartado por medición**: el contador `sdd1_prof_ms` da **0,00 ms** en
+f702 y f708, y `sdd1_sync()` es literalmente un `no-op` (`snes/apu.c`: no
+necesita reloj, el S-DD1 avanza con la lectura del bus). El coste del
+descompresor no puede aparecer ahí. Tampoco era el dibujado (1,3-2,9 ms de
+90-250 ms), ni el DMA (0,00 ms), ni el hilo de audio: con `EnableAudio=0`
+verificado (`audio=0` parseado y **cero** líneas de "first audio callback") el
+pico sigue ahí (114/152/89 ms).
+
+### Lo que sí era
+
+`bridgeq` (el puente de interpretación entero) = **100 % de `emu`** en los
+picos. El invitado ejecuta, instrucción a instrucción, el handshake del
+SPC700 de `$C0:8598`:
+
+    $C0:859D  SEI
+    $C0:859E  LDA $002140      ; lee el puerto de salida del SPC700
+    $C0:85A2  CMP $002140      ; compara con OTRA lectura inmediata
+    $C0:85A6  BNE $859D        ; espera a que el SPC700 deje de cambiarlo
+
+13 ciclos de CPU por vuelta (2+4+4+3). f702 da **125.922 opcodes** y 55.535
+lecturas de `$2140`. En hardware esa espera es de microsegundos; aquí la paga
+el intérprete, y por eso el fotograma cuesta 100-250 ms de host.
+
+### El cuello real: el detector de spin
+
+Reparto medido de f702 (audio apagado, `[hstat]`):
+
+    bucle del interprete, total      189,59 ms
+      dentro de interp816_runOpcode   79,61 ms
+      lecturas al puerto APU          28,17 ms   (504 ns por lectura)
+      resto (bookkeeping del bucle)   81,81 ms   <-- 647 ns POR INSTRUCCION
+
+647 ns de "resto" por opcode es imposible para un intérprete normal (~50 ns).
+El culpable es el detector de quiescencia: en **cada** instrucción rellena un
+`QuiescentState` y recorre un anillo de 64 ranuras comparando 17 campos. Peor:
+el filtro `steps-old->step<=256` **no filtra nada**, porque la ranura se
+escribe en `qring[steps & 63]`, o sea que ninguna entrada tiene más de 63
+pasos de antigüedad. Siempre comparaba las 64.
+
+### El arreglo: pre-filtro exacto por generación de épocas
+
+La igualdad completa exige que `write_epoch` **y** `continuous_read_epoch`
+coincidan, y ambos son monótonos. Luego una ranura escrita antes del último
+cambio de esas épocas **no puede coincidir**. Se guarda el step del último
+cambio (`q_floor`) y solo se recorre el arco de ranuras reciente, en **orden
+ascendente de índice** para que el primer ganador sea el mismo que antes.
+Encima, una clave de 64 bits sobre campos que la igualdad ya exige acts como
+pre-filtro conservador.
+
+Medido (mismo binario, `SNESRECOMP_QSCAN_FILTER` alternado, audio apagado,
+3 corridas alternadas para que la deriva del host no juegue a favor):
+
+    fotograma   original            parche
+    f702        188-202 ms bucle    124-130 ms      resto 81-88 -> 30-31 ms
+    f705        114-115 ms bucle     75 ms          resto 56-57 -> 19-21 ms
+    f708        100-101 ms bucle     70-71 ms       resto 47 -> 17-20 ms
+
+    media de emu 5,02 ms -> 3,97 ms  (-21 %)
+    peor frame visible: f705 108 ms -> 66 ms, f708 89 ms -> 63 ms
+
+**Exactitud: 1200 fotogramas de `[fstate]` bit a bit idénticos con el filtro
+puesto y quitado, en 3 corridas.** El filtro no puede cambiar la decisión del
+detector: si la clave difiere, la comparación completa también fallaría.
+
+### Dos trampas de medicion que costaron tiempo (anotadas para no repetirlas)
+
+1. **Este host tiene deriva grande entre corridas**: el mismo fotograma con
+   estado de invitado identico midio 152 ms en una corrida y 250 ms en otra.
+   Una sola medicion por configuracion NO vale. Hay que alternar A/B/A/B y
+   comparar.
+2. **El ternario de las variables de entorno se puede invertir en silencio.**
+   `(_e && _e[0] && _e[0] != '0') ? 1 : 0` significa "activado"; puesto al
+   reves (`? 0 : 1`) el flag `=0` activa la funcion y `=1` la desactiva, y
+   los resultados salen **invertidos** sin ningun sintoma. Pasó dos veces
+   (`SNESRECOMP_NO_QSCAN` y `SNESRECOMP_QSCAN_FILTER`) y en ambas la primera
+   conclusion fue la contraria de la buena.
+3. **El tamano de ventana NO era la causa.** Escala 1, 2 y 3 dan el mismo
+   atasco; una primera corrida con escala 3 que no se atascó era ruido y
+   produjo una correlacion falsa.

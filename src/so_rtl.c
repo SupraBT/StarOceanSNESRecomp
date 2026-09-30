@@ -243,6 +243,27 @@ void RunOneFrameOfGame(void) {
     snes_sync_master_clock(g_snes, 225 * 1364);
   }
 
+  /* env-gated per-frame hot-spot stat (SNESRECOMP_HOTSTAT=1): cuantas
+   * instrucciones se interpretaron y cuantas lecturas al puerto del SPC700
+   * ($2140-$217F) se hicieron, y cuanto TIEMPO DE HOST se llevaron. Con esto
+   * se decide si un fotograma lento es el bucle del handshake $C0:859D o
+   * otra cosa. Los contadores se puesta a cero aqui, que es el fin de frame. */
+  { static int hs = -1;
+    if (hs < 0) { const char *e = getenv("SNESRECOMP_HOTSTAT");
+                  hs = (e && e[0] && e[0] != '0') ? 1 : 0; }
+    if (hs) {
+      extern uint64_t g_hm_ops, g_hm_apu_reads, g_hm_apu_ns;
+      extern uint64_t g_hm_iter_ns, g_hm_op_ns;
+      fprintf(stderr, "[hstat] f=%d ops=%llu apuRd=%llu | msBucle=%.2f "
+                      "msOpcode=%.2f msApu=%.2f msResto=%.2f\n",
+              counter_global_frames, (unsigned long long)g_hm_ops,
+              (unsigned long long)g_hm_apu_reads,
+              (double)g_hm_iter_ns / 1e6, (double)g_hm_op_ns / 1e6,
+              (double)g_hm_apu_ns / 1e6,
+              (double)(g_hm_iter_ns - g_hm_op_ns - g_hm_apu_ns) / 1e6);
+      g_hm_ops = 0; g_hm_apu_reads = 0; g_hm_apu_ns = 0;
+      g_hm_iter_ns = 0; g_hm_op_ns = 0;
+    } }
   /* env-gated per-frame render-state trace (SNESRECOMP_FRAME_STATE=1):
    * logged just before SoDrawPpuFrame, so inidisp is exactly what the
    * renderer will see. Diagnostic only; zero cost when unset. */
