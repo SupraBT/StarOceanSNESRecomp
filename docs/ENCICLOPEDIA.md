@@ -3227,4 +3227,65 @@ PyGhidra 3.1.0 quedo en el venv de Ghidra
 (`%APPDATA%/ghidra/ghidra_12.1.4_PUBLIC/venv`). **Ojo con la trampa 32.1**: el
 parche de "aislar `APPDATA`" para esquivar la extension SNES duplicada **rompe
 PyGhidra** (el venv vive bajo el APPDATA real). Para usar PyGhidra hay que
-arreglar la extension duplicada, no aislar el APPDATA.
+arreglar la extension duplicada, no aislar el APPDATA. Hace falta tambien
+`JAVA_HOME` (Adoptium 25) ademas de `GHIDRA_INSTALL_DIR`; con eso,
+`tools/ghidra_desasm.py` desensambla un rango de ROM y es la forma barata de
+leer un bucle concreto.
+
+## 36. El toolchain es CIEGO a la mitad baja de los bancos `$C0-$FF` (2026-09-30)
+
+### 36.1 El sintoma: el codigo mas caliente del juego no se puede decodificar
+
+El bloqueo de la caminata no es un cuelgue -- el juego sigue funcionando, lo que
+diverge es el estado -- y **no es cobertura**: con el artefacto del 53,7 % de
+trabajo en C se bloquea igual. Lo que si aparecio al mirar el codigo caliente:
+
+* `$C62D95` (102.830 pasos interpretados en 6000 frames) esta **SIN NODO**, y los
+destinos de llamada que el escaneo vio cerca (`$C62D45`, `$C62DAE`, `$C62DCD`)
+salen del analizador con **0 instrucciones** (`empty_decode`);
+* `tools/ghidra_desasm.py` sobre `ROM[0x62D45..]` da codigo 65816 perfecto:
+`PHP PHB SEP #$20 LDA #$7E PHA PLB` ... o sea **el despachador de objetos por
+frame**: recorre 0x40 ranuras de 0x40 bytes desde `$7E:2000` y por cada ranura
+cuyo flag tiene el bit 15 llama a `JSR $2DAE`. Es el codigo que mueve al
+personaje;
+* el IRQ/NMI (`$C0:0221`, verificado a mano: `SEI/PHB/PHD/REP #$30` con `RTI` en
+  `$025E`) tambien sale `empty_decode`.
+
+### 36.2 La causa
+
+`rom.rs::is_rom_address` aplicaba la regla LoROM "solo `$8000-$FFFF` es ROM" a
+TODO banco, pero en Star Ocean los bancos `$C0-$FF` son la **ventana MMC del
+S-DD1** (`sdd1_mmc_linear` en el runner): los **64 KB completos** son ROM, de una
+pagina de 1 MB elegida por `$4804-$4807`. El *calculo* de offset ya era correcto
+(`((bank & 0x3F) << 16) | addr`, que para `$C6:2D45` da 0x62D45); lo que estaba
+mal era la **validez**.
+
+Firma que confirma el diagnostico sin mirar el codigo: **todos** los bloques del
+mapa de Ghidra del agente anterior estan en la mitad alta (`84B8`, `8594`,
+`862A`, `8812`, `8812`, `0221`...) salvo `0221`, y todo lo que decodifica bien en
+el manifiesto tambien (`C0:84B8`, `C3:8F50`). La mitad baja era invisible.
+
+### 36.3 Estado del arreglo
+
+* **Rust (`rom.rs`): arreglado.** `is_rom_address` devuelve `true` para
+  `$C0-$FF` y `lorom_offset` resuelve la ventana a la pagina 0 (antes ademas
+  **paniqueaba**: `addr $0000 not in LoROM range`). `cargo build` limpio.
+* **Falta el emisor Python**: mantiene su propria ventana LoROM
+  (`codegen.py:195` `offset = canon_bank * 0x8000 + (pc - 0x8000)`,
+  `wrapper_autoroute.py:95` `bank_start = lorom_offset(bank, 0x8000)`), asi que el
+  test del despachador sigue emitiendo 446 bytes vacios. Ese es el siguiente
+  cambio, y sin el no se puede medir la ganancia real.
+
+### 36.4 Lo que NO explica, y el instrumento que falta
+
+El arreglo es una palanca de **cobertura**, no la causa de la divergencia: el AOT
+es byte-exacto contra el interprete puro, asi que meter ese codigo en C no
+cambiaria la caminata. Para localizar la divergencia (el personaje anda distinto)
+se necesita comparar el **estado del invitado** frame a frame, y ahi el trace de
+Mesen **no llega**: trae PC, registros y banco de datos por frame, pero **no
+WRAM**. El estado que manda aqui es la **tabla de objetos** (`$7E:2000`, 0x40
+ranuras de 0x40 bytes segun 36.1).
+Instrumento pedido (regla 3 de AGENTS.md): un trace de Mesen que registre, por
+frame del tramo de la caminata, la palabra de flags y la posicion de la ranura
+del jugador (`$7E:20xx`) -- con eso se localiza el frame exacto en que nuestra
+caminata se separa de la grabada y se desensambla *ese* codigo.
