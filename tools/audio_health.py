@@ -57,8 +57,10 @@ def run(bdir, deadline, frames, script=None):
     if script:
         # Mismo input que el A/B: el audio tiene que sonar tambien mientras se
         # navega (el fallo de §22.13 se cebaba justo con el driver de sonido).
-        env["SNESRECOMP_REPLAY_FILE"] = script
-        env["SNESRECOMP_REPLAY_UP_PAUSE_MS"] = "0"
+        # El reloj lo declara el propio guion (ver tools/replay_clock.py).
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        import replay_clock
+        replay_clock.apply(env, script)
     run_env = env
     proc = subprocess.run([exe], cwd=os.path.join(ROOT, bdir, "Release"),
                           env=run_env, stdout=subprocess.DEVNULL,

@@ -29,6 +29,9 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 REL = None
 
+sys.path.insert(0, HERE)
+import replay_clock  # noqa: E402  (reloj del guion: ver tools/replay_clock.py)
+
 
 def safe(text):
     """Consola Windows en cp1252: los mensajes no pueden llevar no-ASCII."""
@@ -65,10 +68,11 @@ def env_for(deadline, script=None):
     if deadline is not None:
         e["SNESRECOMP_FRAME_DEADLINE"] = str(deadline)
     if script:
-        e["SNESRECOMP_REPLAY_FILE"] = script
-        # Sin la pausa de 1,5 s tras cada Up: es reloj de pared y solo alarga la
-        # corrida (no toca el estado del invitado).
-        e["SNESRECOMP_REPLAY_UP_PAUSE_MS"] = "0"
+        # El guion declara su reloj en la cabecera (`# clock: master`). Una
+        # grabacion de hardware NO se puede keyear al indice de frame: nuestro
+        # invitado no va al mismo tiempo que el hardware en el mismo frame, y
+        # las pulsaciones cortas se pierden (ver tools/replay_clock.py).
+        replay_clock.apply(e, script)
     return e
 
 

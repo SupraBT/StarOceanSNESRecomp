@@ -2500,4 +2500,63 @@ logo): el trabajo es real del invitado, no una lentitud nuestra, y la palanca
 correcta sigue siendo llevarlo a AOT. El `sdnmi` (NMIs por frame) es `0` en
 18.157 frames y `1` en 11.403, con **una sola corrida de 18.035**: eso no cuadra
 con un juego a 60 fps con musica sonando, asi que **ni `sdnmi` ni su corrida se
-deben usar** hasta que el instrumento se revalide.
+deben usar** hasta que el instrumento se revalide. **Hipotesis ya confirmada en
+§25.2 para esa corrida: el juego lleva NMI deshabilitada a proposito**
+(`[fstate] r4200=21`, bit 7 a 0, `nmiEn=0`, con V-IRQ activa `vIrq=1`) y espera
+el vblank sondeando `$4212`, asi que `sdnmi=0` puede ser correcto. El PC del
+trace (`pc`) NO se puede comparar contra nuestro `resume=` por indice de frame:
+los dos relojes no van juntos (ver §25).
+
+## 25. Un guion de entrada de hardware va keyeado al RELOJ, no al frame (2026-09-30)
+
+### 25.1 El sintoma que lo destapo
+
+Tres corridas guiadas por `TracesMesen/..._replay.txt` (`build-prof` 15:59 y
+16:01, `build-dev` con sondas 16:03) mostraban en la ventana la partida
+**parada en el menu de seleccion de nombre**; la de 16:01 sin musica (iba en
+turbo, que por diseño no se escucha) y la de 16:03 con musica. El usuario lo
+leyo, con razon, como "se atasca ahi". **No es el juego: es el fichero.**
+
+### 25.2 Medido (mismo build, mismo tramo de 4.000 frames de invitado)
+
+| | keyeado al indice de frame (`replay.txt`) | keyeado al master (`mesen_master.txt`) |
+| :--- | :--- | :--- |
+| frames con `pad!=0` entregados | **9** | **14** (los 14 que hay en la grabacion) |
+| primera pulsacion (A, fr=1173 = master `419.139.852`) | **no llega al invitado** | aterriza en host f=1093 con key `419.194.234`: **+54.382 master ≈ 7 ms** |
+| desfase de relojes en fr=1170 | nuestro invitado va **+27.710.032 master (≈2,4 s) adelantado** | el keyeo lo absorbe |
+| estado final en f=4.000 | `resume=C2FCA0`, AFB=8C, E4=005D (aparcado) | `resume=C62D9F`, PB=`$C6`, AFB=30-35 |
+| resultado | menu quieto | **la partida avanza, con musica** |
+
+Causa: nuestro invitado **no** va al mismo tiempo que el hardware en el mismo
+indice de frame (el boot se comprime y a fr=4.000 vamos ~2 % por delante:
+`master` 1.458.061.454 vs 1.429.413.536). Y la clave del replay se muestrea una
+vez por frame de host, asi que una pulsacion de 4-5 frames de invitado (60-80 ms)
+cae en otro instante del juego o fuera de la ventana. Dos sintomas que parecian
+uno: el `r4200=21` (`nmiEn=0`, con `vIrq=1`) que se ve en el `[fstate]` explica
+tambien el `sdnmi=0` de la traza de Mesen (§24.4).
+
+### 25.3 El arreglo, ya en el repo
+
+* `tools/replay_clock.py` — el guion **declara su reloj** en la cabecera
+  (`# clock: master`) y `verificar.py` / `audio_health.py` lo aplican solos. Un
+guion sin directiva se sigue keyeando al frame, como `grabada.txt`.
+* `tools/mesen_replay_por_reloj.py` — convierte el `*_trace.tsv` de Mesen en un
+guion keyeado a `master`/`cpu`/`frame`. Reproduce **byte a byte** los eventos que
+funcionaron.
+* `tools/input_scripts/mesen_master.txt` — la sesion completa de Mesen: 29.560
+frames, **11.664 con pulsacion**, 489 eventos de cambio, primera clave 306.900 y
+ultima 10.480.422.216.
+* Puerta: `python tools/verificar.py --script=mesen_master.txt` → audio PASA
+(`16 s con musica de 25 s`, sin silencio absoluto) y **A/B 2.100/2.100
+byte-identico** contra su baseline propio (`build-dev/Release/logs/`
+`golden_fstate_mesen_master.log`, local como los demas).
+
+### 25.4 Lo que deja abierto
+
+* El **desfase de ~2 %** del reloj de invitado frente al hardware en el mismo
+  frame hay que medirlo aparte: o es contabilidad del boot, o es tiempo de
+  invitado de mas (y afectaria a todo lo que se compare por frame).
+* El cuelgue **manual** e intermitente del §16.5 sigue sin explicacion: alli la
+  entrada era a mano, no un replay, asi que el keyeo no lo cubre.
+* Cualquier conclusion sacada de corridas guiadas por un guion keyeado al frame
+  (incluidas las de §16) es sospechosa y hay que **repetirla con el reloj**.
