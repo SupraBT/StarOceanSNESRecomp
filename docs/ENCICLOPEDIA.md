@@ -42,9 +42,15 @@
 - **Rebuild trace (requiere MSVC env):** `cmd //c ".\\build_trace.bat"`
   (el .bat hace `call vcvars64.bat` + `ninja -C build-trace`). Sin vcvars → error
   `stdint.h not found`.
+  **(2026-09-30: obsoleto.** `build_trace.bat` se eliminó de la raíz: el flag
+  `SNESRECOMP_ENABLE_TRACE` ya no existe en las fuentes (0 coincidencias en
+  `src/` y `snesrecomp/runner/src/`) y el árbol de builds es VS2022. La
+  instrumentación vive hoy en `build-dev` y va por variables de entorno, ver
+  §23.**)**
 - `SNESRECOMP_TRACE=1` habilita el debug server; con 0 todos sus calls son no-op
   (stubs inline en `debug_server.h`). Compilar `debug_server.c` requiere TRACE=1.
 - Flag del proyecto: `SNESRECOMP_ENABLE_TRACE=ON` en CMake → `build-trace/CMakeCache.txt`.
+  **(2026-09-30: flag eliminado del motor; ver §23.)**
 
 ## 3. Input: grabador/replay ELIMINADO (2026-08-24)
 
@@ -167,6 +173,11 @@ Comandos verificados:
 - `render_mode0.py` / `render_bg.py` — renderizan capas desde `build/saves/ppu_dump.bin`
   (VRAM 64KB + CGRAM 512B concatenados). Asumen tilemaps $4800/$4C00/$5000/$5800 y tiles
   $2000/$4000 — **esos supuestos eran de la época del hack; verificar contra la VRAM real.**
+  **(2026-09-30: ambas eliminadas de la raíz junto con `analyze_ppu.py`,
+  `decode_vram.py`, `vram_viewer.py`, `vram_visualizer.py`: nada en el árbol
+  produce ya `ppu_dump.bin`, así que eran herramientas muertas. Recuperables con
+  `git show <commit>^:<fichero>`. Lo vivo para lo mismo: `cosim/dump_ppu_cgram.py`
+  y `tools/oracle_overlay.py`. Ver §23.)**
 - PPM de referencia (estado con hack): `bg1_tiles.ppm`…`bg4_tiles.ppm` (256×256 atlases).
 
 ## 10. Gotchas de Windows / herramientas
@@ -2357,3 +2368,136 @@ Nota de metodo: la prueba `fps` de la puerta es sensible a la carga de la
 maquina. Una corrida completa dio mediana 57,7 fps (umbral 58) con el sistema
 ocupado y 60,2-60,2 fps al repetirla en solitario; antes de dar un fallo de fps
 por real, repetirla con la maquina tranquila.
+
+## 23. Limpieza de la raiz del arbol (2026-09-30)
+
+Motivo: la raiz mezclaba herramientas de la epoca del hack (`build/` + Ninja,
+`deps/SDL2-*`) con las del flujo actual (VS2022, `build-dev`, `tools/verificar.py`).
+Criterio aplicado fichero a fichero: **se queda solo si un documento vivo
+(README, `docs/*.md`) o el propio motor lo cita Y ademas puede correr contra
+artefactos que este arbol todavia produce.**
+
+Eliminados, rastreados (recuperables con `git show <commit>^:<fichero>`):
+
+| fichero | por que |
+|---|---|
+| `_check.py`, `_check2.py` | sondas GDI de ventana (brillo / "¿esta congelado?"). Sustituidas por `SNESRECOMP_FRAME_STATE` + `tools/verificar.py`; sin referencias en ningun documento. |
+| `analyze_ppu.py`, `decode_vram.py`, `vram_viewer.py`, `vram_visualizer.py` | leen `ppu_dump.bin`; ningun componente del arbol lo escribe ya. |
+| `render_bg.py`, `render_mode0.py` | idem (`build/saves/ppu_dump.bin`), y §9 ya marcaba sus supuestos de tilemap como de la epoca del hack. |
+| `test_vram.py` | simulador de juguete de la etapa S-DD1: no mide nada real. |
+| `trace_mode_trajectory.py`, `validate_drive.py` | `import so_drive`, modulo que no existe (estaba en `.gitignore` y ya no esta): rotos de origen. |
+| `build_msvc.bat` | configura Ninja + SDL2 mingw (`deps/SDL2-2.30.5/x86_64-w64-mingw32`), ruta que no existe; el flujo es VS2022 + SDL3. |
+| `build_trace.bat` | `ninja -C build-trace`; `SNESRECOMP_ENABLE_TRACE` ya no existe en las fuentes. |
+
+Basura de configure local, ignorada (borrada sin rastro en git): `CMakeCache.txt`
++ `CMakeFiles/` — un configure in-source con generador **Visual Studio 18 2026** y
+`SNESRECOMP_SDL_BACKEND=SDL2`, ajeno a los `build-*/` reales —, `_bd.log` y
+`build-clean-test-build.log` (logs de MSBuild), `logs_cfg_audit.txt` (configure que
+falla: sin SDL2) y `logs_cfg_prof.txt`.
+
+Se quedan, con motivo: `sdd1_ref.py` + `sdd1_compare.py` (oraculo independiente
+del S-DD1; `snesrecomp/runner/src/snes/ppu.c:2480` los cita como la validacion
+byte-exacta del motor) y `sdd1_engine_test.c`; `run_dev_forense.bat` y
+`run_clean_ab.bat` (lanzadores forense y A/B documentados en §16, con todas sus
+variables de entorno todavia vivas en el host — y estan en `.gitignore`, asi que
+borrarlos no seria recuperable); `SO_jap_ROM_layout.txt` (referencia obligatoria
+de `agents.md`).
+
+Fuera del alcance pedido (extensión distinta; señalados, no tocados):
+`build.ps1` y `build.sh`, plantilla del motor que compila la "static library" del
+flujo antiguo (`cmake -B build -G Ninja`) — el README apunta a
+`tools/regenerate_aot.ps1` y a cmake directo con VS2022.
+
+## 24. Revision externa (`HerramientasDecompilacion`) y trazas nuevas de Mesen (2026-09-30)
+
+Revision, no aceptacion: aqui queda **que esta verificado y que no**, medido por
+nosotros contra la ROM y contra los TSV, para no construir encima de una
+conclusion que no se sostiene.
+
+### 24.1 Lo que el HANDOFF acierta (verificado byte a byte)
+
+ROM de `StarOceanRecomp/`: 6.291.456 B, sha1 `A616EE34…EF8D` (el mismo que
+declara el replay de Mesen). Los cinco puntos de su §1.2 y §3 comprobados
+contra los bytes del fichero:
+
+| afirmacion | comprobacion |
+| :--- | :--- |
+| cabecera en `0x007FC0` con titulo `Star Ocean` | ✓ |
+| unico `JML $C00000` en `0x007EB9` (= NMI `$00:FEB9`) | ✓ `5C 00 00 C0` |
+| vector IRQ `$00:FEBD` -> `JML $C00221` | ✓ `5C 21 02 C0` (y **coincide con `config/bankC0.cfg`**, que ya llamaba `IrqHandler` a `0221`) |
+| `$C0:0000` = offset `0x000000` (MMC del S-DD1: 4 paginas de 1 MB en `$C0-$FF`; `$C6:2D95` = `0x062D95`) | ✓ coherente con el comentario de `bankC0.cfg`; la regla `offset = (banco-0xC0)<<16` para `$C0-$CC` |
+| `FUN_c00221` 3 salidas y terminadores en `025E/02AF/02D5` | ✓ los tres son `40` (RTI) |
+| `FUN_c08a5b` termina en `8C36`; `FUN_c05193` en `51C5`; `C8:0790` en `807AE`; `C8:07AF` en `807B3`; `C6:2D95` en `62DAD` | ✓ `60`/`6B`/`6B`/`6B`/`6B` |
+
+Su `analisis/c0_bloques.json` es lo mas valioso del lote: **bloques con final
+medido y su terminador** (`["8812","8C36","8C37",455,732522,"RTS"]`,
+`["5193","51C5","51C6",27,115177,"RTL"]`, `["0221","025E","025F",33,35442,"RTI"]`…)
+y `c0_freq.json` con la frecuencia por direccion. Eso si es material para
+rehacer `bankC0.cfg` (que hoy declara 19 funciones con finales redondeados
+`0400/0600/0800…`, todas sin medir).
+
+### 24.2 Lo que no se sostiene (dos afirmaciones)
+
+* **`FUN_c003b4` `03B4-0451`, "157 bytes"**: el byte `0x450` es `37` y el
+  `0x451` es `A9`; **ninguno es RTS/RTL/RTI**, y su propio `c0_bloques.json` no
+  tiene bloque empezando en `03B4` (si tiene `0387-03B3` con RTS). De las cinco
+  funciones medidas, esta es la unica sin terminar de verificar.
+* **`$C0:5151` es "duplicado exacto" de `$C0:5193`**: **falso**. Se comparan los
+  bytes: `5151` empieza con un envoltorio `E0 73 B8 D0 DC AB 28 6B`
+  (`CPX #$73 … RTL` en `5158`); el cuerpo arranca en `5159` y coincide con
+  `5193` solo en **8 bytes** (el prologo `08 8B E2 20 A9 7E 48 AB` = `PHP PHB`
+  / `SEP #$20` / `LDA #$7E` / `PHA` / `PLB`); desde ahi el resto son 10/58
+  bytes iguales. Son **dos rutinas hermanas con el mismo prologo y constantes
+  ajustadas** (p. ej. `F0 12` vs `F0 11`), no copias identicas: sirve para
+  elegir donde cortar, no como "una se mide y se replica".
+* Su §1.1 avisa de que `$C6` no aparece en 2,4 M instrucciones de `$C0` — pero
+  **se contradice con `MASTER_StarOcean_Knowledge.md`** (mismo lote, 2 h antes),
+  que da `$C2` 54,3 % y `$C6` 18,7 % como los dos bancos dominantes. Las dos no
+  pueden ser verdad. Las trazas que tenemos **no lo resuelven**: el TSV de
+eventos solo guarda E/S de registros (kinds `w214x`, `sd2100`, `keyon`…), **no
+  instrucciones ejecutadas**. Para zanjarlo hace falta nuestro propio
+  instrumento: un contador por banco en el puente (cada cuerpo AOT ya se
+despacha por banco y el interprete conoce `K:PC`). Nada de eso existe hoy
+  (`grep` de `per_bank|bank_exec|by_bank` en el motor: 0).
+
+### 24.3 Nota legal sobre `analisis/`
+
+`c0_uniq.json` y `c0_lines.txt` (32 MB, 2.436.154 lineas) son **bytes de la ROM
+cruspuestos** (contenido del cartucho). No pueden entrar al repo `StarOceanSNESRecomp`
+ni a `generated/`: solo las estadisticas (`c0_freq.json`, `c0_bloques.json`) son
+publicables.
+
+### 24.4 Las trazas de Mesen: el replay sirve, las columnas de estado NO
+
+`TracesMesen` = 2 sesiones; la buena es la 2.a (13:43:56 -> 14:01:36, `fr=29560`,
+`kon=28295`, sin el aviso de reset que aborted la 1.a). Contenido:
+
+| fichero | estado |
+| :--- | :--- |
+| `*_replay.txt` | **util** ya: 488 pulsaciones, `fr 1173…29327`, mascara en orden `$4218`, cabecera `# replay para el motor recomp` = formato de `SNESRECOMP_REPLAY_FILE`. Es el input largo que faltaba (8 min, con musica: `kon` crece de 0 a 28.294). |
+| `*_trace.tsv` | 29.560 filas × 34 columnas. **Vivas**: `fr in pin btn master cyc pc a x y sp r2140 w2140 spcw ini kon konf spc* r4212 hc sw4200`. **Muertas**: `bright bg scan ppufr p db` = `0`/`00` en **las 29.560 filas** (INIDISP no puede ser 0 con el juego en pantalla). |
+| `*_events.tsv` | 1,46 M de eventos de **E/S de registros** (no hay eventos de instruccion). |
+| `*_trace_status.log` | la sesion, el flag de reset y el volcado de claves de `getState()` que se hizo para depurar lo anterior. |
+
+**Prueba de que las columnas de estado estan muertas** (invariante falsable:
+`bright` debe ser el ultimo valor escrito a `$2100` del frame): hay 17.247
+frames con `ini=80+0F` y **`bright=0` en todos ellos**. Mientras eso no se
+arregle, cualquier conclusion que use INIDISP/BGMODE/scanline/`p`/`dbr` de este
+trace mide ceros. El script (`tools/mesen_so_trace.lua`) lee
+`ppu.screenBrightness`, `ppu.bgMode`, `ppu.scanline`, `ppu.frameCount` con
+`nz(g(ppu, …), 0)`, y las claves que existen de verdad en `getState()` (volcado
+en el `.log`) son `cpu.ps`, `cpu.dbr`, `ppu.screenBrightness`…; hay ademas dos
+nombres mal en las columnas de CPU (`p` y `db` en vez de `ps` y `dbr`). Tambien
+la **numeracion del comentario de cabecera esta desplazada una columna** desde
+`p`/`bright` (`# 14 bright` cuando `bright` es la 15 en la fila de cabecera).
+
+Donde si cruza con nosotros: la columna **`hc`** (instrucciones en
+`$C0859D-$C085D0`) da **261.614 instrucciones en 284 frames**, con picos de
+18.612 (fr=83), 17.575 (fr=11.578), 15.928 (fr=28.311)… y `fr=1` con NMI a 0
+para los primeros 18.035 frames. Es el **mismo bucle caliente** que medimos el
+29-09 en el recomp (~25.000 instrucciones interpretadas/frame en el hueco del
+logo): el trabajo es real del invitado, no una lentitud nuestra, y la palanca
+correcta sigue siendo llevarlo a AOT. El `sdnmi` (NMIs por frame) es `0` en
+18.157 frames y `1` en 11.403, con **una sola corrida de 18.035**: eso no cuadra
+con un juego a 60 fps con musica sonando, asi que **ni `sdnmi` ni su corrida se
+deben usar** hasta que el instrumento se revalide.

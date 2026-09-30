@@ -12,6 +12,7 @@ Tu objetivo es lograr una conversión idéntica byte-a-byte, ciclo-exacta y sin 
 - **Trace de Referencia:** `star ocean (japan)-trace.log` (Validación de ejecuciones/registros).
 - **Mapa de Memoria ROM:** Layout de bancos `SO_jap_ROM_layout.txt` (S-DD1, Chunks LZ, Tablas de Eventos, Data de Audio/Gráficos).
 - **Base de Conocimiento:** `ENCICLOPEDIA.md` (Documentación acumulativa del proyecto).
+- **Dónde viven los documentos (2026-09-30):** la documentación interna está toda en `docs/` — `docs/ENCICLOPEDIA.md`, `docs/PROTOCOLO.md`, `docs/DESCARTADAS.md`, `docs/SO_jap_ROM_layout.txt` y `docs/Datos Importantes de Consulta.md`. En la raíz solo quedan `README.md` y este `agents.md`.
 - **Repositorios de Referencia SNES:** Proyectos hermanos disponibles en el workspace (`SuperMarioWorldRecomp`, `MegaManXSNESRecomp`, `ZeldaALttPSNESRecomp`). Consultar para patrones de arquitectura en C sobre timings NMI/IRQ, pipeline de PPU/HDMA, OAM y bucles de ejecución.
 
 ---

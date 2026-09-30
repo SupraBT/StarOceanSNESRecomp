@@ -25,7 +25,7 @@ development:
   load stalls (e.g. ~193 ms → ~61 ms on the heaviest frame).
 
 Known gaps and the development roadmap are tracked in
-[`docs/BUILD.md`](docs/BUILD.md) and `Datos Importantes de Consulta.md`
+[`docs/BUILD.md`](docs/BUILD.md) and `docs/Datos Importantes de Consulta.md`
 (Spanish, internal reference).
 
 ## How it works
