@@ -3085,3 +3085,82 @@ cambiar el `generated/` sin puerta A/B es exactamente lo que §28 prohibe.
 | `tools/perfil_interp.py` | corrida de perfil que termina sola y vuelca el histograma |
 | `tools/trabajo_aot.py --hist` | lista de trabajo ordenada por trabajo interpretado |
 | `tools/aot_seeds.py` | semillas de cfg desde los `unproven_call` (util cuando el analizador sepa probar salidas) |
+
+## 34. El artefacto AOT del arbol no es reproducible, y `force_lle` clava el banco
+caliente al interprete (2026-09-30)
+
+### 34.1 Cual de los dos artefactos es cual (medido)
+
+Al regenerar con el toolchain comprometido y el cfg del repo salen **91 nodos,
+47 `aot_eligible`, `bankc0_v2.c` = 14.201 B, `bankc3_v2.c` = 1.130 B**. Eso es
+**identico, byte a byte, al snapshot archivado**
+`StarOceanRecomp-legacy-2026-09-29/generated/` (mismos tamanos, mismos 91 nodos,
+mismas 47 elegibles). Es decir: **el toolchain de hoy reproduce el baseline
+validado**.
+
+Lo que hay en el arbol es otra cosa: **99 nodos, 67 elegibles,
+`bankc0_v2.c` = 502.461 B, `bankc3_v2.c` = 54.754 B**. Y no se reproduce con
+ninguna entrada del repo:
+
+| entrada | nodos | elegibles |
+|---|---:|---:|
+| emision de hoy, cfg del repo, backend nativo | 91 | 47 |
+| idem, backend **python** | 91 | 48 |
+| idem **sin** `--cfg-roots` | 10 | 10 |
+| idem, 3 pasadas seguidas (¿punto fijo?) | 91 | 47 (identicas) |
+| **`generated/` versionado** | **99** | **67** |
+
+Descartado como causa: la cache por digest (3 pasadas identicas), el ROM (sha1
+correcto `A616EE34...`), la emision python vs nativa (91 vs 91 nodos) y `config/`
+(sin commits desde `e112a58`, 2026-09-03). `generated/` se versiono en el commit
+`9208252` (2026-09-28 17:13), **anterior** a `b3423a5` ("AOT v2", 2026-09-29
+15:42) del submodulo. Conclusion: el artefacto del arbol es **anterior al
+toolchain actual y no verificable**; el validado si lo es.
+
+### 34.2 La causa de que `$C0` no tenga C: 14 lineas `force_lle`
+
+`bankC0.cfg` declara 14 `force_lle` cuyos valores (`824E`, `8289`, `8319`,
+`8496`, `84B8`, `8500`, `8594`, `8598`, `85FE`, `878C`, `87B7`, `8812`, `887F`,
+`8A5B`) son **los arranques de los bloques calientes del driver S-DD1**. Aislado
+por familias de directivas, con el mismo cfg de bloques medidos:
+
+| cfg de `$C0` | nodos | elegibles | pasos interpretados cubiertos por C | cobertura |
+|---|---:|---:|---:|---:|
+| el inventado del repo (20 rangos de 0x200) | 91 | 47 | 74.993 | 0,36 % |
+| **desde bloques medidos (mapa de Ghidra)** | 46 | 21 | **510.510** | **2,46 % (6,8x)** |
+| + los 27 `exclude_range` | 45 | 21 | 510.510 | 2,46 % (inocentes) |
+| + los 14 **`force_lle`** | 34 | 11 | 24.345 | **0,12 %** |
+
+Y no es sutil: con `force_lle` el C emitido para `$C0` son **20 envoltorios que
+hacen `interp_tier_dispatch`** (14.731 B), mientras que el cfg medido emite
+cuerpos reales (`Ghidra_84B8`, `Ghidra_8594`, `Ghidra_85FE`, `Ghidra_878C`,
+`bank_C0_85CC`..., 75.857 B). Es decir, el banco `$C0` entero -- **29,3 % del
+trabajo interpretado, el NMI, el IRQ y el driver del S-DD1**, y el sitio donde el
+juego espera cada frame -- no tiene ni una linea de C.
+
+Comprobacion cruzada de que no es un problema de mapeo ni de datos: los bytes de
+`ROM[0x0221]` son `78 8B 0B C2 30 DA 5A 48 A9 00 00 5B E2 20 48 AB AD 11 42 ...`
+(65816 real: `SEI/PHB/PHD/REP #30/...`) con **RTI en `$025E`**, que es exactamente
+el bloque que Ghidra midio (`0221-025E`, 33 instrucciones, 35.442 ejecuciones).
+El mapeo lineal es correcto; el que no decodifica es el cfg.
+
+### 34.3 Nexo medido con el audio
+
+* zona del manejador de IRQ y el tick del driver (`C00221-C004FF`): **431.583
+  pasos = 2,1 % de TODO el trabajo interpretado** (7,1 % del banco). Es donde 19
+  situa el tick del driver de sonido, `C0:032D`;
+* los tres bloques que `force_lle` clava (`84B8`, `8594`, `8812`): **8,7 % del
+  trabajo total**.
+
+Prediccion falsable, para no volver a "parchear el audio": quitar esos
+`force_lle` (arreglando antes la razon por la que se pusieron) **tiene que**
+cambiar el comportamiento del driver de sonido. Eso se prueba con la puerta A/B
+y el volcado de PCM, no escuchando.
+
+### 34.4 Como no repetir esto
+
+* `tools/cfg_desde_bloques.py`: genera un cfg de banco desde bloques medidos y
+  **avisa** del coste de conservar `force_lle` (2,46 % -> 0,12 % en `$C0`).
+* `tools/perfil_interp.py` + `tools/trabajo_aot.py --hist`: cobertura medida.
+* Regla: **ningun artefacto AOT sin poder regenerarlo desde el repo**. Si no se
+  reproduce con las entradas versionadas, no es un baseline: es una foto.
