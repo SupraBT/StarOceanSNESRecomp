@@ -314,7 +314,12 @@ void RunOneFrameOfGame(void) {
    *
    * SNESRECOMP_FRAME_OBJTABLE_FROM/_TO bound the window (guest frames) so a
    * run only pays for the frames that matter. Diagnostic only; zero cost when
-   * the variable is unset. */
+   * the variable is unset.
+   *
+   * Reads the RAW WRAM array, not cpu_read8(): cpu_read8 latches open_bus and
+   * calls cart_note_cpu_bus, so a 4 KB-per-frame dump perturbs the very state
+   * it is trying to observe (measured: with 64 slots the table read as zero,
+   * with 1 slot it was alive). $7E:xxxx is g_ram[xxxx]. */
   { static int obj_n = -1; static long obj_from = 0, obj_to = -1;
     if (obj_n < 0) {
       const char *e = getenv("SNESRECOMP_FRAME_OBJTABLE");
@@ -334,7 +339,7 @@ void RunOneFrameOfGame(void) {
         fprintf(stderr, " %02X:", s);
         for (int b = 0; b < 0x40; b++)
           fprintf(stderr, "%02X",
-                  (unsigned)cpu_read8(&g_cpu, 0x7E, (uint16)(base + b)));
+                  (unsigned)g_cpu.ram[(base + b) & 0x1FFFFu]);
       }
       fputc('\n', stderr);
     }

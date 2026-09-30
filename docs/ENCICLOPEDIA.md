@@ -3383,3 +3383,63 @@ entrega es **a rachas**, y por tanto la duracion de la carga **no** se explica
 solo por la tasa del chip. Queda como pregunta abierta que mide exactamente el
 hueco de hardware (¿espera del invitado a vblank?, ¿una pantalla de carga?) --
 y no como una causa confirmada de la divergencia de la caminata.
+
+## §38. La tabla de objetos: instrumento fiable y donde vive el jugador
+
+### 38.1 El volcado tiene que leer WRAM en crudo, no `cpu_read8`
+
+El primer instrumento (`SNESRECOMP_FRAME_OBJTABLE`) volcaba las ranuras con
+`cpu_read8(&g_cpu, 0x7E, addr)`. Eso **altera la corrida que intenta observar**:
+`cpu_read8` fija `open_bus` y llama a `cart_note_cpu_bus`, y con 64 ranuras por
+frame (4 KB) el juego cae por otro camino. Medido: con **64 ranuras** la tabla
+salia **entera a cero** durante toda la caminata; con **1 ranura** estaba viva y
+moviendose. La conclusion es la trampa clasica del observador que perturba.
+
+Arreglo: leer `g_cpu.ram[(base + b) & 0x1FFFFu]` directamente (WRAM = `$7E`/`$7F`
+lineal), sin latchear `open_bus` ni notificar el bus. Con eso el volcado es
+**libre de efectos secundarios** y las 64 ranuras se pueden mirar a la vez.
+
+### 38.2 El jugador es la ranura 0 de la tabla de `$7E:2000`
+
+Con el dump limpio, en el tramo de la caminata guiada y con 64 ranuras:
+
+* **12 ranuras activas**: `00 01 02 20 21 22 30 31 32 3D 3E 3F` (el resto a cero);
+* la **ranura 0** es el jugador: sus bytes de posicion cambian cada frame
+  mientras hay entrada direccional, y se quedan fijos (salvo el byte 0 de
+  animacion, que cicla `88 -> 8E -> CE`) cuando el pad esta neutro;
+* el byte 0 de la ranura es el **indice de fotograma** del sprite (`88`/`8C`/
+  `8E`/`CE`), no una bandera.
+
+Es decir: el despachador `$C62D95` (32.1) recorre 0x40 ranuras de 0x40 bytes
+desde `$7E:2000` **incluida la del jugador**, y la tabla **no** esta vacia en la
+caminata — el "todo a cero" era el instrumento, no el juego.
+
+### 38.3 La caminata guiada esta en los frames ~14.838-15.945
+
+Sale del propio guion de entrada (tramo de entrada direccional sostenida), no de
+mirar el juego. Es la ventana en la que hay que comparar AOT contra interprete
+puro cuando la puerta A/B no sea byte-exacta global: `ab_run.py` cubre 6000
+frames, asi que la caminata **no** entra en esa pasada y hace falta una corrida
+acotada a `f>=14000` para verla.
+
+### 38.4 Estado del arbol (nada publicado)
+
+Commits **locales**, sin push, en `so-mmc-window` (submodulo) y en la rama de
+trabajo (padre):
+
+| repo | commit | contenido |
+|---|---|---|
+| `snesrecomp` | `782dbce` | ventana MMC en el emisor Python (4 ficheros) |
+| padre | `34eee91` | `generated/` (union) + `tools/ab_run.py` |
+| padre | `6a0a02e` | `bankC0.cfg`, `so_rtl.c`, `ENCICLOPEDIA.md`, puntero del submodulo |
+
+`generated/` sigue siendo el artefacto de la **union**, que **si pasa** la puerta
+A/B (identico 6000/6000). El artefacto con el arreglo MMC vive en `out/gen-ab`
+(ignorado) y **no** se instala: ya no cuelga (§37.3 se curo con `force_lle` sobre
+la familia de puertos `$2140-$2143` de la mitad baja de `$C0`), pero queda una
+**deriva de ~2 ciclos de CPU por frame** (`d_cpu` crece ~11.550 a frame 6000,
+`d_master` dentro de +-10). Mientras esa deriva no sea cero, no es byte-exacto y
+no se publica ni se adopta.
+
+Tambien: `generated/` en el arbol es la union, pero `out/gen-ab` es el arreglado;
+**no** confundir cual exe esta usando cual build dir.
