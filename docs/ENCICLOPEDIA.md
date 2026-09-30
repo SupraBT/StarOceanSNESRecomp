@@ -3275,6 +3275,8 @@ el manifiesto tambien (`C0:84B8`, `C3:8F50`). La mitad baja era invisible.
   `wrapper_autoroute.py:95` `bank_start = lorom_offset(bank, 0x8000)`), asi que el
   test del despachador sigue emitiendo 446 bytes vacios. Ese es el siguiente
   cambio, y sin el no se puede medir la ganancia real.
+  **RESUELTO en §37.1** (el bloqueo real era la puerta `pc >= $8000` del propio
+  `decoder.py`, no `rom_offset`); §37.2/§37.3 tienen la cobertura y la puerta A/B.
 
 ### 36.4 Lo que NO explica, y el instrumento que falta
 
@@ -3289,3 +3291,95 @@ Instrumento pedido (regla 3 de AGENTS.md): un trace de Mesen que registre, por
 frame del tramo de la caminata, la palabra de flags y la posicion de la ranura
 del jugador (`$7E:20xx`) -- con eso se localiza el frame exacto en que nuestra
 caminata se separa de la grabada y se desensambla *ese* codigo.
+
+## 37. La ventana MMC arreglada en el emisor: lo que destapa, la cobertura honesta y la carga del S-DD1 medida (2026-09-30)
+
+### 37.1 El emisor Python ya no es ciego (y por que el arreglo era mas grande de lo que parecia)
+
+Al hacer el cambio del §36.3 sobre el emisor Python aparece el bloqueo real, que
+no estaba en `rom_offset` sino **en el decodificador**: `v2/decoder.py` tenia
+`if not (0x8000 <= pc <= 0xFFFF): continue` en el bucle de trabajo, asi que
+cualquier PC por debajo de `$8000` se saltaba *aunque el offset fuera correcto*.
+Era el mismo error que `is_rom_address` en Rust, dos capas mas abajo, y el
+unico que impedia materializar el despachador. Cambios:
+
+* `snes65816.py::rom_offset` / `::is_rom_address`: bancos `$C0-$FF` resuelven a
+  `((bank & 0x3F) << 16) | addr` (ROM lineal, pagina 0) y son ROM en todo su
+  rango;
+* `v2/decoder.py`: nuevo `_pc_is_rom(bank, pc)` (acepta `< $8000` en `$C0-$FF`)
+  en los tres puntos que filtraban por PC;
+* `v2/codegen.py::_is_invalid_lorom_call_target`: para `$C0-$FF` solo aplica el
+  limite de tamano de ROM, no la regla `pc >= $8000`;
+* `v2/pha_rts_autoroute.py::_rom_offset_lorom`: misma ventana.
+
+**Verificacion byte a byte** (no por cobertura):
+`$C0:84B8` -> fichero `0x0084B8` = `08 E2 20 A9 04 8F 06 48` (`PHP; SEP #$20;
+LDA #$04; STA $4806` = escritura del registro de pagina del MMC -> **codigo
+real**); `$C6:2D45` -> `0x062D45` = `08 8B E2 20 A9 7E 48 AB` (`PHP PHB SEP
+LDA #$7E PHA PLB`, el despachador de objetos). Y el intérprete **ya mapeaba
+igual**: `sdd1_reset` pone `r4804..r4807 = 0,1,2,3`, asi que la ventana es la
+identidad `((bank-0xC0)<<16)|addr`. Antes decodificador e intérprete resolvian
+`$C0:84B8` a offsets **distintos** (lo que ya avisaba §36). Ahora coinciden.
+375/375 tests del toolchain en verde.
+
+### 37.2 La cobertura del 53,7 % estaba INFLADA por el decodificado erroneo
+
+Con el arreglo, el mismo artefacto se mide con `tools/trabajo_aot.py --hist`:
+
+| backend | nodos AOT | cobertura de pasos |
+|---|---|---|
+| nativo | 442 | **19,6 %** |
+| python | 815 | **42,4 %** |
+| union (sin arreglo) | — | 53,7 % |
+
+La contradiccion es aparente: la metrica cuenta un PC como "cubierto" cuando cae
+**dentro del rango `[min_pc24, max_pc24]` de un nodo AOT**, y el decodificado con
+bytes erroneos producia nodos con rangos anchisimos que atravesaban los PCs
+calientes sin ejecutar el codigo correcto (banco `$C3`: 90,1 % "cubierto" con
+cuerpos malos; el banco `$C6` daba 0 %). Con los bytes correctos, `$C6`/`$C8`/
+`$C5`/`$C1` suben a **100 %** y `$C3` cae a 4 %: el 53,7 % era un artefacto de
+la metrica, no trabajo real. Leccion: **la cobertura por rango no es evidencia de
+que el AOT se ejecute**; la unica evidencia es la puerta A/B.
+
+### 37.3 El artefacto arreglado NO es byte-exacto (y por que)
+
+`tools/ab_run.py` (nuevo: lanza las dos corridas del MISMO exe, `LLE_BOUNCE=1` y
+`=0`, con el reloj del guion) sobre `build-ab` (artefacto con el arreglo, backend
+python, 6000 frames):
+
+* **divergencia en el frame 5**: `resume=C8F425` (AOT) vs `C8F428` (LLE),
+  `cpu +3` / `master -18`. No es ruido de muestreo: los artefactos validados
+  daban `resume` identico 6000/6000.
+* **cuelgue del lado AOT en el frame 3665**: pila `bank_C0_0F72_M1X0` <-
+  `bank_C0_03B4_M1X0` <- `bank_C0_032D_M1X0`, SEH `0xC0000008`, direccion
+  salvaje. Son rutinas de la **mitad baja de `$C0`** (`$032D` = tick del
+  driver con el handshake `$2140`; `$0F72` = bucle de copia `LDA $40; BMI`;
+  `$03B4` = despacho por `$64`). El artefacto del arbol **no las tiene** (0
+  apariciones en `generated/bankc0_v2.c`), porque el bug las hacia invisibles.
+
+Conclusion de ingenieria: el arreglo es **necesario** (el emisor leia bytes
+equivocados en todo `$C0-$FF`) pero **destapa codigo que nunca se habia emitido
+como AOT** y que aun no esta validado. **No adoptar** todavia ni el artefacto del
+arbol ni el arreglado; la puerta A/B manda.
+
+### 37.4 La carga del S-DD1, medida por bytes (no por duracion)
+
+El runner ya trae el instrumento: `SNESRECOMP_SDD1STATS=1` (una linea por frame
+con actividad, bytes servidos por DMA y por lectura directa). Corrida de 1500
+frames con el guion de hardware:
+
+```
+f3      dma=2084   ...   f163  dma=6144   f316  dma=768   f317 dma=896
+f708    dma=47456  ...   f1149 dma=512    f1154 dma=3802  f1168 dma=15600
+f1172   dma=2048   ...   f1173+ dma=256 (streaming por frame)
+```
+
+La **primera carga (2084 bytes) se sirve ENTERA dentro del frame 3**; la segunda
+(47.456 bytes) tambien en **un** frame. Eso **no sostiene** la hipotesis del
+"28x" de §18.4 (que salia de 733/26 y asumia una tasa constante por byte): un
+estrangulamiento por byte que diera 733 frames para 2084 bytes implicaria ~0,35
+frames/byte, y entonces los 47.456 bytes tardarian ~16.600 frames, no uno. La
+entrega es **a rachas**, y por tanto la duracion de la carga **no** se explica
+solo por la tasa del chip. Queda como pregunta abierta que mide exactamente el
+hueco de hardware (¿espera del invitado a vblank?, ¿una pantalla de carga?) --
+y no como una causa confirmada de la divergencia de la caminata.

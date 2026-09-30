@@ -301,4 +301,42 @@ void RunOneFrameOfGame(void) {
               (unsigned)g_cpu.P);
     }
   }
+
+  /* env-gated object-table dump (SNESRECOMP_FRAME_OBJTABLE=<n_slots>).
+   *
+   * The per-frame dispatcher at $C6:2D45 walks 0x40 slots of 0x40 bytes from
+   * WRAM $7E:2000 and runs the update routine of every slot whose flag word
+   * has bit 15 set; that is the code that actually moves the player. The
+   * hardware trace we have carries registers, PC, DB and pad, but NOT WRAM, so
+   * the object table is ours to observe: dumping the first N slots once per
+   * guest frame is what lets us find the exact frame where a guided walk
+   * leaves the path and which field changed first.
+   *
+   * SNESRECOMP_FRAME_OBJTABLE_FROM/_TO bound the window (guest frames) so a
+   * run only pays for the frames that matter. Diagnostic only; zero cost when
+   * the variable is unset. */
+  { static int obj_n = -1; static long obj_from = 0, obj_to = -1;
+    if (obj_n < 0) {
+      const char *e = getenv("SNESRECOMP_FRAME_OBJTABLE");
+      obj_n = (e && e[0] && e[0] != '0') ? atoi(e) : 0;
+      if (obj_n < 0) obj_n = 0;
+      if (obj_n > 0x40) obj_n = 0x40;   /* the whole table, 0x2000-0x2FFF */
+      const char *fr = getenv("SNESRECOMP_FRAME_OBJTABLE_FROM");
+      if (fr && fr[0]) obj_from = atol(fr);
+      const char *to = getenv("SNESRECOMP_FRAME_OBJTABLE_TO");
+      if (to && to[0]) obj_to = atol(to);
+    }
+    if (obj_n > 0 && counter_global_frames >= obj_from
+        && (obj_to < 0 || counter_global_frames <= obj_to)) {
+      fprintf(stderr, "[objtab] f=%d", counter_global_frames);
+      for (int s = 0; s < obj_n; s++) {
+        unsigned base = 0x2000u + (unsigned)s * 0x40u;
+        fprintf(stderr, " %02X:", s);
+        for (int b = 0; b < 0x40; b++)
+          fprintf(stderr, "%02X",
+                  (unsigned)cpu_read8(&g_cpu, 0x7E, (uint16)(base + b)));
+      }
+      fputc('\n', stderr);
+    }
+  }
 }
