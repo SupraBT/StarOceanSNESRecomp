@@ -87,20 +87,48 @@ def load_observed(path, hasta):
     return obs
 
 
+def load_hist(path):
+    """Histograma completo del interprete (`<pc24> <pasos>` por linea).
+
+    Lo produce el motor al salir con SNESRECOMP_INTERP_PROFILE_FULL=<ruta>
+    (ver tools/perfil_interp.py, que ademas hace que la corrida termine sola).
+    Es la fuente correcta para ordenar la lista de trabajo: cubre TODO el codigo
+    interpretado, no una muestra de frontera de frame como el trace de hardware.
+    """
+    hist = defaultdict(int)
+    with open(path, "r", encoding="utf-8", errors="replace") as f:
+        for line in f:
+            c = line.split()
+            if len(c) != 2:
+                continue
+            try:
+                hist[int(c[0], 16)] += int(c[1])
+            except ValueError:
+                continue
+    return hist
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--manifest", default=os.path.join(ROOT, "generated", "program_manifest.json"))
     ap.add_argument("--cfg", default=os.path.join(ROOT, "config"))
-    ap.add_argument("--trace", required=True)
+    ap.add_argument("--trace", default=None,
+                    help="trace de hardware (muestreo por frame)")
+    ap.add_argument("--hist", default=None,
+                    help="histograma completo del interprete (recomendado)")
     ap.add_argument("--hasta", type=int, default=100000)
     ap.add_argument("--top", type=int, default=25)
     a = ap.parse_args()
 
+    if not a.trace and not a.hist:
+        ap.error("hace falta --hist (histograma del interprete) o --trace (hardware)")
+
     nodes, nroots = load_manifest(a.manifest)
     cfg = load_cfg(a.cfg)
-    obs = load_observed(a.trace, a.hasta)
-    print("manifiesto: %d nodos, %d raices | cfg: %d funciones declaradas | observado: %d frames con PC (%d PCs distintos)"
-          % (len(nodes), nroots, len(cfg), sum(obs.values()), len(obs)))
+    obs = load_hist(a.hist) if a.hist else load_observed(a.trace, a.hasta)
+    unidad = "pasos interpretados" if a.hist else "muestras_hw"
+    print("manifiesto: %d nodos, %d raices | cfg: %d funciones declaradas | observado: %d %s (%d PCs distintos)"
+          % (len(nodes), nroots, len(cfg), sum(obs.values()), unidad, len(obs)))
 
     # indice por banco: nodos nativos y nodos lle_only
     per_bank = defaultdict(lambda: dict(nat=[], lle=[], instr_nat=0, instr_lle=0))
@@ -118,8 +146,8 @@ def main():
                 return True
         return False
 
-    print("\n=== por banco: C generado vs interprete, contra lo que hardware ejecuta ===")
-    print("banco  nodos_C  nodos_LLE  instr_C  instr_LLE  muestras_hw  muestras_en_C  cobertura")
+    print("\n=== por banco: C generado vs interprete, contra lo que se ejecuta de verdad ===")
+    print("banco  nodos_C  nodos_LLE  instr_C  instr_LLE  observado  dentro_de_C  cobertura")
     tot_hw = 0
     for b in sorted(set(list(per_bank.keys()) + [p >> 16 for p in obs])):
         e = per_bank.get(b, dict(nat=[], lle=[], instr_nat=0, instr_lle=0))
@@ -168,7 +196,7 @@ def main():
     sinNodo = [(p, v) for p, v in obs.items()
                if not covered(p, nodes) ]
     sinNodo.sort(key=lambda x: -x[1])
-    print("\n=== PCs observados en hardware SIN NINGUN nodo en el manifiesto (huecos) ===")
+    print("\n=== PCs observados SIN NINGUN nodo en el manifiesto (huecos) ===")
     print("  total: %d PCs distintos, %d muestras (%.1f%% del total observado)"
           % (len(sinNodo), sum(v for _, v in sinNodo),
              100.0 * sum(v for _, v in sinNodo) / max(1, sum(obs.values()))))

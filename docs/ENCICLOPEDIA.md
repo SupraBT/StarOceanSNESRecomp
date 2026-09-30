@@ -2974,3 +2974,114 @@ invitado espera), no todo el codigo ejecutado (nuestro perfil vio 44.788 PCs
 distintos y no los vuelca completos: solo imprime los 60 primeros). Para la
 lista completa hay que volcar el histograma entero del perfil; esta medido lo que
 se puede medir hoy.
+
+## 33. El cfg NO es lo que sostiene el AOT: cobertura medida y semillas que no
+convierten nada (2026-09-30)
+
+### 33.1 Instrumento: el histograma completo ya termina solo
+
+`interp_hist_dump` se disparaba solo desde `atexit`, asi que obtener el
+histograma exigia que **un humano cerrase la ventana**. Ahora hay ademas
+`SNESRECOMP_INTERP_PROFILE_FULL_AT=<frame>`: vuelca UNA vez al alcanzar ese frame
+de invitado sin cortar la ejecucion (idempotente con el de salida).
+
+`tools/perfil_interp.py --frames N` lanza la corrida como se debe: reloj del
+guion por `tools/replay_clock.py`, turbo sin presentar, y
+`SNESRECOMP_EXIT_AT_FRAME=N` para que **el motor salga solo** y el `atexit`
+vuelque. Medido: 6.000 frames -> 21.297 PCs distintos, **20.741.683 pasos
+interpretados**, sin intervencion humana. Es la fuente correcta para ordenar la
+lista de trabajo (cubre todo el codigo interpretado, no una muestra de frontera
+de frame como el trace de hardware). `tools/trabajo_aot.py --hist <fichero>` la
+consume.
+
+Dos trampas de entorno, las dos silenciosas y las dos ya cerradas:
+
+* **`SNESRECOMP_REPLAY_CLOCK` no es la cadena que el motor imprime.** El cargador
+  solo entendia `cpu`/`master`; pasar `guest-master-clocks` (el texto del mensaje
+  de log) degradaba a **frames de host**, la entrada aterrizaba en instantes de
+  invitado equivocados y el juego se quedaba clavado en el titulo con las
+  estrellas. Ahora acepta tambien esos nombres y con cualquier otro **aborta**
+  (`exit(2)`) en vez de adivinar.
+* **`SNESRECOMP_FRAME_DEADLINE` NO es una salida**: es el modelo de tiempo, y con
+  deadline > 0 el invitado cede el frame por deadline en vez de por quiescencia y
+  el DSP deja de tocar nada (§22.13). La salida limpia es
+  `SNESRECOMP_EXIT_AT_FRAME`. Un lanzador que confunda ambas no mide lo que dice
+  medir.
+
+### 33.2 Reparto del trabajo interpretado (6.000 frames, 20,74 M pasos)
+
+| banco | pasos | % |
+|---|---:|---:|
+| `C3` | 7.551.079 | **36,4 %** |
+| `C0` | 6.082.604 | **29,3 %** |
+| `C6` | 4.185.800 | **20,2 %** |
+| `C2` | 997.185 | 4,8 % |
+| `C8` | 730.547 | 3,5 % |
+| `CC` | 477.963 | 2,3 % |
+| `CA` · `CB` · `C9` | 638.569 | 3,1 % |
+| `C5` · `C4` · `C7` · `C1` · `00` | 77.118 | 0,4 % |
+
+Tres bancos son el **85,9 %** del trabajo. Los seis sin ningun cfg declarado
+(`C1`, `C6`, `C7`, `C8`, `CA`, `CB`, `CC`) suman el 31 %.
+
+### 33.3 Cobertura real del AOT: 0,36 % (cfg) vs 10,20 % (manifiesto en disco)
+
+Cruzando el histograma con los rangos `min_pc24..max_pc24` de los nodos:
+
+| manifiesto | nodos | `aot_eligible` | pasos dentro de C | en `lle_only` | **sin nodo** |
+|---|---:|---:|---:|---:|---:|
+| `generated/` (en disco) | 99 | 67 | 10,20 % | 31,67 % | 58,13 % |
+| **regenerado hoy con el MISMO cfg** | 91 | 47 | **0,36 %** | 0,22 % | **99,42 %** |
+
+La diferencia no es del cfg: es que **el generador actual no reproduce el
+`generated/` de disco** (la deriva que ya avisaba `docs/BUILD.md`, §28). El mismo
+arranque `C38F50` decodifica **442 instrucciones** en el manifiesto guardado y
+**3** en el regenerado; `C00221` (IRQ) decodifica 280 y **0**. En el regenerado la
+decodificacion se corta por `has_lle_suppressed_call_edge` /
+`truncated_call_continuation`. Conclusion operativa: **la cobertura que creiamos
+tener no esta demostrada por el toolchain actual**, y la puerta A/B de hoy no
+puede verlo porque se compara consigo misma (§28).
+
+### 33.4 El cfg de `$C0` es relleno inventado
+
+`bankC0.cfg` declara 20 funciones de exactamente `0x200` en `0x200`
+(`NmiHandler 0000 end:0221`, `Sdd1Init 0400 end:0600`, `SpcUpload 0600 end:0800`,
+... `NmiComplete 2600 end:2800`). Eso no es un mapa de nada: es el motivo de que
+"18 de las 19 funciones declaradas no se ejecuten nunca" (§32.2). El codigo que
+`C0` ejecuta de verdad, segun el mapa de bloques de Ghidra del agente anterior,
+esta en `84B8-8C37` (732.522, 663.446 y 406.040 ejecuciones) mas `0221-025E` (el
+IRQ real, que acaba en `RTI`), y **no esta declarado**. Regla: un cfg se genera a
+partir de evidencia (bloques medidos), no se escribe a ojo.
+
+### 33.5 Resultado NEGATIVO: 20 semillas de cfg no convierten ningun nodo
+
+Hipotesis: los motivos `unproven_call_at_<site>_to_<target>_m?x?` son
+*declaraciones que faltan*, y el parser de cfg acepta `func NOMBRE <pc>` **sin
+`end:`** (decodifica hasta el terminador), asi que declarar esos 20 destinos
+como raices deberia probar su salida y desbloquear al llamante.
+
+Se implemento (`tools/aot_seeds.py`: 20 destinos -> 12 en `00`, 5 en `C0`, 3 en
+`C3`) y se midio contra el cfg pristino en la misma corrida:
+
+* **0 nodos pasan a `aot_eligible`** y 0 regresan;
+* +29 nodos nuevos (6 elegibles) que cubren **125.160 pasos = 0,6 %**;
+* la cobertura dentro de C no se mueve: 74.993 pasos en ambos casos.
+
+Mecanismo: los nodos que importan no estan bloqueados solo por el callee
+desconocido. El nodo que mas trabajo interpretado acumula de toda la sesion,
+`C38F50` (39.356 pasos, `C3`), es `lle_only` por
+`has_lle_suppressed_call_edge` + `truncated_call_continuation`; el IRQ
+`C00221` por `empty_decode`; y los de `00` por `cop`/`brk` = **datos
+decodificados como codigo**. Conclusion: **el cfg no es la palanca**. La palanca
+son los bloqueos estructurales del analizador (`has_lle_suppressed_call_edge`,
+`truncated_call_continuation`, `structural_poison`) y la deriva del generador.
+Las semillas se retiraron (`config/` queda pristino): no demuestran ganancia y
+cambiar el `generated/` sin puerta A/B es exactamente lo que §28 prohibe.
+
+### 33.6 Herramientas dejadas
+
+| herramienta | para que |
+|---|---|
+| `tools/perfil_interp.py` | corrida de perfil que termina sola y vuelca el histograma |
+| `tools/trabajo_aot.py --hist` | lista de trabajo ordenada por trabajo interpretado |
+| `tools/aot_seeds.py` | semillas de cfg desde los `unproven_call` (util cuando el analizador sepa probar salidas) |

@@ -92,10 +92,24 @@ static void replay_load(const char *path) {
     {
         const char *cm = getenv("SNESRECOMP_REPLAY_CLOCK");
         if (cm && *cm) {
-            if (!strcmp(cm, "cpu"))         s_replay_clock_mode = 1;
-            else if (!strcmp(cm, "master")) s_replay_clock_mode = 2;
-            else fprintf(stderr, "[replay] unknown SNESRECOMP_REPLAY_CLOCK='%s' "
-                                 "(cpu|master); using host frames\n", cm);
+            /* Se aceptan tambien los nombres que este mismo mensaje IMPRIME
+             * (`guest-cpu-cycles` / `guest-master-clocks`): pasar el texto del
+             * log en vez del valor era una trampa silenciosa -- el cargador
+             * degradaba a frames de host, la entrada caia en instantes de
+             * invitado equivocados y el juego se quedaba clavado en el menu de
+             * inicio. Un nombre desconocido no puede seguir siendo un aviso
+             * perdido entre el arranque. */
+            if (!strcmp(cm, "cpu") || !strcmp(cm, "guest-cpu-cycles"))
+                s_replay_clock_mode = 1;
+            else if (!strcmp(cm, "master") || !strcmp(cm, "guest-master-clocks"))
+                s_replay_clock_mode = 2;
+            else if (!strcmp(cm, "host") || !strcmp(cm, "host-frames"))
+                s_replay_clock_mode = 0;
+            else {
+                fprintf(stderr, "[replay] FATAL: unknown SNESRECOMP_REPLAY_CLOCK='%s' "
+                                "(cpu|master|host); refusing to guess\n", cm);
+                exit(2);
+            }
         }
     }
     char line[64];
