@@ -151,23 +151,47 @@ void RunOneFrameOfGame(void) {
   static double s_frame_deadline = -2.0;
   if (s_frame_deadline < -1.0) {
     const char *e = getenv("SNESRECOMP_FRAME_DEADLINE");
-    /* DEFAULT 0 (audio) desde 2026-09-29, ver ENCICLOPEDIA §22.13.
+    /* DEFAULT 0 desde 2026-09-29 (ver ENCICLOPEDIA §22.13 y §22.21).
      *
-     * Con la deadline activa el invitado cede el frame por DEADLINE en vez de
-     * por QUIESCENCIA, y el tick del driver de sonido del juego vive en el
-     * handler de V-IRQ por frame (C0:032D, ver §19). Medido con volcado del PCM
-     * que se entrega al dispositivo (`SNESRECOMP_PCM_DUMP`): con cualquier
-     * deadline > 0 el DSP no toca NADA en toda la intro (pico 0 en 0-13 s y
-     * pico 2 despues del unico chasquido de f790), mientras que con 0 toca
-     * musica continua desde el segundo 7 (picos 2000-4500). No es efecto de
-     * "cuanto tiempo" -0,25 frames ya silencia todo- sino de POR DONDE sale el
-     * frame. Los arreglos de audio (tasa del consumidor, colchon inicial,
-     * recorte de exceso, §22.12) son independientes y siguen activos.
+     * POR QUE SIGUE HAYENDO QUE PASARLE 1 A MANO -- y por que el motivo ya NO
+     * es el audio. La justificacion anterior de este default ("con deadline el
+     * DSP no toca NADA en toda la intro", y "falta que el camino de deadline
+     * entregue el NMI/IRQ del frame") quedo DESMENTIDA por medicion:
      *
-     * La fidelidad del modelo de tiempo queda disponible con
-     * SNESRECOMP_FRAME_DEADLINE=1 (y el A/B byte-exacto de §22 la valida), pero
-     * NO se activa por defecto hasta que el camino de deadline entregue tambien
-     * el NMI/IRQ del frame como hace el camino de quiescencia. */
+     *  1. Con SNESRECOMP_FRAME_DEADLINE=1 el audio NO se queda mudo: la energia
+     *     del anillo del DSP (dsp_ring_energy) es 0 hasta el frame de invitado
+     *     786 y a partir de ahi produce con normalidad (1.137.183 en f786). La
+     *     afirmacion anterior solo miraba una ventana de 624 frames de HOST y
+     *     con la deadline el invitado va 1:1 con el host, asi que media el
+     *     tramo equivocado.
+     *  2. La subida de BRAM del motor de sonido es la OPERACION QUE MAS
+     *     cambia, y a favor de la deadline. El invitado escribe ~7.460 bytes
+     *     seguidos en $2140 y el SPC700 los consume por handshake:
+     *       - hardware (Traza Mesen, w214x por frame): rampa 327, 550, 544, 705,
+     *         1182, 1180, 1186, 1182, 1182, 1180, 592 entre f413 y f423.
+     *       - motor CON deadline:  rampa 348, 444, 448, 709, 935, 950, 937,
+     *         935, 951, 799 entre f386 y f395. Misma forma.
+     *       - motor SIN deadline: 348, 444, 444 y de golpe +6.208 bytes en UN
+     *         solo frame. La forma NO es la del hardware.
+     *     Ademas la huella FNV del flujo (puerto,valor) de $2140 coincide BYTE A
+     *     BYTE entre las dos configuraciones: el invitado entrega los mismos
+     *     bytes, solo que con la deadline llega repartido como en hardware.
+     *
+     *  3. Lo que sigue SIN arreglar es un defecto de temporizacion del APU que
+     *     es ANTERIOR a la deadline y que la deadline no introduce: el motor de
+     *     sonido del SPC700 (BRAM) se queda 400 frames de invitado sin escribir
+     *     ni un registro del DSP (spcDat congelado), y las voces no arrancan
+     *     hasta f395 (sin deadline) / f786 (con deadline) cuando el hardware las
+     *     tiene key-on desde f100. Ver §22.21.
+     *
+     *  4. El motivo real que bloquea el default es la PUERTA A/B: AOT contra
+     *     interprete diverge en 10 ciclos master por frame dentro del handler de
+     *     V-IRQ ($C8:F425 LDA $4212 / $C8:F428 BMI $F425). Esa discrepancia es
+     *     PREEXISTENTE: con deadline=0 la puerta ya falla en el frame comun #4
+     *     (master A=23943668 B=23943678) y con deadline=1 en el #69. No la
+     *     introduce la deadline; la deadline solo cambia donde cae el limite de
+     *     frame y por tanto cuando se hace visible.
+     */
     s_frame_deadline = (e && e[0]) ? atof(e) : 0.0;
     if (s_frame_deadline < 0.0) s_frame_deadline = 0.0;
   }

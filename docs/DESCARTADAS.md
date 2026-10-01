@@ -188,3 +188,42 @@ se quedan sin programar. Ver ENCICLOPEDIA §22.16.
 **Donde si queda acotado.** En el spin del handshake de sonido `$C0859D`: con la
 deadline el invitado acaba 23 fotogramas de host parado en `$C085A6` (dentro de
 ese spin) y sin ella, 0 veces. Ahi, y no en el audio, hay que mirar.
+
+---
+
+## 2026-10-01 — Retirada: "con la deadline el audio se queda mudo"
+
+**Retira** la hipótesis con la que se justificaba `s_frame_deadline = 0` por
+defecto (ver `src/so_rtl.c`, y ENCICLOPEDIA §22.13).
+
+**Por que estaba mal.** La medición que la sostenía ("`dsp_ring_energy()` da 0
+durante 624 fotogramas") contaba fotogramas de **host**. Con la deadline el
+invitado va 1:1 con el host, de modo que 624 frames de host son 624 de
+invitado, y la ventana se quedaba justo antes de donde arranca el sonido. Sobre
+1200 frames, el primer frame de **invitado** con energía > 0 es el **786** con
+`deadline=1` (energía 1.137.183) y el 395 con `deadline=0`. Con deadline=1 el
+audio suena.
+
+**Lo que además se midió y va a favor de la deadline.** El ritmo de la subida
+de ~7.460 bytes a `$2140`:
+- hardware: rampa 327, 550, 544, 705, 1182, 1180, 1186, 1182, 1182, 1180, 592.
+- `deadline=1`: rampa 348, 444, 448, 709, 935, 950, 937, 935, 951, 799 (misma forma).
+- `deadline=0`: 348, 444, 444 y **+6.208 bytes de golpe en un solo frame**.
+
+Y la huella FNV del flujo `(puerto, valor)` de `$2140` coincide byte a byte
+entre las dos configuraciones: el invitado entrega los mismos bytes, solo que
+sin deadline los entrega liedos y con deadline los entrega al ritmo del
+handshake, como el hardware.
+
+**Regla que sale de ahi.** Antes de volver a escribir "con la deadline no se
+oye", contar en frames de **invitado** (`gf=master_cycles/357368`, que ya
+imprime `[dspstat]`) y no de host, y comprobar contra la rampa de `w214x` de
+la traza de Mesen antes de dar algo por mudo.
+
+**Lo que sigue abierto (no es la deadline).** El motor de sonido del SPC700 se
+queda 400 frames de invitado sin escribir un solo registro del DSP, y las voces
+no arrancan hasta f395 / f786 cuando el hardware tiene `keyon` desde f100. Es
+anterior a la deadline y está en las dos configuraciones. Y el motivo real que
+sigue bloqueando el default es la puerta A/B: 10 ciclos master por frame de
+diferencia entre AOT e intérprete en el handler de V-IRQ `$C8:F425`, que ya
+fallaba con `deadline=0` en el frame común #4. Detalle en ENCICLOPEDIA §22.21.

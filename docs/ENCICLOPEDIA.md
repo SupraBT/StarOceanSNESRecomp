@@ -3869,3 +3869,149 @@ eventos en una tabla de 21 numeros que se puede mirar de un vistazo.
 **Estado honesto:** el IPL y el registro del DSP quedan descartados con datos.
 El problema es el camino de los DATOS de audio dentro del emulador, que es una
 capa distinta y no se ha tocado.
+
+---
+
+## 22.21 La deadline NO silencia el audio: lo que de verdad cambia y lo que de verdad falla
+
+**Fecha:** 2026-10-01. **Cierra:** §22.13 (el audio como motivo del default 0),
+§22.17 y §22.20. **Instrumentos:** `[dspvoice]`, `[dspstat]` ampliado
+(`gf`, `pW2140`, `pDrop`, `pLost`, `pRd`, `pHash`), `tools/dspvoice_ab.py`.
+
+### 22.21.1 El "audio mudo con deadline" era una confusion de reloj
+
+`dsp_ring_energy()` da 0 durante 624 frames... de HOST. Pero con
+`SNESRECOMP_FRAME_DEADLINE=1` el invitado va 1:1 con el host, asi que 624 frames
+de host son 624 frames de invitado. Medido sobre 1200 frames:
+
+| configuracion | primer frame de INVITADO con energia > 0 |
+|---|---|
+| deadline=0 | 395 (energía 1.409, luego 8.936, 26.508, 49.991) |
+| deadline=1 | **786** (energía 1.137.183) |
+
+Con deadline=1 el audio **suena**, y fuerte. No hay silencio permanente. La
+medida anterior (pico 0 en 0-13 s) miraba solo el tramo previo a f786.
+
+La prueba de que el motor de sonido del SPC700 esta VIVO en ambos casos durante
+ese tramo: lee el flujo de puertos a ritmo constante, 400-490 lecturas de `$F4`
+por cada 50 frames de invitado, igual en las dos configuraciones.
+
+### 22.21.2 La huella del flujo de $2140 es IDENTICA en las dos configuraciones
+
+`g_apu_stream_hash` (FNV-1a sobre la secuencia `(puerto, valor)` de todas las
+escrituras que el invitado entrega al SPC700) comparada frame de invitado a
+frame de invitado:
+
+```
+gf=400  d0=1f472a8faa39e461  d1=1f472a8faa39e461   SI
+gf=756  d0=224d1cfaa77e7262  d1=1f472a8faa39e461   *** NO *** (d1 va 3 frames atras)
+gf=759  d0=2605737420c17878  d1=224d1cfaa77e7262   *** NO *** (d1 alcanza a d0)
+```
+
+El invitado entrega **los mismos bytes, en el mismo orden**. Lo unico que cambia
+es CUANDO, y el retraso es de 3 a 8 frames de invitado.
+
+### 22.21.3 Lo que cambia a favor de la deadline: el RITMO de la subida
+
+El driver de sonido sube ~7.460 bytes a `$2140` y el SPC700 los consume por
+handshake. Escrituras a `$2140-$2143` por frame de invitado, comparadas con la
+traza de hardware (`w214x`):
+
+```
+hardware  f413..f423:  327  550  544  705 1182 1180 1186 1182 1182 1180  592
+deadline=1 f386..f395: 348  444  448  709  935  950  937  935  951  799
+deadline=0 f383..f391: 348  444  444              +6208 en UN frame
+```
+
+**Sin deadline el invitado vuelca 6.208 bytes de golpe en un solo frame de
+host.** Con deadline la subida adopta la rampa de hardware. Este es el cambio de
+comportamiento mas grande que produce la deadline en toda la capa de audio, y va
+a favor de ella.
+
+Explicacion mecanica: en `interp_bridge.c:bridge_apu_flush()` hay dos caminos.
+Sin deadline se hace el catch-up RELATIVO (`apuCatchupCycles += pending *
+kInterpApuPerMaster` y `snes_catchupApu`) **y ademas** el sincronismo absoluto
+(`rtl_sync_apu_to_cpu_locked`): el SPC700 corre a mas del doble de su velocidad
+real y por eso el handshake va holgado y el invitado no espera. Con deadline
+solo se hace el sincronismo absoluto (`rtl_apu_frame_timeline_active()`), el
+SPC700 corre a su velocidad real, y el invitado **espera** al SPC700 byte a byte
+como en hardware. El defecto del modo sin deadline no es que suene: es que
+**mentira sobre el ritmo**, y por eso el juego corre 13% por delante del reloj.
+
+### 22.21.4 Lo que sigue roto, y NO es culpa de la deadline
+
+El motor de sonido del SPC700 (el que vive en el BRAM) se queda **400 frames de
+invitado sin escribir ni un registro del DSP** (`spcDat` congelado en 825):
+
+```
+bloque     hardware  deadline=0  deadline=1
+f400-f449      160        141          0
+f450-f499       94        141          0
+f500-f549      158        272          0
+f550-f599      222        330          0
+f600-f649      288        320          0
+f650-f699      223         60          0
+f800-f849      317        427          0     (d1 sigue sin Writes hasta ~f1000)
+```
+
+Y las voces no arrancan hasta f395 / f786, cuando el hardware tiene `keyon` de
+verdad desde f100 (1-13 en f50-99, 41/50 frames en f100-149, 40-48 hasta f699,
+y un hueco real en f700-799).
+
+**Este defecto es ANTERIOR a la deadline y esta en las dos configuraciones.** No
+la introduce la deadline; la deadline solo lo hace mas visible porque la musica
+tarda mas en arrancar.
+
+Descartes de esta sesion, con contador:
+- cola de puertos que se desborda: `pDrop=0`, profundidad maxima `pProf=1`.
+- bytes perdidos por sobrescritura de `$F4-$F7` antes de que los lea el SPC700:
+  `pLost` = 177 (d0) / 258 (d1) en toda la intro. Despreciable y comparable.
+- temporizadores del SPC700: `tim0` sigue a hardware con delta 2 en ambos.
+- flujo de bytes distinto: la huella §22.21.2 dice que no.
+- el SPC700 aparcado sin leer: lee a 400-490/50 frames en ambos.
+
+Queda una sola pista viva: el motor del BRAM arranca la subida ~28 frames de
+invitado antes que el hardware (f386 contra f413) y aun asi no reacciona a los
+datos. Eso apunta al **protocolo de handshake de la subida** (los flags de
+`previousFlags`/DIR y la extension de pagina `$2F`/`$3F`), no al reloj.
+
+### 22.21.5 La puerta A/B ya estaba en rojo, y por un motivo distinto
+
+`tools/ab_run.py --build build-ab` con 300 frames:
+
+| configuracion | primera divergencia | delta |
+|---|---|---|
+| deadline=0 | frame comun **#4** (f_AOT=5) | `master` A=23943668 B=23943678 |
+| deadline=1 | frame comun **#69** (f_AOT=70) | `master` A=25015764 B=25015774 |
+
+10 ciclos master por frame, dentro del handler de V-IRQ:
+
+```
+$C8:F425  AD 12 42   LDA $4212
+$C8:F428  30 FB      BMI $F425
+```
+
+El delta no se acumula: oscila (+10, -4, +12, -2), o sea que AOT e interprete
+cargan distinto el mismo bucle y el final de frame cae en un punto u otro del
+bucle de 6-7 ciclos. **Es preexistente y no lo introduce la deadline.** Lo que
+hace la deadline es desplazar el limite de frame y con ello el punto del
+bucle donde cae, asi que el rojo aparece mas tarde pero sigue rojo.
+
+**Este es el motivo real por el que la deadline no se activa por defecto**, y no
+el audio.
+
+### 22.21.6 Efecto medido sobre los tres bajones de frames
+
+`tools/hm_hot_run.py --frames 900 --hot-ms 18`, mismo binario, mismo guion,
+umbral 18 ms, 18 capturas en rojo sin deadline y 15 con deadline:
+
+| sintoma | sin deadline | con deadline |
+|---|---|---|
+| congelamiento de arranque (f4) | **1587,45 ms** | **33,19 ms** |
+| tercer logo (f316-f332) | f316 = 31,32 ms | f335 = 20,09 ms |
+| transicion al fondo estrellado (f705-f708) | f705 = **109,86 ms**, f708 = **92,58 ms** (48 FPS) | **no aparece** (60 FPS) |
+| f751 | 29,77 ms (38 FPS) | f757 = 26,90 ms (60 FPS) |
+
+Sin deadline el invitado avanza 13% por delante del reloj de host (host 101 ->
+invitado 163), lo que ademas significa que el juego va mas rapido de lo que
+deberia aunque no se note como tirón.
