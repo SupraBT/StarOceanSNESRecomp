@@ -4318,3 +4318,79 @@ hardware**, lectura a lectura. La sonda `tools/mesen_so_probe.lua` actual
 registra escrituras (`w214x`) pero no el valor de las lecturas de puerto. Sin
 ese dato no se puede escribir la correccion sin inventar la semantica del
 registro, que es justo lo que AGENTS.md prohibe.
+
+---
+
+## 22.25 ORACULO CAPTURADO: $2140 es un pestillo. Contesta a 22.24.5
+
+**Fecha:** 2026-10-01. Cierra el dato que faltaba en §22.24.5.
+
+### 22.25.1 Como se ha capturado (y de paso, Mesen por linea de comandos)
+
+`tools/mesen_so_probe.lua` graba ahora **una linea por lectura** de
+`$2140-$2143` en `so_probe_r2140.tsv`, con el valor devuelto y el PC que la
+hace (`R2140_DESDE` / `R2140_HASTA` / `R2140_MAX` en el bloque de config).
+
+La sonda **tambien corre sin GUI**:
+
+```
+Mesen.exe "Star Ocean (Japan).sfc" --testRunner "ruta\mesen_so_probe.lua"
+```
+
+El orden importa: el ROM va como argumento posicional PRIMERO. Con
+`--testRunner=...` o con `Mesen-S.exe` no ejecuta nada. Se verifico antes con
+un script de humo que escribe un fichero y comprueba que `emu`,
+`emu.getMasterClock` y `emu.addMemoryCallback` funcionan. Ficheros guardados en
+`docs/traces/hw_r2140.tsv` (399.888 lineas), `hw_frames.tsv`, `hw_audio.tsv`,
+`hw_events.tsv`.
+
+Salvedad registrada por la propia sonda al terminar: si todas las lecturas
+salieran 0, avisa de que el callback de lectura de esa build no entrega el
+valor. En esta build **si lo entrega**.
+
+### 22.25.2 El dato: $2140 solo cambia cuando se escribe
+
+```
+f9  $2140=$AA  pc=$C0850C
+f9  $2141=$BB  pc=$C0850C
+f9  $2140=$AA  pc=$C0855D
+f9  $2140=$AA  pc=$C0855D
+...            (18 lecturas seguidas, todas AA)
+f9  $2140=$CC  pc=$C0855D
+f9  $2140=$CC  pc=$C08524
+```
+
+- **96,7 %** de las lecturas consecutivas devuelven el mismo valor que la
+  anterior (`386.725` de `399.888`).
+- El valor cambia **exactamente** cuando el CPU escribe: la 19.ª lectura sale
+  `CC` y antes salia `AA`.
+
+**Conclusion: `$2140` es un pestillo del puerto, no el estado del SPC700.** Dos
+lecturas sin escritura en medio tienen que devolver SIEMPRE el mismo byte, y
+por tanto el `CMP $2140 / BNE $859D` de §22.24.2 **sale a la primera
+iteracion**. No hay ninguna logica de "el SPC ya consumio el byte": es
+literalmente leer dos veces el mismo registro.
+
+### 22.25.3 El invitado lee mucho, pero NO en el bucle del que huimos
+
+| | hardware |
+|---|---|
+| lecturas de $2140 por fotograma | ~5.100 (f9-f78) |
+| frames en los que lee | **solo f9 a f78** |
+| lecturas dentro de `$C0859D-$C085D0` | **432 en toda la corrida** |
+| de esas, en f1-f60 | **0** |
+| frames donde aparece el spin | f70=16, f71=54, f73=54, f75=36, f76=126, f77=54, f78=92 |
+| PCs que mas leen | `$C08D9C` 126.385, `$C08DA0` 126.385, `$C08524` 82.360 |
+
+O sea: en hardware la subida de audio se hace polleando desde `$C08D9C` /
+`$C08DA0` / `$C08524`, y **deja de hacerlo en f78**. El spin `$C0859D` se
+ejecuta 432 veces en total, en una ráfaga de f70-f78, y **nunca en f1-f60**.
+
+En el motor ese mismo spin se ejecuta decenas de miles de veces POR FOTOGRAMA
+durante f4-f100+ (§22.24.2). De ahi salen los 15-25 ms por fotograma.
+
+### 22.25.4 Herramienta
+
+`tools/r2140_oracle.py docs/traces/hw_r2140.tsv [motor.tsv]` contrasta los dos
+lados con las mismas tres preguntas (spin, repeticiones, PCs) y da el
+veredicto. Con solo el fichero de hardware ya sale el 96,7 % y el 0 en f1-f60.

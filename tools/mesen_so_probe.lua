@@ -44,6 +44,13 @@
 --                  escriben byte a byte en vez de resumirse. Fuera de la
 --                  ventana solo queda el digest.
 --   HUELLAS        cada N fotogramas, empreinte del WRAM/RAM del SPC/BRAM del
+--   R2140_DESDE / R2140_HASTA / R2140_MAX
+--                  ventana en la que se graba UNA LINEA POR LECTURA de
+--                  $2140-$2143 en <salida>_r2140.tsv, con el valor devuelto y
+--                  el PC que la hace. Es el oraculo del handshake de
+--                  $C0:859E (LDA $2140 / CMP $2140 / BNE): en hardware el
+--                  bucle corre 0 veces, aqui no converge nunca, y sin el valor
+--                  de lectura no se puede saber cual es la semantica correcta.
 --                   DSP. Es lo que marca el primer fotograma de divergencia.
 --
 -- LO QUE ESTE SCRIPT NO PUEDE HACER (y por que no lo disimula)
@@ -71,12 +78,23 @@ local VERBOSE_DESDE = 1         -- ventana con detalle byte a byte
 local VERBOSE_HASTA = 200
 local HUELLAS_CADA = 20         -- huella cada N fotogramas; 0 = desactivar
 local DIR_SALIDA  = nil         -- nil = carpeta del ROM / candidatos
+-- ORACULO DEL HANDSHAKE DE $2140.
+-- El invitado en $C0:859E hace LDA $2140 / CMP $2140 / BNE $859D: exige que
+-- DOS lecturas seguidas, sin escritura en medio, devuelvan el MISMO byte. En
+-- hardware ese bucle se ejecuta 0 veces (columna ipl de _frames.tsv), o sea
+-- que las dos lecturas coinciden a la primera. En el motor no convergen nunca.
+-- Aqui se graba CADA lectura con su valor y con el PC de quien la hace, que es
+-- lo unico que permite emparejar $C0859E con $C085A2 y ver que devuelve el
+-- hardware de verdad en cada una.
+local R2140_DESDE = 1         -- ventana de captura
+local R2140_HASTA = 1200
+local R2140_MAX   = 400000     -- tope de lineas; en hardware no se llega
 local PARAR = false             -- true = emu.stop() al terminar (CIERRA Mesen)
 
 -- Ficheros. Se declaran ANTES de log(), que los usa: en Lua un local
 -- declarado despues no existe para las funciones de arriba, y el
 -- `if f_status` se comeria un global nil en silencio.
-local f_frames, f_audio, f_events, f_replay, f_fp, f_status = nil, nil, nil, nil, nil, nil
+local f_frames, f_audio, f_events, f_replay, f_fp, f_status, f_r2140 = nil, nil, nil, nil, nil, nil, nil
 local base = nil
 
 -- Zonas de codigo vigiladas. El recuento por fotograma de cuantas veces se
@@ -219,9 +237,10 @@ local function abrir()
       f_events = assert(io.open(dir .. "_events.tsv", "w"))
       f_replay = assert(io.open(dir .. "_replay.txt", "w"))
       f_fp     = assert(io.open(dir .. "_fp.tsv", "w"))
+      f_r2140  = assert(io.open(dir .. "_r2140.tsv", "w"))
     end)
     if ok and f_frames then base = dir; break end
-    f_frames, f_audio, f_events, f_replay, f_fp = nil, nil, nil, nil, nil
+      f_frames, f_audio, f_events, f_replay, f_fp, f_r2140 = nil, nil, nil, nil, nil, nil
   end
   if not base then
     log("ERROR: no he podido escribir en ninguna ruta")
@@ -246,17 +265,19 @@ local function abrir()
   f_events:write("# " .. TAG .. " eventos: SOLO cambios. fr\tmaster\tsrc\tkind" ..
                  "\taddr\tval\tnote\n")
 
+  f_r2140:write("# " .. TAG .. " lecturas de $2140-$2143, una linea por lectura, con el PC. fr	master	addr	val	pc	n\n")
+
   f_fp:write("# " .. TAG .. " huellas para localizar el primer fotograma de " ..
              "divergencia. fr\tmaster\twram\tspcRam\tdspRam\n")
   return true
 end
 
 local function cerrar()
-  for _, f in ipairs({ f_frames, f_audio, f_events, f_replay, f_fp }) do
+  for _, f in ipairs({ f_frames, f_audio, f_events, f_replay, f_fp, f_r2140 }) do
     if f then pcall(function() f:close() end) end
   end
   if f_status then pcall(function() f_status:close() end) end
-  f_frames, f_audio, f_events, f_replay, f_fp, f_status = nil, nil, nil, nil, nil, nil
+  f_frames, f_audio, f_events, f_replay, f_fp, f_status, f_r2140 = nil, nil, nil, nil, nil, nil, nil
 end
 
 -- ============================================================================
@@ -271,6 +292,11 @@ local dsp_latch = 0
 local canario = 0                    -- escrituras en la pagina de pila
 local kon_total, kon_frame = 0, 0
 local pad_prev = 0
+local r2140_n    = 0          -- lineas escritas en _r2140.tsv
+local r2140_tot  = 0          -- lecturas de $2140 en toda la corrida
+local r2140_cero = 0          -- ... de las cuales salieron con valor 0
+local r2140_pcs  = 0          -- PCs distintos seen: si sigue a 0, el hook
+                              -- de lectura no entrega valor ni PC
 local poll_mask = nil
 local ultima = {}                    -- ultimo valor escrito por registro (transiciones)
 local api = {}
@@ -291,6 +317,16 @@ end
 local function bump(n, addr, val)
   cnt[n] = (cnt[n] or 0) + 1
   if addr ~= nil then dig[n] = d_addr_val(dig[n] or d_reset(), addr, val or 0) end
+end
+
+-- PC de la CPU ahora mismo. Se llama DENTRO del callback de lectura, asi que
+-- solo puede usar getters: leer memoria ahi reentraria en el propio hook.
+local function pc_actual()
+  local cs = try(emu.getCpuState, CT_CPU)
+  if type(cs) == "table" then
+    return nz(g(cs, "k", "K"), 0) * 65536 + nz(g(cs, "pc", "PC"), 0)
+  end
+  return 0
 end
 
 local function verbose()
@@ -366,7 +402,27 @@ local function registrar()
     if verbose() then evento("cpu_w2140", addr, v, "cpu", "") end
   end, CB_WRITE, APU_LO, APU_HI, CT_CPU) and 1 or 0)
 
-  n = n + (add_mem_cb(function() bump("r2140") end,
+  -- ORACULO DEL HANDSHAKE: una linea por LECTURA de $2140, con el valor que
+  -- devuelve y el PC que la hace. Antes solo se contaba; ahora ademas se
+  -- mezcla (direccion, valor) en el digest del fotograma, de modo que el
+  -- flujo de lecturas se puede comparar hardware contra motor sin abrir el
+  -- fichero, y en el fichero se ve una a una que es lo que hace falta para
+  -- emparejar $C0859E con $C085A2.
+  n = n + (add_mem_cb(function(addr, v)
+    bump("r2140", addr, v)
+    r2140_tot = r2140_tot + 1
+    local val = tonumber(v) or 0
+    if val == 0 then r2140_cero = r2140_cero + 1 end
+    if f_r2140 and frame >= R2140_DESDE and frame <= R2140_HASTA and r2140_n < R2140_MAX then
+      local pc = pc_actual()
+      if pc ~= 0 then r2140_pcs = r2140_pcs + 1 end
+      r2140_n = r2140_n + 1
+      local mc = nz((api.cache or {}).masterClock, 0)
+      if mc == 0 then mc = try(emu.getMasterClock) or 0 end
+      f_r2140:write(string.format("%d	%d	%04X	%02X	%06X	%d\n",
+                                frame, mc, addr or 0, val, pc, r2140_n))
+    end
+  end,
                       CB_READ, APU_LO, APU_HI, CT_CPU) and 1 or 0)
   n = n + (add_mem_cb(function() bump("r4212") end,
                       CB_READ, 0x004212, 0x004212, CT_CPU) and 1 or 0)
@@ -567,6 +623,7 @@ local function on_end_frame()
   local w42 = {}
   for i = 1, math.min(#w4200_vals, 8) do w42[i] = hex(w4200_vals[i], 2) end
   cols[#cols + 1] = #ini_vals > 0 and table.concat(ini, "+") or "-"
+
   cols[#cols + 1] = nz(cnt["r2140"], 0)
   cols[#cols + 1] = nz(cnt["r4212"], 0)
   cols[#cols + 1] = #w4200_vals > 0 and table.concat(w42, "+") or "-"
@@ -623,7 +680,22 @@ local function on_end_frame()
   reset_frame()
 
   if END_FRAME > 0 and frame >= END_FRAME then
-    log("FIN fr=" .. frame .. " kon_total=" .. kon_total)
+    -- SALVEDAD del oraculo de $2140. Un hook de LECTURA puede no entregar el
+    -- valor leido segun la build de Mesen; si fuera asi, el fichero seria una
+    -- columna de ceros y pareceria un hallazgo. Se dice explicitamente.
+    log(string.format("FIN fr=%d kon_total=%d | $2140: %d lecturas, %d lineas, " ..
+                      "%d con valor 0, %d con PC != 0",
+                      frame, kon_total, r2140_tot, r2140_n,
+                      r2140_cero, r2140_pcs))
+    if r2140_tot > 0 and r2140_cero == r2140_tot then
+      log("AVISO: TODAS las lecturas de $2140 salieron 0. El callback de " ..
+           "lectura de esta build seguramente NO entrega el valor: _r2140.tsv " ..
+           "NO sirve como oraculo y hay que leer el puerto por otra via.")
+    end
+    if r2140_n >= R2140_MAX then
+      log("AVISO: se ha tocado el tope de R2140_MAX (" .. R2140_MAX .. "); " ..
+           "las ultimas lecturas no estan grabadas.")
+    end
     cerrar()
     if PARAR then pcall(emu.stop) end
   end
