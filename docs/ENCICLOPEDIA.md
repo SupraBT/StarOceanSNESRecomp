@@ -4207,3 +4207,114 @@ buscando. Ojo con el comentario que hay en `common_rtl.c` sobre el caso de
 
 Ademas el motor no emite `w2100` ni `w4200`, que la sonda de Mesen si emite, asi
 que la alineacion arrastra ruido de esos huecos. Falta engancharlos.
+
+---
+
+## 22.24 El bajon del arranque: no es el S-DD1, es el handshake del puerto de audio en $C0:859D
+
+**Fecha:** 2026-10-01. Corrige §22.22 y §22.23: los bajones NO estan
+resueltos, y la causa no es la que se suponia.
+
+### 22.24.1 El coste real, por fotograma (instrumentacion ya correcta)
+
+Con `SNESRECOMP_PERF=1` + `SNESRECOMP_REPLAY_FILE` + `SNESRECOMP_REPLAY_CLOCK=master`:
+
+| tramo | emulacion |
+|---|---|
+| f1-3 | 0,8 - 0,9 ms |
+| **f4-f9** | **15 - 16 ms** |
+| **f10-f43** | **23 - 25 ms** |
+| f100-f300 | **1,3 - 1,5 ms** |
+| f772-f788 | 25 - 44 ms (subida de audio) |
+
+No son picos: es una **meseta de 15-25 ms por fotograma** durante el arranque y
+el menu, y luego el codigo recompilado corre a 1,3 ms. Los bloques de 100
+frames: f0-99 = 15,9 ms de media, f100-199 = 1,37 ms.
+
+**El S-DD1 queda descartado como causa del arranque**: `sdd1Blocks=0` y
+`sdd1Bytes=0` en f1-14. El descompresor no se invoca en esa zona.
+
+### 22.24.2 Donde se van los ciclos: el histograma de PCs
+
+El perfilador de la zona debuild (`SNESRECOMP_INTERP_PROFILE` +
+`SNESRECOMP_PHASE_MS=1`, linea "top interp PCs") da, para la ventana cara del
+arranque (160.584 muestras):
+
+```
+$C08521   12,1 %      $C0859D  4,0 %      $C085CC  4,0 %
+$C084FB   10,2 %      $C0859E  4,0 %      $C085CF  4,0 %
+$C085A6    4,0 %      $C085AA  4,0 %      $C085CE  4,0 %
+$C0859D..$C085D0 en conjunto = ~30 %
+```
+
+Y desensamblado (`tools/dis_range.py C0:8590 C0:85E0 --m 1 --x 0`):
+
+```
+$C0:8598  PHP
+$C0:8599  SEP #$20
+$C0:859B  STA $4B
+$C0:859D  SEI
+$C0:859E  LDA $002140        <-- 1a lectura
+$C0:85A2  CMP $002140        <-- 2a lectura
+$C0:85A6  BNE $859D          <-- si difieren, repetir
+$C0:85A8  EOR $4A            <-- handshake de la subida de audio
+$C0:85AE  STA $002141
+$C0:85B4  STA $002142
+$C0:85BA  STA $002143
+$C0:85C6  STA $002140
+$C0:85CC  CLI / NOP / NOP / NOP / BRA $859D
+```
+
+**El invitado exige que DOS lecturas seguidas de `$2140` devuelvan el MISMO
+byte.** Es el handshake de "el SPC ya consumio lo que le mande". En hardware
+sale a la primera iteracion: la columna `hc` de la traza vale **0** en los
+primeros 400 fotogramas, o sea que el bucle no se ejecuta ni una vez. En el
+motor se ejecuta decenas de miles de veces por fotograma.
+
+### 22.24.3 La lectura de $2140 no es idempotente
+
+`SNESRECOMP_APU_PORT_DIAG=1` registrando **todas** las lecturas (no solo los
+cambios: filtrar por cambio oculta justo el caso que importa):
+
+```
+master=24354730  r $2140=15   <-- pareja IGUAL: el handshake sale
+master=24354934  r $2140=15
+master=24355462  r $2140=2A
+master=24355666  r $2140=2A
+master=24356194  r $2140=3F   <-- aqui empieza a NO converger
+master=24356398  r $2140=08
+master=24356926  r $2140=54
+master=24357130  r $2140=1D
+master=24357962  r $2140=69  /  32
+```
+
+Cada pareja devuelve un byte distinto, asi que `CMP` + `BNE $859D` no
+converge y el invitado se quedaInterpretando un bucle de 4 instrucciones
+durante 15-25 ms por fotograma.
+
+### 22.24.4 El replay de pulsaciones NO es el problema (descartado con dato)
+
+Deriva del reloj de invitado frente a la traza de Mesen, con el replay loaded:
+
+| frame | delta master | en frames de reloj |
+|---|---|---|
+| f1 | +50.468 | +0,14 |
+| f1000 | +52.474 | +0,15 |
+| f10000 | +70.474 | +0,20 |
+| f17711 | ~+86.000 | +0,24 |
+
+En 19.322 fotogramas el reloj del invitado se desvia **0,24 fotogramas**. Las
+pulsaciones llegan en su sitio. Lo que falla a partir de f~14.800 es la
+**logica del juego**, que diverge: los ciclos de CPU ejecutados por el motor
+exceden a los de hardware en **+4.806 ciclos por fotograma** de media
+(+20.002 en f1, +89.575.448 en f19000). Un estado de juego distinto responde
+distinto a la misma entrada, y el personaje acaba donde no debe. Eso es un
+problema de exactitud, no de replay.
+
+### 22.24.5 Lo que hace falta y no hay
+
+El oráculo que falta es **el valor que devuelve una lectura de `$2140` en
+hardware**, lectura a lectura. La sonda `tools/mesen_so_probe.lua` actual
+registra escrituras (`w214x`) pero no el valor de las lecturas de puerto. Sin
+ese dato no se puede escribir la correccion sin inventar la semantica del
+registro, que es justo lo que AGENTS.md prohibe.

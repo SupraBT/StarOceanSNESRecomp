@@ -408,35 +408,34 @@ static void HmSaveBmp(const uint8_t *px, int pitch, int w, int h,
  * la emulacion costaba 0,05 ms y todo el tiempo se iba a "resto", que en
  * realidad era emulacion sin medir. */
 static double s_hm_emu_ms = 0.0;
+static double s_sdd1_ms_prev = 0.0;
 static int s_hud_on = -1;
 static Uint64 s_hud_prev = 0;
 static Uint64 s_hud_t0 = 0;
 static Uint64 s_hud_t1 = 0;
 
+/* Dibuja el HUD dentro de la imagen y, con SNESRECOMP_PERF / SNESRECOMP_HOT,
+ * publica el reparto del tiempo de este bucle de host.
+ *
+ * `ciclo` (el numero que va al HUD y al disparador de captura) es el delta
+ * entre dos HmDraw, o sea el bucle ENTERO: emulacion + presentacion +
+ * SDL_Delay. Con eso no se puede decir donde se ha ido el tiempo, que es justo
+ * lo que hace falta para atacar un bajon de frames, asi que se separa:
+ *
+ *   emu   = dentro de RtlRunFrame()             (la emulacion)
+ *   draw  = dentro de draw_ppu_frame()          (rasterizar el PPU)
+ *   resto = presentacion + SDL_Delay + eventos  (el ritmo de host)
+ *   loop  = ciclo, el total
+ *
+ * OJO con el orden: la cronometria y [perf]/[hot] van ANTES del gate del HUD.
+ * Estaban colgados de el, asi que SNESRECOMP_PERF=1 sin SNESRECOMP_HUD=1 no
+ * imprimia nada y era facil concluir que no habia coste de emulacion.
+ */
 static void HmDraw(uint8_t *px, int width, int frame_invitado, int fps) {
     if (s_hud_on < 0) {
         const char *e = getenv("SNESRECOMP_HUD");
         s_hud_on = (e && e[0] && e[0] != '0') ? 1 : 0;
     }
-    if (!s_hud_on) return;
-    const Uint64 ahora = SDL_GetPerformanceCounter();
-    const double freq = (double)SDL_GetPerformanceFrequency();
-    double ciclo = s_hud_prev ? (double)(ahora - s_hud_prev) * 1000.0 / freq : 0.0;
-    double draw  = (s_hud_t1 > s_hud_t0)
-                 ? (double)(s_hud_t1 - s_hud_t0) * 1000.0 / freq : 0.0;
-    s_hud_prev = ahora;
-
-    char buf[72];
-    snprintf(buf, sizeof buf, "F%d C%.1f D%.1f %dFPS",
-             frame_invitado, ciclo, draw, fps);
-    const int w = 4 * (int)strlen(buf) + 4;
-    const int h = 9;
-    for (int y = 0; y < h; y++)
-        for (int x = 0; x < w; x++)
-            HmPutPx(px, width * 4, x + 2, y + 2, 0x000000u);
-    /* rojo si el ciclo se pasa del presupuesto de 60 fps, blanco si no */
-    HmText(px, width * 4, 4, 4, buf, ciclo > 18.0 ? 0xFF0000u : 0xFFFFFFu);
-
     if (s_hot_on < 0) {
         const char *e = getenv("SNESRECOMP_HOT");
         s_hot_on = (e && e[0] && e[0] != '0') ? 1 : 0;
@@ -445,21 +444,14 @@ static void HmDraw(uint8_t *px, int width, int frame_invitado, int fps) {
         const char *d = getenv("SNESRECOMP_HOT_DIR");
         if (d && d[0]) s_hot_dir = d;
     }
-    /* [perf] REPARTO REAL DEL TIEMPO de este bucle de host.
-     *
-     * `ciclo` (el numero que va al HUD y al disparador de captura) es el delta
-     * entre dos HmDraw, o sea el bucle ENTERO: emulacion + presentacion +
-     * SDL_Delay. Con eso no se puede decir donde se ha ido el tiempo, que es
-     * justo lo que hace falta para atacar un bajon de frames. Aqui se separa:
-     *
-     *   emu   = dentro de draw_ppu_frame()          (la emulacion)
-     *   resto = presentacion + SDL_Delay + eventos  (el ritmo de host)
-     *   loop  = ciclo, el total
-     *
-     * Ademas se imprime el estado del invitado EN ESE frame, para poder
-     * confrontarlo con la traza de hardware sin tener que correlacionar a mano.
-     * Todo por detras de SNESRECOMP_PERF=1 y coste cero si no se pone.
-     */
+
+    const Uint64 ahora = SDL_GetPerformanceCounter();
+    const double freq = (double)SDL_GetPerformanceFrequency();
+    const double ciclo = s_hud_prev ? (double)(ahora - s_hud_prev) * 1000.0 / freq : 0.0;
+    const double draw  = (s_hud_t1 > s_hud_t0)
+                       ? (double)(s_hud_t1 - s_hud_t0) * 1000.0 / freq : 0.0;
+    s_hud_prev = ahora;
+
     { static int _perf = -1;
       if (_perf < 0) {
           const char *e = getenv("SNESRECOMP_PERF");
@@ -467,29 +459,38 @@ static void HmDraw(uint8_t *px, int width, int frame_invitado, int fps) {
       }
       if (_perf) {
           extern int snes_frame_counter;
-          const double draw = (s_hud_t1 > s_hud_t0)
-              ? (double)(s_hud_t1 - s_hud_t0) * 1000.0 / freq : 0.0;
           const double emu = s_hm_emu_ms;
-          const double resto = ciclo - emu - draw;
+          /* Coste del descompresor del S-DD1 en ESTE fotograma. La pantalla en
+           * negro del arranque y el menu a 48 FPS son esto: el invitado
+           * descomprime bloques y nosotros los descomprimimos de verdad en el
+           * host. Sin este campo no se puede separar "el invitado espera al
+           * S-DD1" de "el host tarda en descomprimir". */
+          uint64_t sb = 0, sz = 0; double sm = 0.0;
+          { void sdd1_prof_get(uint64_t*, uint64_t*, double*);
+            sdd1_prof_get(&sb, &sz, &sm); }
+          const double sdd1_ms = sm - s_sdd1_ms_prev;
+          s_sdd1_ms_prev = sm;
           fprintf(stderr,
-                  "[perf] h=%d g=%d loop=%.2f emu=%.2f draw=%.2f resto=%.2f\n",
+                  "[perf] h=%d g=%d loop=%.2f emu=%.2f draw=%.2f resto=%.2f "
+                  "sdd1=%.2f sdd1Tot=%.0f sdd1Bytes=%llu sdd1Blocks=%llu\n",
                   snes_frame_counter, frame_invitado, ciclo, emu, draw,
-                  resto);
+                  ciclo - emu - draw, sdd1_ms, sm,
+                  (unsigned long long)sz, (unsigned long long)sb);
       }
     }
 
-    static unsigned char lento_ya_contado[0x10000];
-        const int lento = (ciclo > s_hot_ms);
     /* SNESRECOMP_HOT_ALL=1 captura en CADA fotograma rojo, no solo en el
      * flanco de subida. El disparo por flanco servia para ver "cuantos bajones
      * hay", pero si el fotograma 1 ya va lento solo sale una captura y el resto
      * del analisis forense se queda sin imagen. Con HOT_ALL se guarda cada uno.
      */
+    static unsigned char lento_ya_contado[0x10000];
     static int _hot_all = -1;
     if (_hot_all < 0) {
         const char *e = getenv("SNESRECOMP_HOT_ALL");
         _hot_all = (e && e[0] && e[0] != '0') ? 1 : 0;
     }
+    const int lento = (ciclo > s_hot_ms);
     if (s_hot_on) {
         if (lento && (_hot_all || !s_hot_edge)) {
             char path[1024];
@@ -502,16 +503,28 @@ static void HmDraw(uint8_t *px, int width, int frame_invitado, int fps) {
                 s_hot_n++;
             }
             fprintf(stderr,
-                    "[hot] f=%d ciclo=%.2fms (umbral %.1f) draw=%.2fms "
+                    "[hot] f=%d ciclo=%.2fms (umbral %.1f) emu=%.2fms "
                     "fps=%d -> %s  #%d\n",
-                    frame_invitado, ciclo, s_hot_ms, draw, fps, path, s_hot_n);
-        } else if (!lento && s_hot_n &&
-                   (frame_invitado % 600) == 0) {
-            fprintf(stderr, "[hot] f=%d acumulado=%d\n", frame_invitado,
+                    frame_invitado, ciclo, s_hot_ms, s_hm_emu_ms, fps, path,
                     s_hot_n);
+        } else if (!lento && s_hot_n && (frame_invitado % 600) == 0) {
+            fprintf(stderr, "[hot] f=%d acumulado=%d\n", frame_invitado, s_hot_n);
         }
     }
     s_hot_edge = lento;
+
+    if (!s_hud_on) return;
+
+    char buf[72];
+    snprintf(buf, sizeof buf, "F%d C%.1f D%.1f %dFPS",
+             frame_invitado, ciclo, draw, fps);
+    const int w = 4 * (int)strlen(buf) + 4;
+    const int h = 9;
+    for (int y = 0; y < h; y++)
+        for (int x = 0; x < w; x++)
+            HmPutPx(px, width * 4, x + 2, y + 2, 0x000000u);
+    /* rojo si el ciclo se pasa del presupuesto de 60 fps, blanco si no */
+    HmText(px, width * 4, 4, 4, buf, ciclo > 18.0 ? 0xFF0000u : 0xFFFFFFFFu);
 }
 
 static void DrawPpuFrameWithPerf(int present) {
