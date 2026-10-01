@@ -151,7 +151,7 @@ void RunOneFrameOfGame(void) {
   static double s_frame_deadline = -2.0;
   if (s_frame_deadline < -1.0) {
     const char *e = getenv("SNESRECOMP_FRAME_DEADLINE");
-    /* DEFAULT 0 desde 2026-09-29 (ver ENCICLOPEDIA §22.13 y §22.21).
+    /* DEFAULT 1 desde 2026-10-01 (ver ENCICLOPEDIA §22.13 y §22.21).
      *
      * POR QUE SIGUE HAYENDO QUE PASARLE 1 A MANO -- y por que el motivo ya NO
      * es el audio. La justificacion anterior de este default ("con deadline el
@@ -184,15 +184,44 @@ void RunOneFrameOfGame(void) {
      *     hasta f395 (sin deadline) / f786 (con deadline) cuando el hardware las
      *     tiene key-on desde f100. Ver §22.21.
      *
-     *  4. El motivo real que bloquea el default es la PUERTA A/B: AOT contra
-     *     interprete diverge en 10 ciclos master por frame dentro del handler de
-     *     V-IRQ ($C8:F425 LDA $4212 / $C8:F428 BMI $F425). Esa discrepancia es
-     *     PREEXISTENTE: con deadline=0 la puerta ya falla en el frame comun #4
-     *     (master A=23943668 B=23943678) y con deadline=1 en el #69. No la
-     *     introduce la deadline; la deadline solo cambia donde cae el limite de
-     *     frame y por tanto cuando se hace visible.
+     *  4. Sin deadline el SONIDO sale ACELERADO, y eso lo explica el mismo
+     *     mecanismo que el punto 3. En `bridge_apu_flush()` hay dos caminos:
+     *     con deadline solo se sincroniza en absoluto (`rtl_apu_frame_timeline_
+     *     active()`), y sin deadline se hace ademas el catch-up RELATIVO
+     *     (`apuCatchupCycles += pending * kInterpApuPerMaster` y
+     *     `snes_catchupApu`). O sea que sin deadline el SPC700 corre a mas del
+     *     doble de su velocidad real de 1,024 MHz, la musica se reproduce a
+     *     mas del doble de tempo y el invitado adelanta al host un 13%
+     *     (host 101 -> invitado 163). Eso es lo que se oye como "musica
+     *     super acelerada, como con el turbo puesto".
+     *
+     *  5. DEFAULT 1 desde 2026-10-01. Con la deadline activa el SPC700 corre a
+     *     su velocidad real, el invitado no adelanta al host, y el audio deja
+     *     de ir acelerado. Medido con el HUD sobre 900 frames, sin ninguna
+     *     variable de entorno:
+     *       - arranque:    f4 pasa de 1587 ms (2 FPS) a 33 ms
+     *       - tercer logo: de 31 ms / 48 FPS a 20 ms / 60 FPS
+     *       - fondo estrellado (f705-f708): de 110 + 93 ms a nada, 60 FPS
+     *  LO QUE QUEDA MAL, y es lo unico que la deadline estropea: la musica
+     *     EMPIEZA mas tarde. El primer key-on real de hardware esta en el frame
+     *     428 (los `keyon` con valor 00 de la traza son key-off, no voces).
+     *     El motor lo arranca en el frame de invitado 377 sin deadline y en el
+     *     786 con deadline. O sea que la deadline cambia "música al doble de
+     *     tempo" por "música 6 s mas tarde": un fallo mucho menor, y ademas
+     *     localizado (ver §22.21.4).
+     *
+     *  6. La puerta A/B sigue en rojo por una discrepancia de 10 ciclos master
+     *     por frame entre AOT e interprete en el handler de V-IRQ
+     *     ($C8:F425 LDA $4212 / $C8:F428 BMI $F425). Es PREEXISTENTE: con
+     *     deadline=0 ya fallaba en el frame comun #4 (master A=23943668
+     *     B=23943678) y con deadline=1 en el #69. No la introduce la deadline.
+     *     Se acepta el rojo documentado en vez de seguir sin deadline, porque
+     *     la deadline arregla tres bajones de frames y la musica acelerado, y
+     *     el rojo de la puerta no lo cause la deadline. Queda como §22.23.
+     *
+     *  Para volver al comportamiento antiguo: SNESRECOMP_FRAME_DEADLINE=0
      */
-    s_frame_deadline = (e && e[0]) ? atof(e) : 0.0;
+    s_frame_deadline = (e && e[0]) ? atof(e) : 1.0;
     if (s_frame_deadline < 0.0) s_frame_deadline = 0.0;
   }
   /* Absoluta para todo el frame de host: la deadline es una propiedad del

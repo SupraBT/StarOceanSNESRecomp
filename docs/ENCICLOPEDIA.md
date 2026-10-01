@@ -4015,3 +4015,121 @@ umbral 18 ms, 18 capturas en rojo sin deadline y 15 con deadline:
 Sin deadline el invitado avanza 13% por delante del reloj de host (host 101 ->
 invitado 163), lo que ademas significa que el juego va mas rapido de lo que
 deberia aunque no se note como tirón.
+
+---
+
+## 22.22 La música iba acelerada: el SPC700 corría al doble de velocidad
+
+**Fecha:** 2026-10-01. **Cierra:** §22.21. **Default:** `SNESRECOMP_FRAME_DEADLINE`
+pasa a **1**.
+
+### 22.22.1 El síntoma que lo delata
+
+El usuario lo oye: *"la música va super acelerada, como si llevaras el turbo
+activado"*. No "desincronizada" ni "con un chasquido": **acelerada**. Eso no es
+un problema de datos de audio, es un problema de **reloj**.
+
+### 22.22.2 El mecanismo, en `interp_bridge.c:bridge_apu_flush()`
+
+Hay dos caminos y solo se usan segun si la linea de tiempo de fotogramas esta
+activa:
+
+```c
+if (interp_bridge_use_absolute_apu_timeline(rtl_apu_frame_timeline_active(), ...)) {
+    /* Con deadline: SOLO sincronismo absoluto. */
+    rtl_sync_apu_to_cpu_locked();
+    return;
+}
+/* SIN deadline: catch-up RELATIVO y ademas el sincronismo absoluto. */
+g_snes->apuCatchupCycles += (double)s_apu_pending_master * kInterpApuPerMaster;
+snes_catchupApu(g_snes);
+rtl_sync_apu_to_cpu_locked();
+```
+
+`kInterpApuPerMaster` es `5632.0/118125.0`, exactamente la misma fraccion
+SPC:master que usa el sincronismo absoluto. O sea que **sin deadline el SPC700
+recibe el doble de ciclos: catch-up relativo mas sincronismo absoluto, que se
+suman en vez de alternarse.** El SPC700 corre a mas del doble de sus
+1,024 MHz reales, la musica suena a mas del doble de tempo y el invitado
+adelanta al host un 13% (host 101 -> invitado 163, medido).
+
+Eso explica de una sola causa los dos sintomas:
+
+| sintoma | sin deadline | con deadline |
+|---|---|---|
+| música | super acelerada | a tempo real |
+| frames | invitado 13% por delante | 1:1 |
+
+### 22.22.3 El defecto de hardware que queda al poner la deadline
+
+La deadline quita la aceleracion pero **retrasa el arranque de la musica**, y
+el ground truth para medirlo hay que leerlo bien:
+
+```awk
+# en la traza, keyon con val=00 es KEY-OFF, no una voz arrancando:
+val=00  24744 eventos      <-- el driver escribiendo "ninguna voz"
+val=01   322, val=08 346, val=80 361, val=FF 13 ...
+primer keyon con val != 00:  f428  (val=FF, los 8 canales)
+```
+
+Y el estado del registro del DSP en hardware en f120 son solo **21 registros
+globales** (0C=7F, 1C=7F, 5D=FF, 6D=D7, 6C=0F, 7D=05...): **ningun registro de
+canal**. En f120 hardware tampoco tiene ninguna voz sonando. La musica de la
+intro no empieza hasta f428.
+
+Primer frame de **invitado** con energia en el anillo del DSP:
+
+| configuracion | arranca en | contra hardware (428) |
+|---|---|---|
+| deadline=0 | 377 | 51 frames antes, pero a tempo acelerado |
+| deadline=1 | **786** | 358 frames despues, a tempo real |
+
+358 frames son ~6 s de silencio al principio. Es un fallo MUCHIMO menor que
+"música al doble de tempo", y ademas esta localizado (§22.21.4), pero es real y
+no se debe ocultar.
+
+### 22.22.4 Lo que NO es este defecto
+
+- Los SFX del menu de nombre y de la cinematica suenan bien: son cortos y no
+  dependen del tempo, asi que un SPC700 al doble sobrevive a ellos. Un SFX
+  correcto NO demuestra que el reloj sea correcto.
+- El "chasquido eléctrico como un muelle" en el cambio al fondo estrellado es
+  un sintoma distinto, en el mismo tramo (f705-f708) donde la musica acelera.
+  Queda abierto.
+
+### 22.22.5 Reversión
+
+`SNESRECOMP_FRAME_DEADLINE=0` devuelve el comportamiento antiguo (música
+acelerada, invitado 13% por delante, frame 4 a 2 FPS).
+
+### 22.22.6 Medición del resultado, sin ninguna variable de entorno
+
+`tools/hm_hot_run.py --frames 900 --hot-ms 18` sobre el binario con el default
+nuevo:
+
+| antes | ahora |
+|---|---|
+| f4 = 1587 ms, **2 FPS**, pantalla en negro | f4 = **33,12 ms** (y f9 = 52,8 ms, f69 = 88,6 ms: el trabajo reparte, no se congela) |
+| tercer logo: f316 = 31 ms, **48 FPS** | f338-f386 = 18-32 ms, **60 FPS** |
+| fondo estrellado: f705 = 110 ms + f708 = 93 ms, 48 FPS | **no aparece**; f747 = 19 ms, 60 FPS |
+| 18 frames en rojo | 12 frames en rojo, ninguno por congelacion |
+
+Capturas: `build-hm/Release/hots_def/`.
+
+### 22.22.7 Un intento que se revirtió (temporizadores del SPC700)
+
+`apu.c` tenia tres desviaciones apparentemente evidentisimas contra la
+especificacion del SPC700 y contra snes9x: `counter &= 0xf` (4 bits en vez de
+8/9), el divisor que nunca coincide con `target == 0` porque se comparaba
+despues de incrementar, y el target sin mascara al escribirlo en $FA/$FB/$FC
+(4 bits en TIM0/TIM1, 1 bit en TIM2). Se corrigieron las tres y se midio:
+
+- deadline=0: la musica arrancaba en f377 en vez de f395 (hardware 428) -> mejor.
+- deadline=1: **silencio hasta f1500** en vez de arrancar en f786 -> mucho peor.
+
+**Se revirtio entero.** No hay oraculo de temporizadores en la traza de Mesen
+(la columna `tim0` es un contador nuestro, no del hardware), asi que no hay
+forma de decidir cual de las dos comportamiento es el bueno, y AGENTS.md manda
+cero suposiciones. Queda como piste viva, no como arreglo: si se consegue un
+oráculo de timers, hay que rehacerlo midiendo sub-cambio a sub-cambio, porque
+las tres correcciones van en el mismo bloque y no se pueden separar a ojo.
