@@ -4133,3 +4133,77 @@ forma de decidir cual de las dos comportamiento es el bueno, y AGENTS.md manda
 cero suposiciones. Queda como piste viva, no como arreglo: si se consegue un
 oráculo de timers, hay que rehacerlo midiendo sub-cambio a sub-cambio, porque
 las tres correcciones van en el mismo bloque y no se pueden separar a ojo.
+
+---
+
+## 22.23 La medición del coste por fotograma estaba MAL: se cronometraba el dibujado, no la emulación
+
+**Fecha:** 2026-10-01. **Corrige:** §22.22.6 y todo lo anterior que citara
+`ciclo=` o `draw=` como coste de emulación.
+
+### 22.23.1 El error
+
+`HmDraw()` mide `ciclo` como el delta entre dos llamadas a `HmDraw`. Eso es el
+bucle de host ENTERO, y estaba bien como "cuánto tardó este fotograma". El error
+fue al **desglosarlo**: el campo `draw` se mide alrededor de
+`g_rtl_game_info->draw_ppu_frame()`, que **solo dibuja el PPU**, no emula. Al
+cronometrar lo que se llamó "emu" ahí, salía 0,05 ms y todo el resto del
+fotograma se iba a un "resto" sin nombre.
+
+Con `SNESRECOMP_PERF=1` (nuevo, en `src/main.c`) cronometrando **solo
+`RtlRunFrame`**, la misma corrida da:
+
+| | antes (medido mal) | ahora (medido bien) |
+|---|---|---|
+| emulación | 0,05 ms | **16 - 27 ms** |
+| dibujado PPU | 2,5 ms | 1 - 1,2 ms |
+| presentación + espera | 16 - 94 ms | 3 - 5 ms |
+
+**El presupuesto de 60 FPS son 16,67 ms y la emulación se come 16-27.** Eso es
+el bajón de frames. No es el dibujado, no es la espera, no es el Present.
+
+### 22.23.2 Qué invalida de §22.22
+
+La tabla de §22.22.6 (f4 de 1587 ms a 33 ms, etc.) medía el bucle entero y
+sigue siendo cierta como medida de bucle, pero **no attribute el coste**: no
+demonstraba que la deadline arreglara el bajón, solo que el bucle duraba menos.
+Con la deadline, la emulación de un fotograma sigue costando 16-27 ms. Lo que
+la deadline arregla es el **salto de 1.587 ms** (66 fotogramas de invitado en
+uno), no el coste por fotograma.
+
+### 22.23.3 Herramientas nuevas
+
+- `tools/frame_forensics.py`: dos pasadas (una cronometra SIN instrumentación,
+  otra recoge `[fstate]`/`[irqstate]`/`[dspstat]`/`[dspvoice]`/`[fbudget]`),
+  guarda el BMP de cada fotograma rojo y escribe un informe por fotograma con
+  el desensamblado del PC y el contraste contra la traza. `SNESRECOMP_HOT_ALL=1`
+  (nuevo) captura en cada fotograma rojo y no solo en el flanco de subida: con
+  el disparo por flanco, si el fotograma 1 ya va lento salía una sola imagen.
+- Traza de eventos del motor en **el formato exacto de Mesen**
+  (`SNESRECOMP_TRACE_EVENTS=<fichero>`, emisor en `audio_trace.c`, enganchado en
+  `apu.c` y `dsp.c`): `w214x` (CPU y SPC), `sdsp_addr`, `sdsp_data` con
+  `nota=reg=XX`, y `keyon`.
+- `tools/trace_diff.py`: alinea las dos trazas de eventos con `difflib` y
+  reporta la primera divergencia con contexto, más la deriva de frame.
+
+### 22.23.4 Lo que la traza de eventos encuentra de inmediato
+
+Contraste cara a cara de los primeros eventos de audio (frame 9):
+
+```
+MOTOR                                   MESEN
+cpu w214x $2143=01                      cpu w214x $2142=80
+cpu w214x $2142=80                      cpu w214x $2143=01
+cpu w214x $2141=01                      cpu w214x $2141=01
+cpu w214x $2140=CC                      cpu w214x $2140=CC
+```
+
+**El motor escribe `$2143` antes que `$2142`; el hardware al reves.** Es la
+primera divergencia real y esta en el mismismo handshake de audio que se lleva
+buscando. Ojo con el comentario que hay en `common_rtl.c` sobre el caso de
+16 bits a `$2140` ("order hi-then-lo"): ahi el hardware SI hace hi-antes-que-lo
+(`$2141=01` luego `$2140=CC`, y el motor tambien), pero en el par
+`$2142`/`$2143` el hardware hace low-antes-que-hi y el motor al reves.
+
+Ademas el motor no emite `w2100` ni `w4200`, que la sonda de Mesen si emite, asi
+que la alineacion arrastra ruido de esos huecos. Falta engancharlos.

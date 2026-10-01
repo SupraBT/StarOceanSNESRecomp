@@ -402,7 +402,13 @@ static void HmSaveBmp(const uint8_t *px, int pitch, int w, int h,
     fclose(f);
 }
 
-static int   s_hud_on = -1;
+/* Reparto del tiempo del bucle de host, publicado para que [perf] lo lea.
+ * `g_hm_emu_ms` es SOLO RtlRunFrame (la emulacion). Antes se confundia con
+ * draw_ppu_frame(), que solo dibuja el PPU: por eso [perf] llegaba a decir que
+ * la emulacion costaba 0,05 ms y todo el tiempo se iba a "resto", que en
+ * realidad era emulacion sin medir. */
+static double s_hm_emu_ms = 0.0;
+static int s_hud_on = -1;
 static Uint64 s_hud_prev = 0;
 static Uint64 s_hud_t0 = 0;
 static Uint64 s_hud_t1 = 0;
@@ -439,15 +445,62 @@ static void HmDraw(uint8_t *px, int width, int frame_invitado, int fps) {
         const char *d = getenv("SNESRECOMP_HOT_DIR");
         if (d && d[0]) s_hot_dir = d;
     }
-    const int lento = (ciclo > s_hot_ms);
+    /* [perf] REPARTO REAL DEL TIEMPO de este bucle de host.
+     *
+     * `ciclo` (el numero que va al HUD y al disparador de captura) es el delta
+     * entre dos HmDraw, o sea el bucle ENTERO: emulacion + presentacion +
+     * SDL_Delay. Con eso no se puede decir donde se ha ido el tiempo, que es
+     * justo lo que hace falta para atacar un bajon de frames. Aqui se separa:
+     *
+     *   emu   = dentro de draw_ppu_frame()          (la emulacion)
+     *   resto = presentacion + SDL_Delay + eventos  (el ritmo de host)
+     *   loop  = ciclo, el total
+     *
+     * Ademas se imprime el estado del invitado EN ESE frame, para poder
+     * confrontarlo con la traza de hardware sin tener que correlacionar a mano.
+     * Todo por detras de SNESRECOMP_PERF=1 y coste cero si no se pone.
+     */
+    { static int _perf = -1;
+      if (_perf < 0) {
+          const char *e = getenv("SNESRECOMP_PERF");
+          _perf = (e && e[0] && e[0] != '0') ? 1 : 0;
+      }
+      if (_perf) {
+          extern int snes_frame_counter;
+          const double draw = (s_hud_t1 > s_hud_t0)
+              ? (double)(s_hud_t1 - s_hud_t0) * 1000.0 / freq : 0.0;
+          const double emu = s_hm_emu_ms;
+          const double resto = ciclo - emu - draw;
+          fprintf(stderr,
+                  "[perf] h=%d g=%d loop=%.2f emu=%.2f draw=%.2f resto=%.2f\n",
+                  snes_frame_counter, frame_invitado, ciclo, emu, draw,
+                  resto);
+      }
+    }
+
+    static unsigned char lento_ya_contado[0x10000];
+        const int lento = (ciclo > s_hot_ms);
+    /* SNESRECOMP_HOT_ALL=1 captura en CADA fotograma rojo, no solo en el
+     * flanco de subida. El disparo por flanco servia para ver "cuantos bajones
+     * hay", pero si el fotograma 1 ya va lento solo sale una captura y el resto
+     * del analisis forense se queda sin imagen. Con HOT_ALL se guarda cada uno.
+     */
+    static int _hot_all = -1;
+    if (_hot_all < 0) {
+        const char *e = getenv("SNESRECOMP_HOT_ALL");
+        _hot_all = (e && e[0] && e[0] != '0') ? 1 : 0;
+    }
     if (s_hot_on) {
-        if (lento && !s_hot_edge) {
+        if (lento && (_hot_all || !s_hot_edge)) {
             char path[1024];
             snprintf(path, sizeof path, "%s/f%06d.bmp", s_hot_dir,
                      frame_invitado);
             HmEnsureDir(s_hot_dir);
             HmSaveBmp(px, width * 4, width, 224, path);
-            s_hot_n++;
+            if (!lento_ya_contado[frame_invitado & 0xFFFF]) {
+                lento_ya_contado[frame_invitado & 0xFFFF] = 1;
+                s_hot_n++;
+            }
             fprintf(stderr,
                     "[hot] f=%d ciclo=%.2fms (umbral %.1f) draw=%.2fms "
                     "fps=%d -> %s  #%d\n",
@@ -1879,6 +1932,8 @@ error_reading:;
                     debug_server_get_controller_active_mask());
 #ifndef SNESRECOMP_CLEAN_BUILD
         t_emu1 = SDL_GetPerformanceCounter();
+        s_hm_emu_ms = (double)(t_emu1 - t_emu0) * 1000.0 /
+                      (double)SDL_GetPerformanceFrequency();
         { extern void debug_server_wait_if_paused(void);
           debug_server_wait_if_paused(); }
         /* Per-frame guest master_cycles (dev): SNESRECOMP_MC_LOG=1 logs
