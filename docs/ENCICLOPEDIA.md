@@ -4394,3 +4394,72 @@ durante f4-f100+ (§22.24.2). De ahi salen los 15-25 ms por fotograma.
 `tools/r2140_oracle.py docs/traces/hw_r2140.tsv [motor.tsv]` contrasta los dos
 lados con las mismas tres preguntas (spin, repeticiones, PCs) y da el
 veredicto. Con solo el fichero de hardware ya sale el 96,7 % y el 0 en f1-f60.
+---
+
+## 22.26 El bucle del handshake: el motor entra 40 frames antes y no sale nunca
+
+**Fecha:** 2026-10-01. Continúa §22.25. Contradice una hipótesis mía de §22.24.
+
+### 22.26.1 Me equivoqué con la semántica de $2140, y el oráculo lo desmentía
+
+Propuse hacer que leer `$2140` devolviera el último valor escrito por el CPU
+("es un pestillo"). **Es falso, y el propio oráculo lo desmiente**: en f9 el CPU
+NO escribió `AA` a `$2140`; su primera escritura de ese frame es `CC`
+(`hw_events.tsv`). Las 18 lecturas que devolvieron `AA` son el valor que el
+**SPC700** tenía en su puerto de salida, y el log de eventos lo confirma: la
+escritura del SPC aparece DESPUÉS de la del CPU, o sea que el SPC devuelve un
+eco de lo que le escriben.
+
+`snes_readBBus` ya devuelve `apu->outPorts[adr & 3]`, que es ese eco. **El modelo
+del motor es correcto.** No se toca.
+
+### 22.26.2 El bucle no se sale por el CMP
+
+Desensamblado completo de la rutina en `$C0:8598`:
+
+```
+$C0:8598  PHP / SEP #$20 / STA $4B
+$C0:859D  SEI
+$C0:859E  LDA $002140
+$C0:85A2  CMP $002140
+$C0:85A6  BNE $859D
+$C0:85A8  EOR $4A
+$C0:85AA  BPL $85CC     ; bit 7 == 0 -> CLI/NOP/NOP/NOP/BRA $859D
+$C0:85AC  LDA $4C y luego escribe $002141/$002142/$002143 y $002140
+$C0:85CC  CLI / NOP / NOP / NOP / BRA $859D
+```
+
+`$85CC` vuelve **incondicionalmente** a `$859D`. Las dos lecturas SIEMPRE
+coinciden (96,7 % de repeticiones en hardware, y en el motor también), así que
+el `BNE` no es lo que atrapa al invitado: **lo que lo atrapa es que
+`(A XOR $4A)` nunca tiene el bit 7.**
+
+### 22.26.3 El dato que lo cierra
+
+`SNESRECOMP_R2140` vuelca ahora el flujo de lecturas del motor en el formato del
+oráculo, con dos columnas añadidas: `$4A` y la condición de salida.
+
+|                     | hardware          | motor                   |
+|---------------------|-------------------|-------------------------|
+| lecturas en el spin | **432** (f70-f78) | **102.392** (desde f30) |
+| frames con el spin  | f70 a f78          | desde f30, y no para    |
+| `$4A` en el spin    | —                  | `$00` en 101.900, `$80` en **506** |
+
+El motor entra en el bucle en **f30**, cuarenta frames antes que hardware, y
+solo 506 de 102.406 lecturas tienen `$4A` igual a `$80`, que es la única
+condición que permite enviar el byte y salir.
+
+Conclusión: la causa NO es el puerto, NO es el S-DD1 y NO es el reloj. Es que
+**el código que pone `$4A` a `$80` no llega a ejecutarse** en el motor, o se
+ejecuta con otro valor. `$4A` está en WRAM baja; en la ROM hay un solo
+`STA $004A` en `$D0:7B52` y dos `STY $004A` en `$A4:4FFA` y `$C4:62CC`, pero
+también puede ser un `TRB`, `TSB` o `ROL` de los muchos que hay. Localizar cuál
+de los candidatos se ejecuta en el arranque es el paso siguiente.
+
+### 22.26.4 Herramientas que quedan
+
+- `SNESRECOMP_R2140=<fichero>` y `SNESRECOMP_R2140_MAX=<n>`: vuelca las lecturas
+  de `$2140-$2143` del motor en el formato del oráculo, con `$4A` y la condición
+  de salida. En `interp_bridge.c`, en la ruta de lectura de BYTE (la del
+  handshake); la de palabra ya tenía su propio diagnóstico.
+- `tools/r2140_oracle.py <hw.tsv> [motor.tsv]`: contrasta los dos lados.

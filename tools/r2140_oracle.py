@@ -118,7 +118,7 @@ def main():
     if tot_hw == 0 and tot_mo > 1000:
         print("    DIVERGE: el motor entra en un bucle que en hardware no se")
         print("    ejecuta nunca. Ahi esta el bajon de frames del arranque.")
-    only_mo = ["$%06X" % pc for pc in pc_mo.most_common(8) if pc not in pc_hw]
+    only_mo = ["$%06X" % p for p, _n in pc_mo.most_common(8) if p not in pc_hw]
     if only_mo:
         print("    PCs que SOLO lee el motor: %s" % ", ".join(only_mo))
     return 0
