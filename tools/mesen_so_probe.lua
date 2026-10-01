@@ -86,6 +86,16 @@ local DIR_SALIDA  = nil         -- nil = carpeta del ROM / candidatos
 -- Aqui se graba CADA lectura con su valor y con el PC de quien la hace, que es
 -- lo unico que permite emparejar $C0859E con $C085A2 y ver que devuelve el
 -- hardware de verdad en cada una.
+-- CONTENIDO INTEGRO del WRAM bajo ($0000-$00FF), fotograma a fotograma.
+-- Es el instrumento mas barato y mas informativo para responder a la pregunta
+-- que de verdad importa: en que fotograma exacto el motor se separa de
+-- hardware. Un digest no sirve para eso (solo diria SI y CUANDO); 256 bytes
+-- en hexadecimal si. El handshake de $2140 lee $4A de ahi, asi que cuando el
+-- motor no pone $4A a $80 se vera aqui el primer fotograma en que esa pagina
+-- deja de coincidir con hardware.
+local WRAM0_DESDE = 1
+local WRAM0_HASTA = 200
+
 local R2140_DESDE = 1         -- ventana de captura
 local R2140_HASTA = 1200
 local R2140_MAX   = 400000     -- tope de lineas; en hardware no se llega
@@ -94,7 +104,7 @@ local PARAR = false             -- true = emu.stop() al terminar (CIERRA Mesen)
 -- Ficheros. Se declaran ANTES de log(), que los usa: en Lua un local
 -- declarado despues no existe para las funciones de arriba, y el
 -- `if f_status` se comeria un global nil en silencio.
-local f_frames, f_audio, f_events, f_replay, f_fp, f_status, f_r2140 = nil, nil, nil, nil, nil, nil, nil
+local f_frames, f_audio, f_events, f_replay, f_fp, f_status, f_r2140, f_wram0 = nil, nil, nil, nil, nil, nil, nil, nil
 local base = nil
 
 -- Zonas de codigo vigiladas. El recuento por fotograma de cuantas veces se
@@ -238,9 +248,10 @@ local function abrir()
       f_replay = assert(io.open(dir .. "_replay.txt", "w"))
       f_fp     = assert(io.open(dir .. "_fp.tsv", "w"))
       f_r2140  = assert(io.open(dir .. "_r2140.tsv", "w"))
+      f_wram0 = assert(io.open(dir .. "_wram0.tsv", "w"))
     end)
     if ok and f_frames then base = dir; break end
-      f_frames, f_audio, f_events, f_replay, f_fp, f_r2140 = nil, nil, nil, nil, nil, nil
+f_frames, f_audio, f_events, f_replay, f_fp, f_r2140, f_wram0 = nil, nil, nil, nil, nil, nil, nil
   end
   if not base then
     log("ERROR: no he podido escribir en ninguna ruta")
@@ -266,6 +277,9 @@ local function abrir()
                  "\taddr\tval\tnote\n")
 
   f_r2140:write("# " .. TAG .. " lecturas de $2140-$2143, una linea por lectura, con el PC. fr	master	addr	val	pc	n\n")
+  if f_r2140 then f_r2140:flush() end
+  f_wram0:write("# " .. TAG .. " WRAM $0000-$00FF integro, un fotograma por fila. fr	master	wram0hex\n")
+  if f_wram0 then f_wram0:flush() end
 
   f_fp:write("# " .. TAG .. " huellas para localizar el primer fotograma de " ..
              "divergencia. fr\tmaster\twram\tspcRam\tdspRam\n")
@@ -273,11 +287,11 @@ local function abrir()
 end
 
 local function cerrar()
-  for _, f in ipairs({ f_frames, f_audio, f_events, f_replay, f_fp, f_r2140 }) do
+  for _, f in ipairs({ f_frames, f_audio, f_events, f_replay, f_fp, f_r2140, f_wram0 }) do
     if f then pcall(function() f:close() end) end
   end
   if f_status then pcall(function() f_status:close() end) end
-  f_frames, f_audio, f_events, f_replay, f_fp, f_status, f_r2140 = nil, nil, nil, nil, nil, nil, nil
+  f_frames, f_audio, f_events, f_replay, f_fp, f_status, f_r2140, f_wram0 = nil, nil, nil, nil, nil, nil, nil, nil
 end
 
 -- ============================================================================
@@ -484,31 +498,41 @@ end
 -- (puede ser (cpuType, addr) o al reves), asi que se prueban los dos y se
 -- recuerda el que funciona. Adivinarlo daria lecturas del bus equivocado y
 -- huellas que no significan nada.
-local rd_forma = nil
-
-local function leer_mem(cpu_type, a)
-  local rd = emu.readMemory
+-- Leer memoria. OJO: en ESTA build emu.readMemory NO EXISTE (comprobado con un
+-- script de humo el 2026-10-01: attempt to call a nil value). La sonda llevaba
+-- tiempo intentando leer con el, y como fallo devolvia nil en silencio, la
+-- huella de WRAM salia '-' y parecia un dato. Por eso ahora se usa emu.read,
+-- que si existe, y se pasa el memType: snesWorkRam para el WRAM de la CPU y
+-- spcRam para la RAM del SPC700.
+local function leer_mem(mem_type, a)
+  if mem_type == nil then return nil end
+  local rd = emu.read
   if not rd then return nil end
-  if rd_forma == 1 then
-    local ok, v = pcall(rd, cpu_type, a)
-    if ok and type(v) == "number" then return v end
-    rd_forma = nil
-  elseif rd_forma == 2 then
-    local ok, v = pcall(rd, a, cpu_type)
-    if ok and type(v) == "number" then return v end
-    rd_forma = nil
-  end
-  local ok, v = pcall(rd, cpu_type, a)
-  if ok and type(v) == "number" then rd_forma = 1; return v end
-  local ok2, v2 = pcall(rd, a, cpu_type)
-  if ok2 and type(v2) == "number" then rd_forma = 2; return v2 end
+  local ok, v = pcall(rd, a, mem_type)
+  if ok and type(v) == "number" then return v end
   return nil
+end
+
+local MT_WRAM = emu.memType and emu.memType.snesWorkRam or nil
+local MT_SPC_RAM = emu.memType and emu.memType.spcRam or nil
+
+
+-- Los 256 bytes del WRAM bajo en hexadecimal. Sin digest: aqui se quiere ver
+-- QUE byte se diferencia, no solo que se ha differed.
+local function volcar_wram0()
+  local t = {}
+  for a = 0x0000, 0x00FF do
+    local v = leer_mem(MT_WRAM, a)
+    if v == nil then return nil end
+    t[#t + 1] = string.format("%02X", v)
+  end
+  return table.concat(t)
 end
 
 local function huella_mem(desde, hasta)
   local h = d_reset()
   for a = desde, hasta do
-    local v = leer_mem(CT_CPU, a)
+    local v = leer_mem(MT_WRAM, a)
     if v == nil then return nil end
     h = d_byte(h, v)
   end
@@ -519,7 +543,7 @@ local function huella_spc()
   if CT_SPC == nil then return nil end
   local h = d_reset()
   for a = 0x0000, 0x00FF do
-    local v = leer_mem(CT_SPC, a)
+    local v = leer_mem(MT_SPC_RAM, a)
     if v == nil then return nil end
     h = d_byte(h, v)
   end
@@ -661,9 +685,22 @@ local function on_end_frame()
   -- HUELLAS_CADA: subirlas a 1 cuela el coste dentro de la emulacion y falsea
   -- las medidas de tiempo, que es justo lo que no hay que hacer.
   if quiere_fp then
+
     f_fp:write(string.format("%d\t%d\t%s\t%s\t-\n", frame, mc,
       hex(huella_mem(0x0000, 0x1FFF), 8), hex(spc_fp, 8)))
   end
+  if f_fp then f_fp:flush() end
+
+  -- Contenido integro del WRAM bajo. Solo en la ventana configurada: 256
+  -- lecturas de memoria por fotograma se notan si se dejan fuera de ella.
+  if f_wram0 and frame >= WRAM0_DESDE and frame <= WRAM0_HASTA then
+    local w0 = volcar_wram0()
+    if w0 then f_wram0:write(string.format("%d	%d	%s\n", frame, mc, w0)) end
+  end
+  -- flush a proposito: Lua bufferiza, y si Mesen se cierra a lo bruto (o se
+  -- mata desde fuera) un fichero pequeno se queda en el bucle y sale de 0
+  -- bytes. Ya ha pasado dos veces y parece un fallo de la sonda.
+  if f_wram0 then f_wram0:flush() end
 
   if LOG_EVERY > 0 and (frame % LOG_EVERY) == 0 then
     log(string.format("fr=%d master=%d pc=%06X r2140=%d cpu_w2140=%d " ..
@@ -717,11 +754,17 @@ local function on_reset()
   reset_frame()
 end
 
+local function avisar_api()
+  if emu.read == nil then log("AVISO: emu.read no existe en esta build") end
+  if not MT_WRAM then log("AVISO: emu.memType.snesWorkRam no existe") end
+end
+
 local function arrancar()
   if not abrir() then return end
   f_replay:write("# replay para el motor recomp, en tiempo de INVITADO\n")
   f_replay:write("# <master> <mascara hex $4218>\n")
 
+  avisar_api()
   registrar()
 
   if try(emu.addEventCallback, on_reset, EV_RESET) then

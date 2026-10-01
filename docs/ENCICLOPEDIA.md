@@ -4463,3 +4463,86 @@ de los candidatos se ejecuta en el arranque es el paso siguiente.
   de salida. En `interp_bridge.c`, en la ruta de lectura de BYTE (la del
   handshake); la de palabra ya tenía su propio diagnóstico.
 - `tools/r2140_oracle.py <hw.tsv> [motor.tsv]`: contrasta los dos lados.
+---
+
+## 22.27 La API real de esta build de Mesen, yWRAM bajo frame a frame en los dos lados
+
+**Fecha:** 2026-10-01. Continúa §22.26.
+
+### 22.27.1 `emu.readMemory` NO EXISTE. La huella de WRAM llevaba tiempo muerta
+
+`leer_mem()` en la sonda llevaba tiempo intentando leer con `emu.readMemory`.
+Un script de humo con `--testRunner` lo deja claro:
+
+```
+readMemory(0x0000, emu.memType.cpu)   ok=false
+  attempt to call a nil value (field 'readMemory')
+```
+
+Como el `pcall` fallaba y la funcion devolvia `nil` en silencio, la "huella de
+WRAM" salia con guiones (`-`) y **parecia un dato**. No lo era: era un fallo de
+la sonda. Ahora se usa `emu.read(offset, memType)`, que si existe.
+
+### 22.27.2 La API de esta build, medida y no supuesta
+
+Lo que hay de verdad en `emu` (lo que sigue se ha listado con `pairs`):
+
+- **Memoria**: `read`, `read16`, `read32`, `readWord`, `write`, `write16`,
+  `write32`, `writeWord`, `getMemorySize`, `getAccessCounters`.
+- **Tipos de memoria** relevantes: `snesWorkRam`, `snesMemory`, `snesDebug`,
+  `spcRam`, `spcMemory`, `spcDspRegisters`, `snesVideoRam`, `snesCgRam`.
+- **Eventos**: `endFrame`, `startFrame`, `reset`, `nmi`, `irq`, `inputPolled`,
+  `stateLoaded`, `stateSaved`, `scriptEnded`, y **`codeBreak`**.
+- **Control**: `step`, `breakExecution`, `resume`, `stop`, `getState`,
+  `setState`, `getCpuState`, `setCpuState`, `resetAccessCounters`.
+
+**`codeBreak` es el evento por instruccion.** Es decir que la traza de
+instruccion a instruccion que se pedia en §22.25 SI es posible en esta build, y
+no hace falta socket ni lockstep: un hook que vuelque PC y registros a fichero
+en una ventana acotada. Contesta de paso a la pregunta de si hay callback por
+instruccion: si, y se llama `codeBreak`.
+
+Convencion de offset verificada: `emu.read(0x0000, snesWorkRam)`,
+`emu.read(0x7E0000, snesMemory)` y `emu.read(0x000000, snesMemory)` devuelven
+**los mismos bytes**, asi que el offset plano de `snesWorkRam` es el WRAM del
+banco 0. Sin esta comprobacion, un volcado con offsets equivocados produce un
+"divergente en f1" que no existe.
+
+### 22.27.3 El WRAM bajo, oraculo y motor
+
+La sonda escribe `<salida>_wram0.tsv` con los **256 bytes integros** de
+`$0000-$00FF`, un fotograma por fila, en la ventana `WRAM0_DESDE..WRAM0_HASTA`
+(1..200). El motor hace lo mismo con `SNESRECOMP_WRAM0=<fichero>` y
+`SNESRECOMP_WRAM0_HASTA=<n>`. Ficheros en `docs/traces/hw_wram0.tsv` y
+`docs/traces/motor_wram0.tsv`, 200 fotogramas cada uno.
+
+Motivo: un digest solo dice SI y CUANDO. 256 bytes en hexadecimal dicen **que
+byte** se separa, que es la pregunta que hace falta.
+
+### 22.27.4 Lo que sale
+
+| fotograma | bytes distintos de 128 | primeras direcciones |
+|---|---|---|
+| f1 | 128 | `$00`..`$07` |
+| f3 | 124 | `$00`..`$07` |
+| f10 | 120 | `$03`..`$0A` |
+
+La pagina baja del WRAM **no coincide en NINGUN fotograma de f1 a f200**, y la
+diferencia se estrecha muy despacio (128 -> 124 -> 120), o sea que el motor va
+poniendo cosas pero no llega. La bandera del handshake, `$4A`, si coincide a
+partir de f10 (`$00` en los dos), asi que **el bloqueo de §22.26 no se explica
+con $4A**.
+
+Ojo con el relleno de encendido: Mesen inicializa el WRAM con un patron
+pseudoaleatorio y el boot lo vaponeiendo a cero. A f3 hardware ya tiene ceros
+desde `$0D`. El motor arranca la pagina a cero. Esa parte es ruido de
+encendido y **no** es una divergencia funcional; la divergencia que queda (los
+120-128 bytes de `$00`-`$7F`) si lo es, y es la que hay que atacar.
+
+### 22.27.5 El metodo que toca ahora
+
+Con `codeBreak` disponible, el paso con mas probabilidad de cerrar esto es la
+traza por instruccion en una ventana acotada (f1-f40) en los dos lados, y el
+primer PC en el que se separan. Es lo unico que attacka la causa en lugar de
+perseguir sus sintomas, y de paso explica los +4.806 ciclos de CPU por
+fotograma de §22.24.4 y el atasco de f14800.

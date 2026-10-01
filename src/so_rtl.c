@@ -351,6 +351,39 @@ void RunOneFrameOfGame(void) {
   /* env-gated per-frame render-state trace (SNESRECOMP_FRAME_STATE=1):
    * logged just before SoDrawPpuFrame, so inidisp is exactly what the
    * renderer will see. Diagnostic only; zero cost when unset. */
+  /* Volcado del CONTENIDO INTEGRO del WRAM bajo ($0000-$00FF) fotograma a
+   * fotograma, en el mismo formato que el oraculo de Mesen. Es la
+   * herramienta mas directa para responder a la pregunta que de verdad
+   * importa: en que fotograma y en que byte el motor se separa de hardware.
+   * El handshake de $2140 lee $4A de ahi, asi que cuando el motor no
+   * converge se ve en este fichero. SNESRECOMP_WRAM0=<fichero> lo activa y
+   * SNESRECOMP_WRAM0_HASTA=<n> acota la ventana (200 por defecto): 256
+   * lecturas por fotograma se notan si se dejan fuera de ella. */
+  { static FILE *w0 = NULL; static int w0_tried = 0;
+    static int w0_hasta = 0;
+    if (!w0_tried) {
+      w0_tried = 1;
+      const char *pth = getenv("SNESRECOMP_WRAM0");
+      if (pth && pth[0]) {
+        w0 = fopen(pth, "wb");
+        const char *hs = getenv("SNESRECOMP_WRAM0_HASTA");
+        w0_hasta = (hs && hs[0]) ? atoi(hs) : 200;
+        if (w0)
+          fprintf(w0, "# motor WRAM $0000-$00FF integro. fr	master	wram0hex\n");
+        else
+          fprintf(stderr, "[wram0] no he podido abrir '%s'\n", pth);
+      }
+    }
+    if (w0 && counter_global_frames <= w0_hasta && g_snes) {
+      fprintf(w0, "%d	%llu	",
+              counter_global_frames,
+              (unsigned long long)g_cpu.master_cycles);
+      for (int a = 0; a < 0x100; a++)
+        fprintf(w0, "%02X", cpu_read8(&g_cpu, 0x00, (uint16_t)a));
+      fprintf(w0, "\n");
+      fflush(w0);   /* por si el proceso se mata desde fuera */
+    }
+  }
   { static int fs = -1; static long fs_from = 0;
     if (fs < 0) { const char *e = getenv("SNESRECOMP_FRAME_STATE");
                   fs = (e && e[0] && e[0] != '0') ? 1 : 0;
