@@ -61,10 +61,12 @@
 local OUT_NAME    = "mesen_fades900b.tsv"
 local STATUS_NAME = "mesen_fades900b_status.log"
 local CANDIDATOS = {
+  "E:\\Experimento Hermes\\Documentacion\\TracesMesen\\" .. OUT_NAME,
   "F:\\Recompilador Super Nintendo\\Mesen\\" .. OUT_NAME,
   "F:\\SOR\\" .. OUT_NAME,
 }
 local STATUS_CANDIDATOS_FIJOS = {
+  "E:\\Experimento Hermes\\Documentacion\\TracesMesen\\" .. STATUS_NAME,
   "F:\\Recompilador Super Nintendo\\Mesen\\" .. STATUS_NAME,
   "F:\\SOR\\" .. STATUS_NAME,
 }

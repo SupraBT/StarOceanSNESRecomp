@@ -21,7 +21,7 @@ expensive stands out on its own.
 
 Inputs
 ------
-oracle : StarOceanRecompDocumentacion/mesen_oracle.tsv (11 tab columns:
+oracle : E:\Experimento Hermes\Documentacion\TracesMesen\mesen_oracle.tsv (11 tab columns:
          fr master cpuCyc inidisp w2140 r2140 ram83 spcOut dspw reg4200 pad).
          The file holds the SAME run twice with different column sets; the
          second pass (starts at fr 411) is the one with inidisp/reg4200/pad.
@@ -30,7 +30,7 @@ recomp : the stderr log of a dev build run with SNESRECOMP_FRAME_STATE=1.
 Usage
 -----
     python tools/oracle_overlay.py \
-        --oracle "../StarOceanRecompDocumentacion/mesen_oracle.tsv" \
+        --oracle "E:\\Experimento Hermes\\Documentacion\\TracesMesen\\mesen_oracle.tsv" \
         --recomp build-dev/Release/state.log \
         --csv build-dev/Release/overlay.csv
 """

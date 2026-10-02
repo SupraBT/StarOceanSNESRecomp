@@ -26,7 +26,7 @@ import collections, os, re, sys
 
 FSTATE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..",
                       "build-dev", "Release", "logs")
-DEFAULT_HW = r"E:\Recompilador Super Nintendo\StarOceanRecompDocumentacion\mesen_fades900b.tsv"
+DEFAULT_HW = r"E:\Experimento Hermes\Documentacion\TracesMesen\mesen_fades900b.tsv"
 DEFAULT_RC = os.path.join(FSTATE, "inidisp_trace.log")
 
 

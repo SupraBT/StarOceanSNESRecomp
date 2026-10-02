@@ -8,18 +8,32 @@ Ahora hay **un solo arbol canonico** y este es el trato.
 
 ## 1. Cual es el arbol canonico
 
-`E:\Recompilador Super Nintendo\StarOceanRecomp` es un **clon de git** de
-<https://github.com/SupraBT/StarOceanSNESRecomp> (rama `main`), con el motor en
-el submodulo `snesrecomp` (<https://github.com/SupraBT/snesrecomp>), pinado a un
-commit concreto.
+**Raiz del entorno: `E:\Experimento Hermes\`.** Todo lo que se toca vive
+DENTRO de ella (regla del 2026-10-02).
+
+El arbol canonico es `E:\Experimento Hermes\StarOceanRecomp`, un **clon de git**
+de <https://github.com/SupraBT/StarOceanSNESRecomp> (rama `main`), con el motor
+en el submodulo `snesrecomp` (<https://github.com/SupraBT/snesrecomp>), pinado a
+un commit concreto. La documentacion y las trazas de apoyo tambien estan dentro
+de la raiz:
+
+- `E:\Experimento Hermes\Documentacion\` - layout de ROM, SDD-1, SPC700,
+  `rg.exe` y `TracesMesen\` (trazas de Mesen).
+- `E:\Experimento Hermes\Decompilacion\` - Ghidra, ROM, trazas de ejecucion,
+  ServidorLUA, MesenCE.
+- `E:\Experimento Hermes\Snesrecomp\` y `E:\Experimento Hermes\SDL3\` -
+  motor de referencia y multimedia.
 
 Todo lo demas es **historico y no se edita**:
 
 - `StarOceanRecomp-legacy-<fecha>` - la carpeta de trabajo anterior a la
   conversion (se conserva como copia de seguridad).
-- `..\versionlimpiagithub` - copia suelta sin git, hecha para publicar.
-- `..\Copia de Seguridad Recompilador\...` - copias de seguridad.
-- `..\StarOceanRecomp-win-1.0` - paquete distribuible.
+- `StarOceanRecomp-win-1.0` - paquete distribuible.
+
+**Fuera de la raiz** quedan copias antiguas (`E:\Recompilador Super Nintendo\...`,
+`E:\Copia de Seguridad Recompilador\...`, `F:\...`). La documentacion antigua
+las cita por su ruta historica, pero **no se abren ni se usan sin autorizacion
+expresa del usuario**.
 
 Si algo de esas copias parece mas nuevo, casi seguro **no lo es**: el 2026-09-29
 el `README.md` y el `.gitignore` locales eran de semanas antes y publicarlos
@@ -45,8 +59,8 @@ se publican nunca (el repo no contiene datos del cartucho).
 | `build-prof` | instrumentado + `SNESRECOMP_INTERP_PROFILE` | reparto del coste por funcion (necesita `generated/` regenerado con el perfil) |
 
 ```bash
-cmake -S . -B build-dev   -G "Visual Studio 17 2022" -DSNESRECOMP_SDL_BACKEND=SDL3 -DSDL3_DIR="E:/SDL3/cmake"
-cmake -S . -B build-clean -G "Visual Studio 17 2022" -DSNESRECOMP_SDL_BACKEND=SDL3 -DSNESRECOMP_CLEAN_BUILD=ON -DSDL3_DIR="E:/SDL3/cmake"
+cmake -S . -B build-dev   -G "Visual Studio 17 2022" -DSNESRECOMP_SDL_BACKEND=SDL3 -DSDL3_DIR="E:/Experimento Hermes/SDL3/cmake"
+cmake -S . -B build-clean -G "Visual Studio 17 2022" -DSNESRECOMP_SDL_BACKEND=SDL3 -DSNESRECOMP_CLEAN_BUILD=ON -DSDL3_DIR="E:/Experimento Hermes/SDL3/cmake"
 cmake --build build-dev --config Release
 ```
 
@@ -88,11 +102,15 @@ git config core.hooksPath tools/hooks
 `user.*` esta puesto para que el autor de los commits coincida con el de GitHub;
 si prefieres otro, cambialo aqui.
 
-## 6. Trazas de hardware (Mesen)
+## 6. Trazas de hardware (Mesen) — el UNICO oraculo
 
-Las trazas de la maquina real viven fuera del repo, en
-`..\StarOceanRecompDocumentacion\TracesMesen`: el `.tsv` por frame, el de eventos,
-el `.log` de estado y el `_replay.txt` con las pulsaciones. El script que las
+**Decision 2026-10-02: bsnes queda retirado.** Solo se usa Mesen, que vive en
+el proyecto: `E:\Experimento Hermes\Decompilacion\MesenCE-master\Mesen.exe`.
+Nada de bsnes (libretro, bsnes-plus, `StarOceanTest2`) sin autorizacion expresa.
+
+Las trazas de la maquina real viven fuera del repo pero DENTRO de la raiz, en
+`E:\Experimento Hermes\Documentacion\TracesMesen`: el `.tsv` por frame, el de
+eventos, el `.log` de estado y el `_replay.txt` con las pulsaciones. El script que las
 genera es `tools/mesen_so_trace.lua` y el replay esta en el formato que come
 `SNESRECOMP_REPLAY_FILE`, asi que se puede reproducir la partida exacta en el
 recompilador y comparar frame a frame.

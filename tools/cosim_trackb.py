@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """Track-B comparator: recomp (so_cosim --state-out) vs bsnes oracle.
 
+[RETIRADO 2026-10-02] bsnes ya no es oraculo: el oraculo unico es Mesen
+(Decompilacion/MesenCE-master/Mesen.exe). Este fichero queda sin mantenimiento
+y no se ejecuta sin autorizacion del usuario.
+
 Diffs per-frame CPU/PPU/S-DD1/WRAM/VRAM/CGRAM snapshots. Halts at the first
 trusted divergence and writes cosim_mismatch.log with the exact offsets and
 values (same contract as the Track-A coordinator).

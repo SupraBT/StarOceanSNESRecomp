@@ -133,6 +133,7 @@ local DSP_ADDR, DSP_DATA = 0x0000F2, 0x0000F3
 local DSP_KON = 0x4C                          -- registro de key-on
 
 local CANDIDATOS = {
+  "E:\\Experimento Hermes\\Documentacion\\TracesMesen\\",
   "F:\\Recompilador Super Nintendo\\Mesen\\",
   "F:\\SOR\\",
 }

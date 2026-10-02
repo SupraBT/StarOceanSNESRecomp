@@ -117,7 +117,7 @@ las escenas que interesan (menu de nombre, cinematica, campo real).
 `tools/input_scripts/grabada.txt` (copiada de `build-dev/Release/rep_bueno.txt`):
 cinco pulsaciones de A que recorren intro -> menu -> seleccion de nombre ->
 cinematica, coincidiendo con
-`StarOceanRecompDocumentacion/Secuencia pulsaciones trace.txt`. Aterrizajes
+`E:\Experimento Hermes\Documentacion\Secuencia pulsaciones trace.txt`. Aterrizajes
 verificados con `SNESRECOMP_REPLAY_LOG=1` (f66 C8F428, f147 C38FA8, f209 C39069,
 f270 C38FAD, f413 C2FCF8).
 

@@ -32,7 +32,7 @@ Uso:
 """
 import sys, os, re
 
-TSV = r"E:\Recompilador Super Nintendo\StarOceanRecompDocumentacion\mesen_intro_probe.tsv"
+TSV = r"E:\Experimento Hermes\Documentacion\TracesMesen\mesen_intro_probe.tsv"
 
 NCOLS = 14
 

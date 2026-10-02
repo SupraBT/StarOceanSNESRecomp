@@ -1,6 +1,8 @@
 import re
 import sys
 
+# FUERA DE LA RAIZ (E:\Experimento Hermes): traza de bsnes de 249 MB que no esta
+# en el arbol. No se usa sin autorizacion del usuario (regla 2026-10-02).
 trace_file = 'F:/Recompilador Super Nintendo/StarOceanTest2/Star Ocean (Japan)-trace.log'
 
 # Voice 5 DSP registers

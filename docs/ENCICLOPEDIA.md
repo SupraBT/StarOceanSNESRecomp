@@ -6,6 +6,29 @@
 
 Última actualización: 2026-08-24
 
+> **Rutas (regla del 2026-10-02): la raíz del entorno es `E:\Experimento
+> Hermes\`.** Las secciones históricas citan rutas antiguas
+> (`E:\Recompilador Super Nintendo\...`, `F:\Recompilador Super Nintendo\...`,
+> `StarOceanRecompDocumentacion\`); léaselas contra la raíz nueva:
+>
+> | cita histórica | dónde está ahora (dentro de la raíz) |
+> | --- | --- |
+> | `StarOceanRecompDocumentacion\TracesMesen` | `E:\Experimento Hermes\Documentacion\TracesMesen` |
+> | `StarOceanRecompDocumentacion\rg.exe` | `E:\Experimento Hermes\Documentacion\rg.exe` |
+> | `StarOceanRecompDocumentacion\Secuencia pulsaciones trace.txt` | `E:\Experimento Hermes\Documentacion\Secuencia pulsaciones trace.txt` |
+> | `StarOceanRecompDocumentacion\` (tsv de sondas: `mesen_intro_probe.tsv`, `mesen_oracle.tsv`, `mesen_fades900*.tsv`, …) | `E:\Experimento Hermes\Documentacion\TracesMesen` (copiados el 2026-10-02) |
+> | árbol `StarOceanRecomp` | `E:\Experimento Hermes\StarOceanRecomp` |
+> | `Decompilacion`/Ghidra/ServidorLUA | `E:\Experimento Hermes\Decompilacion` |
+> | Mesen | `E:\Experimento Hermes\Decompilacion\MesenCE-master\Mesen.exe` (oráculo **único** desde 2026-10-02; antes en `F:\...\Mesen\`) |
+> | bsnes / bsnes-plus / `StarOceanTest2\` | **RETIRADO (2026-10-02)**: no se usa bsnes en ninguna parte; solo Mesen |
+
+> **Oráculo (decisión del 2026-10-02): solo Mesen.** bsnes (libretro, `drive_bsnes`,
+> `cosim_trackb.py`, `drive_bsnesplus`, trazas de bsnes-plus) queda **retirado**:
+> cualquier referencia histórica a bsnes como oráculo en este documento está
+> superada. El emulador vive en el proyecto: `Decompilacion\MesenCE-master\`
+> (binario `Mesen.exe`), y las trazas que produce van a
+> `Documentacion\TracesMesen\`.
+
 ---
 
 ## 1. Arquitectura (lo que ES el proyecto)
@@ -349,6 +372,11 @@ cosim_state.c, interp816.c) y los hooks en common_rtl.c. Solo faltaba el lado ju
 
 ## 14. Track B — Cosimulación bsnes oracle (COMPLETADO parcial)
 
+> **RETIRADO (2026-10-02):** esta sección es histórica. bsnes ya no es oráculo de
+> nada; el oráculo único es Mesen (`Decompilacion\MesenCE-master\Mesen.exe`).
+> `tools/cosim_trackb.py`, `tools/snesref/drive_bsnes.cpp` y `cosim/drive_bsnesplus.cpp`
+> quedan sin mantenimiento.
+
 ### Infraestructura
 - `bsnes_libretro.dll` construido con MinGW/MSYS2 (g++ 16.2) desde
   `E:\...\bsnes\bsnes\target-libretro`.
@@ -407,7 +435,8 @@ python tools\cosim_trackb.py --a build-cosim\trackb_so.bin --b build-cosim\track
 ## 15. Intro: quién gobierna los fundidos y qué le falta al recomp (2026-09-28)
 
 Investigación del 2º fundido de la intro (que en hardware avanza 1 nivel cada 4
-frames) contra el oráculo de Mesen (`StarOceanRecompDocumentacion/mesen_oracle.tsv`).
+frames) contra el oráculo de Mesen (`Documentacion\TracesMesen\mesen_intro_probe.tsv`
+y `mesen_oracle.tsv`).
 Todo lo de aquí está **medido**, con los artefactos en `build-dev/Release/`.
 
 ### 15.1 El contador del invitado que gobierna las cadencias
@@ -572,8 +601,8 @@ script anterior se perdió):
   una corrida de 200 host frames termina en `master≈115M` (frame 322) y el
   overlay sale con `rows=0` — no es un fallo de la herramienta, hace falta una
   corrida más larga (p.ej. `SNESRECOMP_EXIT_AT_FRAME=1200`).
-* `code_search` (ripgrep vendorizado) sigue roto: usar
-  `StarOceanRecompDocumentacion/rg.exe` o `grep` del shell.
+* `rg` se usa desde `E:\Experimento Hermes\Documentacion\rg.exe` (o `grep` del
+  shell).
 * `build-clean` intacto; `versionlimpiagithub` congelada; `StarOceanRecomp` no es
   repo git.
 
@@ -856,7 +885,8 @@ del script, no el probe.
 
 ## 18. Boot de hardware desde el frame 1 y A/B contra el recomp (2026-09-29)
 
-El usuario trajo `mesen_intro_probe.tsv` a `StarOceanRecompDocumentacion`.  Es la
+El usuario trajo `mesen_intro_probe.tsv` a la documentación (hoy en
+`E:\Experimento Hermes\Documentacion\TracesMesen`).  Es la
 primera traza **fiable** de la sonda: en `mesen_intro_probe_status.log` hay 4
 sesiones y solo las dos últimas (`20:33:13` y `20:43:07`) usan la forma de
 registro correcta `formas=1(...)`; las dos primeras (`2(...)`, con `memType` en
@@ -2266,7 +2296,7 @@ fuera de la entrada actual, que es exactamente el motivo por el que las pruebas
 de audio de §22.12/§22.13 no cubrian lo que el usuario oia.
 
 Los ficheros que produce el script se guardan con la ROM; el usuario los ha
-centralizado en `StarOceanRecompDocumentacion/TracesMesen`.
+centralizado en `E:\Experimento Hermes\Documentacion\TracesMesen`.
 
 ## 22.16 Turbo utilizable: aceleracion del host sin tocar al invitado (2026-09-29)
 
@@ -3627,7 +3657,8 @@ Herramientas: `tools/deadline_irq_ab.py`, `tools/fdiff.py`, `tools/pcm_health.py
 
 ### 22.17 EL TRACE DE MESEN ESTABA EN DISCO: con la deadline el modelo es EXACTO, y el fallo esta en el IPL del SPC700 (2026-09-30)
 
-Los ficheros estaban en `E:\Recompilador Super Nintendo\StarOceanRecompDocumentacion\TracesMesen`
+Los ficheros estaban en `E:\Experimento Hermes\Documentacion\TracesMesen`
+(hoy dentro de la raíz; antes `E:\Recompilador Super Nintendo\StarOceanRecompDocumentacion\TracesMesen`)
 (`*_events.tsv` 56 MB, `*_trace.tsv`, `*_replay.txt`). 29.560 fotogramas de
 hardware. El input coincide con el que usa el motor (`mesen_master.txt` esta
 derivado de ESTA traza, y no hay pulsaciones antes del fotograma 1171), asi que
@@ -4546,3 +4577,409 @@ traza por instruccion en una ventana acotada (f1-f40) en los dos lados, y el
 primer PC en el que se separan. Es lo unico que attacka la causa en lugar de
 perseguir sus sintomas, y de paso explica los +4.806 ciclos de CPU por
 fotograma de §22.24.4 y el atasco de f14800.
+
+---
+
+## 22.28 El atasco exacto del handshake $2140/$4A con la deadline (2026-10-01)
+
+> Continuacion de §22.24 (el bajon de arranque) y §22.22 (la deadline). Numero
+> nuevo: las secciones §22.25-§22.27 se escribieron en paralelo y ya ocupaban ese
+> hueco.
+
+### Que se preguntaba
+
+Con `SNESRECOMP_FRAME_DEADLINE=1` (default desde 2026-10-01, §22.22) la musica
+no suena: arranca en f786 en vez de f328 y el anillo del DSP cae a ~3.000
+(silencia audible) mientras los SFX y los dialogos suenan bien. Habia dos
+hipotesis excluyentes sobre el eslabon roto del handshake de arranque:
+
+- **A (entrega).** El valor que el invitado escribe en `$2140`/`$2141` no llega al
+  registro destino del TIMER 0 del SPC700.
+- **B (reloj).** El registro llega, pero el reloj del temporizador no avanza.
+
+### Como se midio
+
+Traza de puertos del invitado (`SNESRECOMP_APU_PORT_RW`) mas un diagnostico
+nuevo del lado del SPC (`SNESRECOMP_SPCTIMER=1`, linea `[spctimer]` en
+`common_rtl.c`) que vuelca por fotograma `timer[0].target/divider/counter/
+enabled`, los ticks acumulados de T0, `outPorts[0..3]` y `spcPC`. Ventana f386-
+f400, que es donde se atasca.
+
+### Resultado: LAS DOS HIPOTESIS QUEDAN DESCARTADAS
+
+| medida | deadline=1 (atascado) | deadline=0 (funciona) |
+|---|---|---|
+| `timer[0].target` | `$A4`, constante | `$8D`, constante |
+| `ticks` de T0 en la ventana | 292 -> 312 (**+20**) | 361 -> 374 (+13) |
+| `timer[0].counter` | `$00` siempre | `$00` siempre |
+| `outPorts` | `80000002` / `00000002`, nunca `$AA/$BB` | `01020100` |
+| `spcPC` | se mueve por el handshake (`085F`/`0958`/`19F2`/`09C9`/`1FA3`…) | entra al motor (`0C84`/`221E`/`2497`) |
+
+- **A queda descartada**: el registro destino SI recibe valor (`$A4`), y de hecho
+  difiere entre configuraciones, luego la escritura llega y se aplica.
+- **B queda descartada**: el reloj del temporizador SI avanza, y con la deadline
+  activa avanza MAS (+20 frente a +13 en la misma ventana). No es falta de
+  tiempo.
+
+### Lo que si se sabe
+
+El punto de atasco es exacto y reproducible: el invitado escribe
+`W $2140=AA` en **f393** (la magia de arranque del IPL del SPC700) y a partir de
+ahi solo relee `$2140` — 73.795 lecturas y ni una escritura mas. El SPC, por su
+parte, sigue consumiendo su presupuesto (17.039 ciclos/fotograma, el mismo en
+las dos configuraciones) y cambia de PC entre 123 direcciones distintas, o sea
+que **no esta colgado**: esta ejecutando, pero no sale del handshake.
+
+`counter` siempre a cero tiene explicacion conocida: leer `$FD` (T0OUT) pone el
+contador a cero (`apu.c`, lectura de `$FD`), asi que el sondeo del SPC se
+autolimpia cada vez. Por eso `counter` no sirve como indicador.
+
+### El eslabon sin observar, medido (inPorts)
+
+Anadiendo `inPorts[0..3]` a la linea `[spctimer]` se cierra el ultimo eslabon
+que quedaba sin datos, y el resultado vuelve a descartar la causa intuitiva:
+
+| medida (f395-f404) | deadline=1 (atascado) | deadline=0 (funciona) |
+|---|---|---|
+| `inPorts` (lo que VE el SPC) | `AA CB CB 77`, estable | `AA CB CB 77`, estable |
+| el SPC ve `$AA` en el puerto 0 | **SI** | **SI** |
+| `outPorts` | `00/80 00 00 02` | `01 02 01 00` |
+| `outPorts` llega a `$AA/$BB` | **NO** | **SI** |
+| escrituras `spcDat` | **824, congeladas** | 1.093 -> 1.138, creciendo |
+| PCs que visita el SPC | solo handshake (`085F`/`0958`/`0965`/`19F2`/`09C9`/`1FA3`) | motor de sonido (`0A06`/`0C84`/`221E`/`2497`) |
+
+O sea que **la peticion SI llega**: el invitado escribe `$2140=$AA`, el puerto
+de entrada del SPC lo muestra como `$AA` de forma estable, y el temporizador
+corre. Lo que no ocurre es la REACCION del IPL: con la deadline activa el SPC
+nunca pone `$AA/$BB` en `outPorts` y sus escrituras al DSP se congelan en 824,
+mientras su PC sigue dando vueltas dentro del handshake. Sin deadline, el mismo
+SPC con los mismos puertos abandona el handshake y entra al motor.
+
+Queda un unico eslabon sin observar y es la diferencia que SI separa las dos
+configuraciones: el SPC lee `$FD` (T0OUT), y **leer `$FD` pone el contador a
+cero** (`apu.c`), asi que el sondeo se autolimpia. Con `target=$A4` el valor no
+llega a ser observado antes del siguiente borrado; con `target=$8D` si. Eso
+apunta a una interaccion entre la mascara del contador (`counter &= 0xf`), la
+frecuencia de sondeo y el valor de destino, no a la entrega del puerto ni al
+reloj del temporizador. Es la pista mas concreta que ha salido hasta ahora, y
+sigue sin estar verificada.
+
+### Lo que queda abierto
+
+La condicion de salida del handshake no llega a cumplirse con la deadline
+activa, aunque el temporizador corre y el puerto se entrega. Con `inPorts` ya
+medido, el eslabon que queda **no es la entrega** sino **la reaccion del IPL del
+SPC a ese `$AA`**: el SPC lo ve (`inPorts[0]=$AA`) y no responde. Instrumentar
+`spc.c` para ver la rama del IPL que consume `inPorts[0]` y la condicion por la
+que no se cumple, en los dos lados a la vez, es el paso siguiente que puede
+cerrar esto.
+
+Un intento de arreglo por este camino ya se descarto: forzar
+`apu_runToGuestCycle` tras encolar la escritura del puerto no movio ni el
+arranque de la musica (f785 tras el cambio frente a f786 antes) ni el silencio
+posterior, asi que la entrega tardia no era la causa. No se dejo ese cambio en el
+arbol.
+
+---
+
+## 22.29 La pista del IPL del SPC700: las dos mascaras quedan EXONERADAS (2026-10-01)
+
+> Cierra la pista que §22.28 dejo abierta. La pregunta era si el temporizador del
+> SPC700 estaba bloqueando la salida del handshake por dos mecanismos concretos:
+> la mascara `counter &= 0xf` y el borrado del contador al leer `$FD`.
+
+### 22.29.1 Correccion de premisa: el IPL no esta en spc.c
+
+Lo primero que habia que corregir es **donde vive el IPL**. `spc.c` es solo el
+interprete de la CPU del SPC700: el codigo del IPL no esta ahi, es una ROM de 64
+bytes embebida en `apu.c` (`bootRom[0x40]`, mapeada en `0xFFC0-0xFFFF`). Por eso
+"buscar la rama en `spc.c`" no iba a dar nada: la rama existe, pero como bytes.
+
+Para no desensamblar de memoria (ni de una tabla de internet, que es justamente
+la clase de suposicion que este proyecto no permite), el desensamblador se
+construyo extrayendo del **propio `switch` de `spc.c`**: el mnemonico sale del
+comentario `case 0xNN: { // xxx` y el numero de bytes de operando sale de que
+helper `spc_adr*` llama ese `case`. Resultado: 256/256 opcodes con longitud
+verificada contra el codigo que las ejecuta.
+
+El IPL desensamblado (base `0xFFC0`):
+
+```
+$FFC0  CD       movx imm
+$FFC1  EF       sleep imp
+$FFC2  BD       movpx imp
+$FFC3  E8       mov imm
+$FFC4  00       nop imp
+$FFC5  C6       movs idy        ;Delay: DEC X / BNE
+$FFC6  1D       decx imp
+$FFC7  D0 FC    bne rel  -> $FFC5
+$FFC9  8F AA F4 movm dp, imm   ;MOV $F4,#$AA   <-- peticion del IPL
+$FFCC  8F BB F5 movm dp, imm   ;MOV $F5,#$BB
+$FFCF  78 CC F4 cmpm dp, imm   ;CMP $F4,#$CC   <-- CONDICION DE SALIDA
+$FFD2  D0 FB    bne rel  -> $FFCF
+$FFD4  2F 19    bra rel   -> $FFEF
+$FFD6  EB F4    movy dp        ;CMP Y,$F4      <-- segundo bucle de espera
+$FFD8  D0 FC    bne rel  -> $FFD6
+$FFDA  7E F4    cmpy dp
+$FFDC  D0 0B    bne rel  -> $FFE9
+$FFDE  E4 F5    mov  dp        ;MOV A,$F5
+$FFE0  CB F4    movsy dp
+$FFE2  D7 00    movs idy
+$FFE4  FC       incy imp
+$FFE5  D0 F3    bne rel  -> $FFDA
+$FFE7  AB 01    inc  dp
+$FFE9  10 EF    bpl  rel  -> $FFDA
+$FFEB  7E F4    cmpy dp
+$FFED  10 EB    bpl  rel  -> $FFDB
+$FFEF  BA F6    movw dp
+$FFF1  DA 00    movws dp
+$FFF3  BA F4    movw dp
+$FFF5  C4 F4    movs dp
+$FFF7  DD       movay imp
+$FFF8  5D       movxa imp
+$FFF9  D0 DB    bne rel  -> $FFD6
+$FFFB  1F 00 00 jmp iax        ;JMP [$0000+X]: salta al motor ya subido
+$FFFE  C0       di   imp
+$FFFF  FF       stop imp
+```
+
+La condicion de salida del handshake esta en **`$FFCF`/`$FFD2`**: el IPL escribe
+`$AA` en `$F4` y `$BB` en `$F5`, y luego **espera a que la CPU escriba `$CC` en
+`$F4`**. Ese `$CC` es lo que dispara el `BRA $FFEF` y el salto final al motor.
+
+### 22.29.2 PRIMERA EXCULPACION: el IPL no lee $FD ni ningun temporizador
+
+Se recorren los 64 bytes del IPL buscando operandos de hardware. Los unicos que
+aparecen son **`$F3, $F4, $F5, $F6, $FB, $FC`**. **No aparece `$FD`, `$FE` ni
+`$FF` en ninguna instruccion del IPL.**
+
+Por tanto, sobre el IPL se puede afirmar sin ambiguedad:
+
+- **`counter &= 0xf` no puede bloquear la salida del IPL.** El IPL no ejecuta
+  ningun `MOV` a `$F1` ni lee `$FD`: no toca los temporizadores en absoluto.
+- **El borrado del contador al leer `$FD` no puede bloquear la salida del IPL.**
+  Es el mismo argumento: si el IPL nunca lee `$FD`, ese borrado no le afecta.
+
+Las dos mecanicas que §22.28 senalaba como "la unica diferencia que separa las dos
+configuraciones" **quedan exoneradas para el IPL**.
+
+### 22.29.3 El IPL SI se ejecuta, y su bucle de espera SI completa
+
+Instrumentacion nueva: `SNESRECOMP_SPCEXEC=1` (traza de opcodes del SPC con
+`pc`, `opcode`, `A`, `X`, `Y`, `SP`, ventana `FROM`/`TO` y corte `MAX`) y
+`SNESRECOMP_T0OUT=1` (traza de **cada** lectura de `$FD/$FE/$FF` con el valor
+DEVUELTO, los ticks acumulados y los ticks entre lectura y lectura). Ambas
+env-gated, sin coste en el build limpio.
+
+Traza del SPC en f0-f20 (82.721 opcodes). Recuento por PC del IPL:
+
+| PC | instruccion | veces ejecutada |
+|---|---|---|
+| `FFC5/FFC6/FFC7` | `DEC X` / `BNE` (rampa de retardo) | 239 cada una |
+| `FFC9` | `MOV $F4,#$AA` | **1** |
+| `FFCC` | `MOV $F5,#$BB` | **1** |
+| **`FFCF`/`FFD2`** | **`CMP $F4,#$CC` / `BNE` (espera)** | **11.184 cada una** |
+| `FFD4` | `BRA $FFEF` (sale de la espera) | 1 |
+| `FFDA`/`FFDC` | `CMP $F4` / `BNE` (2ª espera) | 8.508 cada una |
+| `FFFB` | `JMP [$0000+X]` | 1 |
+
+O sea que el IPL **si corre, si escribe `$AA`/`$BB`, si espera 11.184 veces a ver
+`$CC` en `$F4`, y si sale**. En f0-f20 el SPC no ejecuta **ni un solo opcode por
+debajo de `0xFFC0`**: hasta el `JMP $FFFB` no salta al motor, y ahi el HLE ya le
+ha puesto el PC en el punto de entrada.
+
+Matiz metodologico que dejo escrito porque casi me engaña: en una ventana de
+**solo f0-f2** (232 opcodes) el IPL parecia no llegar nunca a `FFC9`, porque la
+rampa `DEC X` desde `$A4` necesita 164 vueltas y en 3 fotogramas el SPC solo
+habia ejecutado 232 opcodes. La conclusion "el IPL no alcanza el handshake"
+habria sido falsa; solo era falta de ventana. Con f0-f20 la respuesta es
+inequivoca.
+
+### 22.29.4 SEGUNDA EXCULPACION: el motor SI lee $FD y SI ve valores
+
+El motor ya subido (BRAM) sondea `$FD` desde **cinco** PCs distintos. En la
+ventana f392-f395, 178.134 lecturas:
+
+| PC de la lectura | `target` | veces | `val` DEVUELTO |
+|---|---|---|---|
+| `095A` | `$A4` | 61.271 | `00` (y **277 veces `01`**) |
+| `09CB` | `$A4` | 61.185 | `00` (y **363 veces `01`**) |
+| `3954` | `$82` | 38.005 | `00` (y 16 veces `01`) |
+| `3963` | `$82` | 14.252 | `00` |
+| `393A` | `$82` | 2.364 | `00` |
+
+`enabled = 1` en **todas** las lecturas, y el temporizador corre
+(`ticks` 302 -> 309 entre f392 y f396, `portClock` +35.000/fotograma).
+
+Esto deja las dos mecanicas exoneradas por segunda via, ya sobre el motor:
+
+- **El motor SI observa valores no nulos de T0OUT** (640 lecturas con `val=01`
+  solo en f392-f395). Si el borrado al leer `$FD` o la mascara de 4 bits
+  destruyeran la informacion, el contador seria **invisible**, no "visible a
+  veces". Y no lo es.
+- **La mascara `counter &= 0xf` no pierde nada relevante**: solo envuelve a 16, y
+  el motor solo consume el bit bajo. Los valores observados son `00` y `01`.
+- Que el 99,6% de las lecturas devuelva `00` **no es un defecto**: el motor
+  sondea cada ~7 ciclos y el temporizador tickea ~una vez cada 20.000 ciclos
+  (`target=$A4` -> 164 pasos de 128 ciclos). Es un sondeo normal de hardware, y
+  el motor esta escrito para soportarlo.
+- El borrado del contador al leer `$FD` es ademas **semantica real del SPC700**,
+  no una invencion de este emulador. "Arreglarlo" seria desviarse del hardware.
+
+### 22.29.5 Donde queda realmente el atasco
+
+Con las dos mascaras fuera, la imagen medida en f392-f396 es esta:
+
+| medida | valor |
+|---|---|
+| `inPorts` | `A9 FB 01 20` -> `A9 F4 F0 21` -> `AA CB CB 77` (cambia cada fotograma) |
+| el invitado sigue escribiendo puertos | si, el flujo de bytes continua |
+| el SPC consume el flujo | si, `inPorts` cambia |
+| T0 corre y es observable | si (`ticks` 302->309, 640 lecturas con `val=01`) |
+| IPL Completed handshake | si, 11.184 esperas y sale por `FFD4` |
+| **`spcDat` (escrituras SPC -> DSP)** | **congeladas en 824** |
+| bucle caliente | `1F9F-1FB7`, 11 instrucciones, `Y` +3 por vuelta |
+
+El bucle caliente `1F9F-1FB7` **no lee ningun puerto ni `$FD`**: es
+`E4 / D7 / 58 / FA / E4 / F8 / FC(INC Y) / D7 / FC(INC Y) / 7D / D7 / FC(INC Y) /
+AD / D0(BNE)`. Es trabajo interno del motor, no una espera de handshake.
+
+El atasco, por tanto, **no es una espera**: el SPC esta vivo, consume su
+presupuesto, lee los puertos que le llegan, ve el temporizador y su propio IPL
+completo el handshake. Lo que no hace es **pasar a escribir al DSP** (824 y
+congelado). El siguiente paso correcto ya no es el IPL ni el temporizador: es la
+transicion del motor a su rutina de salida al DSP, y la razon por la que
+`deadline=1` la evita y `deadline=0` la alcanza (§22.22, §22.28).
+
+### 22.29.6 Lo que se toca en el arbol
+
+- `snesrecomp/runner/src/snes/spc.c`: nuevo `spc_peek_opcode()`, lectura del
+  opcode en el PC **sin avanzar el PC**. No altera el estado (`spc_read` es puro).
+- `snesrecomp/runner/src/snes/spc.h`: su declaracion.
+- `snesrecomp/runner/src/snes/apu.c`: bloque `[spctimer]` ya existente (sin
+  tocar) y dos bloques nuevos env-gated, `[t0out]` (lecturas de `$FD/$FE/$FF`) y
+  `[spcexec]` (flujo de opcodes del SPC). Los dos leen sus variables de entorno
+  una sola vez y no hacen nada cuando no estan puestas.
+
+Ninguna correccion de comportamiento se ha aplicado a proposito: este turno es
+medicion. No hay cambios en la logica del APU, del IPL ni de los temporizadores.
+
+### 22.29.7 Herramientas
+
+El desensamblador del IPL y el decodificador del bucle se hicieron con scripts de
+tirada en `Decompilacion/` y se han borrado al terminar: derivan la tabla de
+opcodes de `spc.c` por analisis de texto, asi que quedan obsoletos en cuanto
+`spc.c` cambie. Si hacen falta, se regeneran leyendo el `switch` de `spc.c`
+(mnemonico del comentario `case 0xNN: { // xxx`, longitud deducida del helper
+`spc_adr*` que llama ese `case`) y, para el codigo en BRAM, usando los **saltos
+de PC de la propia traza `[spcexec]`**, que dan la longitud real de cada
+instruccion sin suponer nada.
+## 22.30 Log de eventos por BAJON de FPS (2026-10-01)
+
+Instrumento nuevo, en `src/evlog.c` / `src/evlog.h`, documentado en
+`docs/EVLOG.md`. Dispara un volcado detallado cuando el HUD se pone rojo.
+
+Diseno: se guarda un registro por fotograma del bucle de host en un anillo
+circular de 64, SIEMPRE (es copiar una struct). Cuando el HUD se pone rojo se
+abre un fichero y se vuelca el historico que ya estaba en el anillo mas el
+fotograma que dispara, y se sigue escribiendo hasta la recuperacion. Asi los "5
+fotogramas anteriores" salen de un historico REAL, no de haber anticipado que
+iba a haber un bajon.
+
+El umbral NO se recalcula: `HmDraw` le pasa el mismo booleano `ciclo >
+s_hot_ms` que decide el color del HUD. Si el HUD salio rojo, hay log. Es la
+misma costura que ya usaba `[hot]`, sin un segundo sitio que pueda discrepar.
+
+Se graban tiempos de host (ciclo, emu, draw, S-DD1, FPS), relojes (master,
+dSpc, PC del SPC), los tres temporizadores del SPC700, los buffers de E/S
+`$2140-$2143` (lo que ve el SPC, lo que escribe el SPC, el ultimo byte que
+entrego el invitado y cuantos por puerto, y la profundidad de la cola) y las
+llamadas al bucle principal (lecturas del SPC, escrituras SPC->DSP,
+sincronizaciones de APU).
+
+### 22.30.1 Enfrentar el log con Mesen
+
+La columna `dMaster` (ciclos maestro del fotograma) es la que se enfrenta al
+avance por frame del TSV de Mesen: en hardware son 357.368 exactos por
+fotograma, y `dSpc` son los 17.088 del SPC700 (1,024 MHz / 60 Hz). Medido en el
+log: 357.368 / 357.374 / 357.372 / 357.382 segun el fotograma.
+
+`mesenCycEst` = `master + 48766` convierte al `Cycle:` de la traza por
+instruccion, y va con dos avisos en la cabecera de cada fichero: la calibracion
+es de una ventana concreta, y el indice de fotograma NO es coordenada compartida
+con el hardware (§22.25). Por eso el log lleva `f=` y `loop=` separados.
+
+### 22.30.2 La columna sdd1 NO es tiempo de pared
+
+MEDIDO: un fotograma de 84,38 ms de pared sale con `sdd1=275,77`.
+
+La causa esta en `sdd1.c`: `sdd1_prof_ms` suma `sdd1_tsc_ms(__rdtsc() - t0)`,
+o sea convierte un contador **TSC** a ms con el factor de
+`QueryPerformanceFrequency`. En una maquina virtual esos dos relojes no estan
+sincronizados y el factor no vale. El numero sirve como indicador RELATIVO de
+cuando hay descompresion, no como coste. Los costes de verdad estan en `C` y
+`emu`, que salen de `SDL_GetPerformanceCounter`. Aviso escrito en la cabecera de
+cada fichero para que no haya que recordar esto al leer un log.
+
+### 22.30.3 Lo que se rompio al construirlo (y se arreglo)
+
+Cuatro fallos, los tres primeros solo visibles mirando los datos:
+
+1. **`dMaster=0` en todas las lineas.** El indice del registro anterior se
+   calculaba DESPUES de sobrescribir la ranura del anillo, asi que comparaba el
+   registro consigo mismo. Solo se ve al imprimir los datos: `master` avanza bien
+   pero el delta sale 0.
+2. **El mensaje de cierre nominaba el fotograma equivocado.** Informaba del
+   ULTIMO fotograma escrito en vez del que ABRIO el evento; en un tramo largo de
+   fotogramas lentos son muy distintos.
+3. **El CSV salia sin cabecera.** La cabecera estaba dentro del `if (prev)`, que
+   es justamente falso en el primer registro del historico.
+4. **El perfil de S-DD1 se llamaba en cada fotograma con todo apagado.** Al
+   sacarlo de `[perf]` para compartirlo con el log se pagaba una llamada por
+   fotograma que antes solo ocurria con `[perf]` activo. Ahora se pide solo si
+   el log o `[perf]` estan encendidos (`EvLogEnabled()`).
+
+Ademas, el MSVC aviso de un desajuste real de formato en la fila CSV: faltaban
+cuatro `%u`, el grupo `w0..w3` se habia comido el de `in/out`. El fichero salia
+con 48 columnas en la cabecera y 44 en las filas.
+
+### 22.30.4 Rendimiento y build limpio
+
+Apagado: una llamada por fotograma que consulta un `static` y vuelve.
+
+En build limpio el modulo NO se compila (`#ifdef SNESRECOMP_CLEAN_BUILD` en
+`evlog.c`, `EvLogEnabled()` devuelve 0 y el resto es un stub). No es solo
+tamano: la llamada ocurre en el bucle de host de produccion, y la convencion
+del proyecto (CMakeLists) es sacar fuera los monitores de desarrollo.
+VERIFICADO: `build-rel/Release/StarOcean.exe` no contiene ni una cadena
+`SNESRECOMP_EVLOG`. Los dos builds compilan con cero warnings.
+
+### 22.30.5 AVISO DE METODO: el turbo no vale para medir audio
+
+Todas las mediciones de §22.28 y §22.29 se hicieron con
+`SNESRECOMP_FORCE_TURBO=1`, y **en turbo no suena la musica**: el bucle va tan
+rapido como puede y el callback de audio no recibe servicio igual. Para
+reproducir una escena con sonido, sin turbo.
+
+El reparto de tiempo es muy distinto (§22.30.3 tabla de EVLOG.md): en turbo
+`loop` ~9 ms con `resto` ~0; sin turbo `loop` ~16,6 ms con `resto` ~14 ms (la
+espera de vsync).
+
+LO QUE SI SE REVISO, y es la parte que sostiene §22.29: el **estado del
+invitado** es independiente del turbo. Misma ventana (f392-f396), las dos formas
+de ejecucion:
+
+| medida | turbo | sin turbo |
+|---|---|---|
+| `ticks` de T0 | 302 -> 309 | 302 -> 310 |
+| `target` / `enabled` | `$A4` / 1 | `$A4` / 1 |
+| `spcDat` (SPC -> DSP) | congelado en 824 | congelado en 824 |
+| `inPorts` | `A9FB0120` -> `AACBCB77` | `A9FB0120` -> `AACBCB77` |
+| PCs que leen `$FD` | 095A, 09CB, 3954, 3963, 393A | los mismos cinco |
+| lecturas de `$FD` con `val=01` | 640 | 677 |
+| lecturas totales de `$FD` | 178.134 | 178.620 |
+
+La conclusion de §22.29 (el motor SI lee `$FD`, SI ve valores, y el IPL no lee
+`$FD` en ninguno de sus 64 bytes) no dependia del turbo. Lo que si depende del
+turbo, y habria que rehacer sin el, es cualquier afirmacion sobre AUDIO
+percibido, energia del anillo del DSP o momento de arranque de la musica.

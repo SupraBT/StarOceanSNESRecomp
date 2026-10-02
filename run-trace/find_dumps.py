@@ -16,6 +16,8 @@ for f in spc_files[:10]:
     print(f"  {os.path.basename(f)} ({size} bytes)")
 
 # Also look for any dump files in StarOceanTest2
+# FUERA DE LA RAIZ (E:\Experimento Hermes): no esta en el arbol. No se usa sin
+# autorizacion del usuario (regla 2026-10-02).
 sodir = 'F:/Recompilador Super Nintendo/StarOceanTest2'
 spc_files2 = sorted(glob.glob(os.path.join(sodir, '*.bin')), key=os.path.getmtime, reverse=True)
 print(f"\nIn StarOceanTest2:")

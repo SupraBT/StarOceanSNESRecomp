@@ -32,7 +32,7 @@ MASTER_PER_FRAME = 357368
 
 PROBE = os.environ.get(
     "SNESRECOMP_PROBE",
-    r"E:\Recompilador Super Nintendo\StarOceanRecompDocumentacion\mesen_fades900.tsv")
+    r"E:\Experimento Hermes\Documentacion\TracesMesen\mesen_fades900.tsv")
 FSTATE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..",
                       "build-dev", "Release", "logs", "fstate_noinput_err.log")
 

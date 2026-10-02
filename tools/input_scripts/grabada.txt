@@ -3,7 +3,7 @@
 # Copiada de build-dev/Release/rep_bueno.txt: es la secuencia que recorre
 # intro -> menu (New Game/Continue/Sound Player) -> seleccion de nombre ->
 # comienzo de cinematica, y coincide paso a paso con la narrativa de
-# StarOceanRecompDocumentacion/Secuencia pulsaciones trace.txt.
+# E:\Experimento Hermes\Documentacion\Secuencia pulsaciones trace.txt.
 #
 # Cinco pulsaciones de A (mascara 0x0100) con suelta 10-14 frames despues. La
 # clave es el indice de FRAME DE HOST (por defecto). Aterrizajes comprobados con

@@ -1,4 +1,9 @@
 // drive_bsnes.cpp -- headless libretro driver for the Track-B oracle.
+//
+// [RETIRADO 2026-10-02] bsnes ya no es oraculo: el oraculo unico es Mesen
+// (Decompilacion/MesenCE-master/Mesen.exe). Sin mantenimiento; no se ejecuta
+// sin autorizacion del usuario.
+//
 // DEV/DIAGNOSTIC ONLY. Loads a libretro SNES core DLL, plays a ROM for a
 // fixed number of frames with scripted input, and lets the core dump
 // per-frame state (CPU/PPU/S-DD1/WRAM/VRAM/CGRAM) via the SNESREF_STATE_OUT

@@ -16,6 +16,7 @@
 -- Ejecutar (F5).  Luego cargar/reiniciar el ROM.
 
 local CAND = {
+  "E:\\Experimento Hermes\\Documentacion\\TracesMesen\\mesen_ping.log",
   "F:\\Recompilador Super Nintendo\\Mesen\\mesen_ping.log",
   "F:\\SOR\\mesen_ping.log",
 }

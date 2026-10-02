@@ -36,7 +36,7 @@ import difflib
 import pathlib
 import re
 
-MESEN = pathlib.Path(r"E:\Recompilador Super Nintendo\StarOceanRecompDocumentacion"
+MESEN = pathlib.Path(r"E:\Experimento Hermes\Documentacion"
                      r"\TracesMesen\Star_Ocean_Japan__so_trace_events.tsv")
 REG = re.compile(r"reg=([0-9A-Fa-f]+)")
 

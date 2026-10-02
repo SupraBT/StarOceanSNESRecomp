@@ -22,7 +22,7 @@ import re, sys, os
 #   SNESRECOMP_PROBE="...\mesen_fades900.tsv" python tools/ab_master.py fases
 PROBE = os.environ.get(
     "SNESRECOMP_PROBE",
-    r"E:\Recompilador Super Nintendo\StarOceanRecompDocumentacion\mesen_intro_probe.tsv")
+    r"E:\Experimento Hermes\Documentacion\TracesMesen\mesen_intro_probe.tsv")
 FSTATE = os.path.join(os.path.dirname(__file__), "..", "build-dev", "Release", "logs",
                       "fstate_noinput_err.log")
 

@@ -52,11 +52,11 @@ ROOT = HERE.parent
 sys.path.insert(0, str(HERE))
 import replay_clock  # noqa: E402
 
-TRACES = pathlib.Path(r"E:\Recompilador Super Nintendo\StarOceanRecompDocumentacion"
+TRACES = pathlib.Path(r"E:\Experimento Hermes\Documentacion"
                       r"\TracesMesen")
 TRACE_TSV = TRACES / "Star_Ocean_Japan__so_trace_trace.tsv"
-GHIDRA_PROJECTS = pathlib.Path(r"E:\Recompilador Super Nintendo"
-                               r"\HerramientasDecompilacion\ghidra_projects")
+GHIDRA_PROJECTS = pathlib.Path(r"E:\Experimento Hermes"
+                               r"\Decompilacion\ghidra_projects")
 
 # Campos de la traza de hardware que se confrontan con los del motor. La
 # cabecera del TSV esta en las lineas 3-35; la 36 es la de columnas.

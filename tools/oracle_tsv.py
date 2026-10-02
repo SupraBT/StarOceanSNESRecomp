@@ -23,7 +23,7 @@ Uso: python oracle_tsv.py pantalla
 """
 import sys, os, re
 
-TSV = r"E:\Recompilador Super Nintendo\StarOceanRecompDocumentacion\mesen_oracle.tsv"
+TSV = r"E:\Experimento Hermes\Documentacion\TracesMesen\mesen_oracle.tsv"
 ITEM = re.compile(r"([0-9A-F]{2})")
 
 

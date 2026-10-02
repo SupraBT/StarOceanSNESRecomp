@@ -1,5 +1,10 @@
 // drive_bsnesplus.cpp — Track-B oracle driver for bsnes-plus v0.5 (libsnes).
 //
+// [RETIRADO 2026-10-02] bsnes-plus ya no es oraculo: el oraculo unico es Mesen
+// (Decompilacion/MesenCE-master/Mesen.exe). Sin mantenimiento; no se ejecuta
+// sin autorizacion del usuario.
+//
+//
 // Loads a ROM through the bsnes-plus heuristic (S-DD1 autodetected), feeds a
 // per-frame joypad mask file (runner layout: bit k = JoypadID k, B..R), and
 // runs N frames. The state record per frame is emitted by the SNESREF hook

@@ -21,7 +21,8 @@ import re, sys, os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import intro_tsv as T
 
-FSTATE = r"E:\Recompilador Super Nintendo\StarOceanRecomp\build-dev\Release\logs\fstate_rep_bueno_err.log"
+FSTATE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..",
+                      "build-dev", "Release", "logs", "fstate_rep_bueno_err.log")
 
 PAT = re.compile(
     r"\[fstate\] f=(\d+) nmiEn=(\d+) resume=(\S+) inidisp=(\S+) cpu=(\d+) "
