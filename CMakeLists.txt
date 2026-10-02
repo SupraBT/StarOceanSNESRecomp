@@ -41,6 +41,17 @@ if(SNESRECOMP_ENABLE_TRACE)
     add_compile_definitions(SNESRECOMP_TRACE=1)
 endif()
 
+# Traza DENSA por instruccion del estado del invitado (SO_BLOCKTRACE). Es
+# instrumentacion de cosim: escribe el estado de la CPU antes de cada opcode
+# para alinearlo contra el oraculo de Mesen (snesrecomp/cosim/align_regs.py).
+# DESACTIVADA por defecto porque su punto de enganche esta dentro del bucle de
+# opcodes del interprete; activa solo para medir, nunca para produccion.
+option(SNESRECOMP_BLOCKTRACE "Enable per-instruction CPU state trace (cosim only)" OFF)
+if(SNESRECOMP_BLOCKTRACE)
+    add_compile_definitions(SNESRECOMP_BLOCKTRACE=1)
+    message(STATUS "Block trace: ON (per-instruction cosim trace enabled)")
+endif()
+
 set(STAROCEAN_GENERATED_DIR "${CMAKE_CURRENT_SOURCE_DIR}/generated"
     CACHE PATH "Directory containing generated Star Ocean AOT C sources")
 
@@ -66,6 +77,7 @@ set(GAME_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/so_cpu_infra.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/so_spc_player.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/state_file.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/evlog.c
     ${CMAKE_CURRENT_SOURCE_DIR}/snesrecomp/runner/src/desktop/mmx_config.c
 )
 

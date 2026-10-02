@@ -452,6 +452,37 @@ static void HmDraw(uint8_t *px, int width, int frame_invitado, int fps) {
                        ? (double)(s_hud_t1 - s_hud_t0) * 1000.0 / freq : 0.0;
     s_hud_prev = ahora;
 
+    /* Coste del descompresor del S-DD1 en ESTE fotograma. La pantalla en negro
+     * del arranque y el menu a 48 FPS son esto: el invitado descomprime bloques
+     * y nosotros los descomprimimos de verdad en el host. Sin este campo no se
+     * puede separar "el invitado espera al S-DD1" de "el host tarda en
+     * descomprimir".
+     *
+     * El delta se calcula UNA vez aqui y lo consumen tanto [perf] como el log
+     * de bajones. Antes lo hacia [perf] sobre s_sdd1_ms_prev, que solo avanza
+     * si [perf] esta activo: con el log de bajones puesto y [perf] apagado el
+     * valor habria crecido de forma monotona en vez de ser el coste de un
+     * fotograma.
+     *
+     * Y solo se consulta si alguien lo va a usar: pedir el perfil cuesta una
+     * llamada por fotograma y no tiene sentido pagarla con todo apagado. */
+    uint64_t sdd1_blocks = 0, sdd1_bytes = 0; double sdd1_total = 0.0;
+    double sdd1_ms = 0.0;
+    { static int _perf_want = -1; static int _ev_want = -1;
+      extern int EvLogEnabled(void);
+      if (_perf_want < 0) {
+          const char *e = getenv("SNESRECOMP_PERF");
+          _perf_want = (e && e[0] && e[0] != '0') ? 1 : 0;
+      }
+      if (_ev_want < 0) _ev_want = EvLogEnabled();
+      if (_perf_want || _ev_want) {
+          void sdd1_prof_get(uint64_t*, uint64_t*, double*);
+          sdd1_prof_get(&sdd1_blocks, &sdd1_bytes, &sdd1_total);
+          sdd1_ms = sdd1_total - s_sdd1_ms_prev;
+          s_sdd1_ms_prev = sdd1_total;
+      }
+    }
+
     { static int _perf = -1;
       if (_perf < 0) {
           const char *e = getenv("SNESRECOMP_PERF");
@@ -460,22 +491,14 @@ static void HmDraw(uint8_t *px, int width, int frame_invitado, int fps) {
       if (_perf) {
           extern int snes_frame_counter;
           const double emu = s_hm_emu_ms;
-          /* Coste del descompresor del S-DD1 en ESTE fotograma. La pantalla en
-           * negro del arranque y el menu a 48 FPS son esto: el invitado
-           * descomprime bloques y nosotros los descomprimimos de verdad en el
-           * host. Sin este campo no se puede separar "el invitado espera al
-           * S-DD1" de "el host tarda en descomprimir". */
-          uint64_t sb = 0, sz = 0; double sm = 0.0;
-          { void sdd1_prof_get(uint64_t*, uint64_t*, double*);
-            sdd1_prof_get(&sb, &sz, &sm); }
-          const double sdd1_ms = sm - s_sdd1_ms_prev;
-          s_sdd1_ms_prev = sm;
+          /* sdd1_ms / sdd1_total ya se han calculado arriba, una sola vez. */
           fprintf(stderr,
                   "[perf] h=%d g=%d loop=%.2f emu=%.2f draw=%.2f resto=%.2f "
                   "sdd1=%.2f sdd1Tot=%.0f sdd1Bytes=%llu sdd1Blocks=%llu\n",
                   snes_frame_counter, frame_invitado, ciclo, emu, draw,
-                  ciclo - emu - draw, sdd1_ms, sm,
-                  (unsigned long long)sz, (unsigned long long)sb);
+                  ciclo - emu - draw, sdd1_ms, sdd1_total,
+                  (unsigned long long)sdd1_bytes,
+                  (unsigned long long)sdd1_blocks);
       }
     }
 
@@ -491,6 +514,16 @@ static void HmDraw(uint8_t *px, int width, int frame_invitado, int fps) {
         _hot_all = (e && e[0] && e[0] != '0') ? 1 : 0;
     }
     const int lento = (ciclo > s_hot_ms);
+    /* Log por evento de BAJON: se pasa el MISMO `lento` que decide el color de
+     * las lineas siguientes, para que el log y el rojo no puedan discrepar.
+     * evlog.c guarda un registro por fotograma en un anillo y solo abre un
+     * fichero cuando este booleano pasa a true, volcando los fotogramas
+     * anteriores que ya tenia. Fuera de un bajon no escribe nada. */
+    { extern int EvLogEnabled(void);
+      if (EvLogEnabled()) {
+          extern void EvLogFrame(double, double, double, double, int, int, int);
+          EvLogFrame(ciclo, s_hm_emu_ms, draw, sdd1_ms, fps, frame_invitado, lento);
+      } }
     if (s_hot_on) {
         if (lento && (_hot_all || !s_hot_edge)) {
             char path[1024];
@@ -1502,6 +1535,12 @@ int main(int argc, char** argv) {
 
     extern const RtlGameInfo kSoGameInfo;
     RtlRegisterGame(&kSoGameInfo);
+    /* Traza densa por instruccion del estado del invitado (SO_BLOCKTRACE=<fichero>).
+     * Instrumentacion de cosim; solo existe si se compilo con
+     * SNESRECOMP_BLOCKTRACE=ON (por defecto fuera). */
+#if SNESRECOMP_BLOCKTRACE
+    { extern void blocktrace_init(void); blocktrace_init(); }
+#endif
     Snes *snes = SnesInit(kRom, kRom_SIZE);
     host_report_breadcrumb("SnesInit: %s", snes ? "ok" : "FAILED");
     if (snes == NULL) {
