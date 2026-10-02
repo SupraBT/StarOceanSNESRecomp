@@ -40,6 +40,12 @@ python tools/verificar.py
 python tools/audio_health.py
 python tools/audio_health.py --deadline=1
 
+# NOTA (2026-10-02): el golden se regenero con --update-golden porque el
+# commit 2d7244a (2026-09-30) anadio el sufijo `A= X= Y= P=` al [fstate] y el
+# baseline era del 29 13:01. Verificado ANTES de regenerar: los 26 campos
+# antiguos eran byte-identicos en los 2100 frames (diff vacio tras quitar el
+# sufijo), o sea cambio de FORMATO, no de comportamiento.
+
 # A/B byte-exacto de dos configuraciones cualquiera:
 #   dev build + SNESRECOMP_FRAME_STATE=1 -> fichero de lineas [fstate] -> diff
 SNESRECOMP_EXIT_AT_FRAME=2100 SNESRECOMP_FRAME_STATE=1 ./StarOcean.exe 2>f1.log
